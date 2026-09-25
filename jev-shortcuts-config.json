@@ -1,0 +1,111 @@
+{
+  "version": "2.0.0",
+  "endpoint": "https://openrouter.ai/api/alpha/decisions",
+  "request_body": {
+    "model": "typesafe/jev-1.13",
+    "state": "",
+    "questions": {
+      "priority": {
+        "type": "choice",
+        "instructions": "判断这件事务在当前情况下应该何时处理。只根据实际时效、责任、风险、依赖关系以及是否已经完成来判断，不要因为文字中出现‘重要’‘紧急’等词就机械选择。",
+        "criteria": {
+          "now": "当前就应该处理。存在明确或隐含的近期时限、责任、风险、机会窗口，或者不处理会影响下一步工作。",
+          "later": "确实有处理价值，但当前没有必要立即处理，可以进入待办或稍后处理。",
+          "ignore": "无需继续处理，包括无关、重复、低价值、垃圾信息、已经完成、已经失效或不需要任何行动的事情。"
+        }
+      },
+      "action": {
+        "type": "choice",
+        "instructions": "判断这件事务最合理的下一步动作。只选择一个最直接、最有价值的动作。如果信息不足以安全决定，选择 ask_user；如果不需要任何行动，选择 none。",
+        "criteria": {
+          "reminder": "需要在未来某个时间提醒、跟进或重新处理。",
+          "calendar": "属于具有明确日期或时间段的会议、约会、行程或日程安排。",
+          "reply": "下一步主要是给某个人、客户、同事或机构准备文字回复。",
+          "call": "下一步最适合通过电话或语音联系某人解决。",
+          "navigate": "需要前往某个地点、规划路线或打开导航。",
+          "save": "主要价值是保存、收藏、归档或记录资料，当前不需要进一步处理。",
+          "search": "需要查找外部资料、最新信息、价格、地点、事实或网页内容。",
+          "scan": "需要扫描、OCR、识别或整理纸质文件、图片或单据。",
+          "parcel": "与快递、包裹、物流单号、包裹定位或条码识别有关。",
+          "analyze": "需要比较、计算、判断方案、总结材料、制定策略或进行较复杂推理。",
+          "open_app": "主要下一步是打开某个明确的应用或已有工具执行操作。",
+          "ask_user": "缺少关键条件，继续执行容易出错，应该先向用户询问。",
+          "none": "当前不需要执行任何动作，或者不属于上述任何值得执行的事务。"
+        }
+      },
+      "risk": {
+        "type": "score",
+        "instructions": "按照这件事务最可能采取的下一步动作，判断自动执行带来的风险。",
+        "criteria": [
+          "低风险。只读、查询、打开应用、导航、查看信息等，没有明显外部后果。",
+          "中等风险。会创建或修改提醒、日历、文件、笔记等，但容易撤销或修正。",
+          "高风险。可能发送消息、提交信息、删除数据、支付购买、修改账户、分享敏感信息或产生明显外部后果。"
+        ]
+      },
+      "needs_gpt": {
+        "type": "noul",
+        "instructions": "完成这件事务是否需要生成文字、总结长内容、比较多个方案、解释原因、进行多步骤推理或其他更适合大型语言模型完成的工作？"
+      },
+      "missing_info": {
+        "type": "noul",
+        "instructions": "当前信息是否缺少关键条件，以至于如果直接执行最可能的下一步动作，容易产生明显错误或无法正确完成？"
+      },
+      "interrupt": {
+        "type": "noul",
+        "instructions": "这件事务是否值得立即打断用户当前正在做的事情？只有真正具有近期时效、高风险、明显损失、重要责任或短暂机会窗口时才倾向于真。"
+      }
+    }
+  },
+  "result_paths": {
+    "priority": "answers.priority.choice",
+    "priority_confidence": "answers.priority.confidence",
+    "action": "answers.action.choice",
+    "action_confidence": "answers.action.confidence",
+    "risk": "answers.risk.score",
+    "risk_confidence": "answers.risk.confidence",
+    "needs_gpt": "answers.needs_gpt.noul",
+    "missing_info": "answers.missing_info.noul",
+    "interrupt": "answers.interrupt.noul"
+  },
+  "policy": {
+    "minimum_action_confidence": 0.7,
+    "auto_action_confidence": 0.85,
+    "missing_info_threshold": 0.6,
+    "needs_gpt_threshold": 0.6,
+    "interrupt_threshold": 0.8,
+    "high_risk_threshold": 1.5
+  },
+  "actions": {
+    "reminder": { "mode": "auto", "shortcut": "JEV｜建立提醒" },
+    "calendar": { "mode": "confirm", "shortcut": "JEV｜加入日历" },
+    "reply": { "mode": "gpt_then_confirm", "shortcut": "JEV｜准备回复" },
+    "call": { "mode": "confirm", "shortcut": "JEV｜电话" },
+    "navigate": { "mode": "auto", "shortcut": "JEV｜导航" },
+    "save": { "mode": "auto", "shortcut": "JEV｜保存资料" },
+    "search": { "mode": "auto", "shortcut": "JEV｜搜索" },
+    "scan": { "mode": "auto", "shortcut": "JEV｜扫描" },
+    "parcel": { "mode": "auto", "shortcut": "JEV｜查快递" },
+    "analyze": { "mode": "gpt", "shortcut": "JEV｜GPT分析" },
+    "open_app": { "mode": "whitelist", "shortcut": "JEV｜打开应用" },
+    "ask_user": { "mode": "ask", "shortcut": "JEV｜询问补充" },
+    "none": { "mode": "stop" }
+  },
+  "labels": {
+    "now": "立即处理",
+    "later": "稍后处理",
+    "ignore": "忽略",
+    "reminder": "建立提醒",
+    "calendar": "加入日历",
+    "reply": "准备回复",
+    "call": "电话联系",
+    "navigate": "打开导航",
+    "save": "保存资料",
+    "search": "搜索资料",
+    "scan": "扫描识别",
+    "parcel": "查询快递",
+    "analyze": "深入分析",
+    "open_app": "打开应用",
+    "ask_user": "需要补充信息",
+    "none": "无需处理"
+  }
+}
