@@ -7,6 +7,7 @@ on:
     paths:
       - "pyvoiceagent/v1_5/**"
       - "pyvoiceagent/agent_core_1_5_0_dev.py"
+      - "pyvoiceagent/agent_core_1_5_0.py"
       - ".github/workflows/pyvoiceagent-v15-tests.yml"
   workflow_dispatch:
 
@@ -24,6 +25,6 @@ jobs:
       - name: Python syntax checks
         run: |
           python -m compileall -q pyvoiceagent/v1_5
-          if test -f pyvoiceagent/agent_core_1_5_0_dev.py; then
-            python -m py_compile pyvoiceagent/agent_core_1_5_0_dev.py
+          if test -f pyvoiceagent/agent_core_1_5_0.py; then
+            python -m py_compile pyvoiceagent/agent_core_1_5_0.py
           fi
