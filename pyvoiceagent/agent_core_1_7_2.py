@@ -873,6 +873,38 @@ def decode_shortcuts_result_b64(raw):
     return decoded
 
 
+def can_retry_readonly_calendar(state):
+    """Retry only a single failed, approved calendar read; never any write."""
+    p=state.get('pending') or {}
+    plan=state.get('plan')
+    return bool(
+        state.get('status')=='needs_review'
+        and isinstance(p,dict) and p.get('tool')=='calendar.list'
+        and state.get('single_plan') and state.get('plan_approved')
+        and isinstance(plan,list) and len(plan)==1
+        and isinstance(plan[0],dict) and plan[0].get('tool')=='calendar.list'
+        and state.get('plan_index')==0 and not state.get('events')
+        and int(state.get('calendar_read_retry_count',0))<1
+        and any(term in str(state.get('error','')) for term in (
+            '数据编码异常','CALREAD1','查询回调正文为空')))
+
+
+def retry_last_readonly_calendar(state):
+    """Reuse original date bounds locally; do not consume DeepSeek Tokens."""
+    if not can_retry_readonly_calendar(state):
+        return False
+    if not prompt_alert('重新查询上次日历（无需 AI）',
+            '只重新查询上次的日期，不创建或修改事项，不向 DeepSeek 发起新请求。继续吗？'):
+        return False
+    state['calendar_read_retry_count']=1
+    state['pending']=None
+    state['status']='ready'
+    state['error']=''
+    put_state(state)
+    execute_planned_actions(state)
+    return True
+
+
 def bridge_callback(token, status, result_b64=''):
     """Only record success if a matching pending request returns explicit ok.
 
@@ -2622,7 +2654,10 @@ def show_menu():
                 if show_text_menu():
                     return  # A submitted task owns execution; do not reopen menus.
             elif choice.startswith('3.'):
-                pretty_status(get_state())
+                saved=get_state()
+                pretty_status(saved)
+                if retry_last_readonly_calendar(saved):
+                    return  # New shortcut callback will own this read-only query.
             elif choice.startswith('4.'):
                 if update_from_menu():
                     return  # Do not keep the old engine alive after installing another.
