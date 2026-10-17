@@ -58,7 +58,23 @@ def download(path, limit):
 
 def repair_update():
     state = load_json(TASK)
-    if state.get('pending') and state.get('status') in ('awaiting_callback', 'needs_review', 'writing'):
+    # A failed, read-only calendar query is not a system write. Preserve
+    # its pending data so the newer engine can safely retry without AI.
+    pending = state.get('pending') or {}
+    safe_read = (isinstance(pending, dict)
+                 and pending.get('tool') == 'calendar.list'
+                 and state.get('status') == 'needs_review'
+                 and state.get('single_plan') is True
+                 and state.get('plan_approved') is True
+                 and isinstance(state.get('plan'), list)
+                 and len(state['plan']) == 1
+                 and isinstance(state['plan'][0], dict)
+                 and state['plan'][0].get('tool') == 'calendar.list'
+                 and state.get('plan_index') == 0
+                 and not state.get('events')
+                 and any(word in str(state.get('error','')) for word in (
+                     '数据编码异常', 'CALREAD1', '查询回调正文为空')))
+    if pending and state.get('status') in ('awaiting_callback', 'needs_review', 'writing') and not safe_read:
         return '已停止：存在未核验的系统写入；没有修改手机文件。'
 
     meta = load_json(META)
