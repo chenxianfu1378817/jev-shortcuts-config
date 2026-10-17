@@ -1,0 +1,27 @@
+name: PYVoiceAgent V1.5.1 Token Optimization Tests
+
+on:
+  push:
+    branches:
+      - dev/pyvoiceagent-v1-5-1
+    paths:
+      - "pyvoiceagent/v1_5_1/**"
+      - "pyvoiceagent/agent_core_1_5_1.py"
+      - ".github/workflows/pyvoiceagent-v151-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check syntax
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_5_1.py
+          python -m compileall -q pyvoiceagent/v1_5_1
+      - name: Run regression suite
+        run: python -m unittest discover -s pyvoiceagent/v1_5_1 -p 'test_*.py' -v
