@@ -100,8 +100,9 @@ class ExperienceTests(unittest.TestCase):
         urls=[]
         fake=types.ModuleType('objc_util')
         class UIApplication:
-            def sharedApplication(self):
-                return self
+            @classmethod
+            def sharedApplication(cls):
+                return cls()
             def openURL_(self,url):
                 urls.append(url)
                 return True
