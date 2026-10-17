@@ -103,7 +103,7 @@ class NotesTests(unittest.TestCase):
         a._index_agent_note_after_callback(st,p)
         found=a._local_agent_notes_search(decision('notes.search_agent','报价'))
         self.assertIn('采购报价记录',found['result'])
-        self.assertIn('不是苹果备忘录',a._local_agent_notes_search(decision('notes.search_agent','不存在的词'))['result'])
+        self.assertIn('并非苹果备忘录全库搜索',a._local_agent_notes_search(decision('notes.search_agent','不存在的词'))['result'])
         self.assertFalse(found['verified'])
         self.assertIn('非 Apple Notes 独立核验',found['result'])
 
@@ -164,7 +164,7 @@ class WebTests(unittest.TestCase):
             headers={'Content-Type':'text/html; charset=utf-8'}
             def __enter__(self):return self
             def __exit__(self,*args):pass
-            def read(self,n):return '<p>广西项目路面进展正常，预计下周开始施工。</p>'.encode()
+            def read(self,n):return '<p>广西项目路面进展正常，预计下周开始施工。施工单位已经完成第一阶段的基层铺筑，第二阶段准备开始。</p>'.encode()
         with patch.object(a,'_validate_public_https_link',return_value='https://example.com/article'), \
              patch.object(a,'build_opener',return_value=types.SimpleNamespace(
                  open=lambda req,timeout:Response())):
