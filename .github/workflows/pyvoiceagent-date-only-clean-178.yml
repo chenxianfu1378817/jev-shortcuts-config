@@ -1,0 +1,40 @@
+name: Validate PYVoiceAgent 1.7.8 clean reminder notes
+
+on:
+  push:
+    branches: [main, fix/dateonly-clean-notes-178]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_8.py'
+      - 'pyvoiceagent/tests/test_date_only_work_178.py'
+      - '.github/workflows/pyvoiceagent-date-only-clean-178.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile and test clean reminders
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_7_8.py
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_date_only_work_178.py' -v
+      - name: Regression previous version
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_date_only_work_177.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_natural_work_plan_176.py' -v
+      - name: Release hash and byte length
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          b=Path('pyvoiceagent/agent_core_1_7_8.py').read_bytes()
+          print('SHA256='+hashlib.sha256(b).hexdigest())
+          print('BYTES='+str(len(b)))
+          PY
