@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 142,
-  "version": "1.4.2",
-  "path": "agent_core_1_4_2.py",
-  "sha256": "1fa33aba33a36b110b74ab1eb1c8e0df0597176ac1c9f5ee2744241a91809210",
-  "size_bytes": 57381,
-  "summary": "V1.4.2: 苹果提醒事项持久防重记录；跨任务幂等；系统查询不一致时暂停人工核验；兼容 V1.4.1 最近任务；保留真实读回与逐项总结"
+  "sequence": 143,
+  "version": "1.4.3",
+  "path": "agent_core_1_4_3.py",
+  "sha256": "adf50cb26c511b86874bc72504cdcc873a63d639f761015a12864294e295e9f7",
+  "size_bytes": 58448,
+  "summary": "V1.4.3: 持久提醒防重；苹果提醒系统读回不一致时暂停；V1.4.1 末次成功记录在开启新任务前迁移；防止跨任务重复创建"
 }
