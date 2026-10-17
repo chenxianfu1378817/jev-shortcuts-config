@@ -194,5 +194,48 @@ class DateOnly177Tests(unittest.TestCase):
         self.assertEqual(a.CALENDAR_READ_SHORTCUT,'PYAgentCalendarRead')
         self.assertEqual(a.SYSTEM_MODULES['calendar.create'],'PYAgentCalendar')
 
+
+    def test_readback_rejects_wrong_day_even_with_matching_marker(self):
+        p=a._spoken_work_plan(goal(),date(2026,10,17))
+        key=a._dayonly_key(p['title'],p['day'])
+        shifted=Reminder(p['title'],'2026-10-19','[PYVoiceAgent dayonly:'+key+']')
+        module=types.SimpleNamespace(get_reminders=lambda completed=None:[shifted])
+        self.assertEqual(a._dayonly_existing(module,p['title'],p['day'],key),[])
+
+    def test_list_displays_date_only_without_0000_clock(self):
+        p=a._spoken_work_plan(goal(),date(2026,10,17))
+        key=a._dayonly_key(p['title'],p['day'])
+        item=Reminder(p['title'],p['day'],'[PYVoiceAgent dayonly:'+key+']')
+        choice={'tool':'reminder.list','datetime':'','end_datetime':''}
+        with patch.dict(sys.modules,{'reminders':types.SimpleNamespace(
+                get_reminders=lambda completed=None:[item])}):
+            result=a._local_reminder_list(choice)
+        self.assertIn('10-18（仅日期）',result['result'])
+        self.assertNotIn('10-18 00:00',result['result'])
+
+    def test_calendar_conflict_and_assist_route_still_operates(self):
+        choice={'tool':'calendar.assist','datetime':'2026-10-18T00:00:00+08:00',
+                'end_datetime':'2026-10-19T00:00:00+08:00',
+                'title':'','text':'','reason':'','notes':'','shortcut_id':''}
+        raw='查询到2项日程：\n2026年10月18日 09:0009:30A会议\n2026年10月18日 09:1510:00B会议'
+        self.assertIn('本地发现可能冲突',a._calendar_read_insights(raw,choice))
+        st=state()
+        with patch.object(a,'put_state'),\
+             patch.object(a,'execute_planned_actions',side_effect=lambda s:s):
+            a.research_then_plan(st,choice)
+        self.assertEqual(st['plan'][0]['tool'],'calendar.list')
+        self.assertEqual(st['research_phase'],'awaiting_calendar')
+
+    def test_existing_timed_reminder_tools_unchanged(self):
+        old_path=os.path.join(os.path.dirname(__file__),'..','agent_core_1_7_6.py')
+        old_spec=importlib.util.spec_from_file_location('legacy176',old_path)
+        old=importlib.util.module_from_spec(old_spec)
+        old_spec.loader.exec_module(old)
+        self.assertEqual(a.SYSTEM_MODULES,old.SYSTEM_MODULES)
+        self.assertEqual(a.MAIN_MENU,old.MAIN_MENU)
+        self.assertEqual(a.ONE_SHOT_TOOLS,old.ONE_SHOT_TOOLS)
+        self.assertEqual(a.RESEARCH_ACTIONS,old.RESEARCH_ACTIONS)
+
+
 if __name__=='__main__':
     unittest.main()
