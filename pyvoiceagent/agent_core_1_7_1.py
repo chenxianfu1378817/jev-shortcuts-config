@@ -902,8 +902,6 @@ def bridge_callback(token, status, result_b64=''):
     # being misreported as an empty calendar.
     calendar_result = None
     if tool == 'calendar.list' and status == 'ok':
-        prefix = 'CALREAD1\\n'
-        # Python string prefix contains the newline character, not literal '\\n'.
         prefix = 'CALREAD1' + chr(10)
         if not returned_text.startswith(prefix):
             state['pending']['reported_status'] = 'invalid_calendar_read_response'
@@ -921,7 +919,7 @@ def bridge_callback(token, status, result_b64=''):
     desc = ('快捷指令 {} 回报：{}。标记 {}。' .format(p['name'], status, p['marker']))
     if status == 'ok':
         result = ({'status': 'ok', 'verified': False,
-                   'result': '只读快捷指令返回（未做独立系统核验）：\\n'+calendar_result}
+                   'result': '只读快捷指令返回（未做独立系统核验）：\n'+calendar_result}
                   if tool == 'calendar.list' else
                   {'status': 'ok', 'result': desc + '这是快捷指令报告，并非 Pythonista 二次查询核验。' +
                    (' 工具返回数据：' + returned_text if returned_text else '')})
