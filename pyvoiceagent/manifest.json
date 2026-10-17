@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 173,
-  "version": "1.7.3",
-  "path": "agent_core_1_7_3.py",
-  "sha256": "65205a10531c67d490056577b9b959868e6eb2f03352a06adcbc2ae11568c73c",
-  "size_bytes": 131806,
-  "summary": "V1.7.3：继续支持日历快捷指令 URL 编码、换行 Base64 回调；新增纯 calendar.list 编码失败后在首页第3项确认重查上次日历（不再调用 DeepSeek，不创建写入）。保留对待核验写入的严格保护，173 项离线回归通过，待 iPhone 真机验收。"
+  "sequence": 174,
+  "version": "1.7.4",
+  "path": "agent_core_1_7_4.py",
+  "sha256": "471bb4e0ea546b597f223de605bf0c2134021d62bf679b9280e7e37e59aacbea",
+  "size_bytes": 138009,
+  "summary": "V1.7.4：calendar.assist 复用已验证的 PYAgentCalendarRead（CALREAD1 回调），不走 Pythonista EventKit；本地保守检查起止时间、全天及冲突，授权后 DeepSeek 分析，先展示建议和提醒时间再单独确认写入。保留 V1.7.3 五项首页、原快捷指令与防重复机制；12 项新增离线回归通过，待 iPhone 真机验收。"
 }
