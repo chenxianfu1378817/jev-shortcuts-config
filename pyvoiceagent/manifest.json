@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 171,
-  "version": "1.7.1",
-  "path": "agent_core_1_7_1.py",
-  "sha256": "d4e83b88776b09aacd31216953af623b9bcb89e85cdab3c8482b3090e73a42de",
-  "size_bytes": 129395,
-  "summary": "V1.7.1: calendar.list 通过 PYAgentCalendarRead 日历只读快捷指令返回实际查询结果；155项离线测试通过，待手机验收。"
+  "sequence": 172,
+  "version": "1.7.2",
+  "path": "agent_core_1_7_2.py",
+  "sha256": "7e70b90e34f7287a868fc5cf3e8a3d88dc8f768a5d261971b20bb483c43fa716",
+  "size_bytes": 130291,
+  "summary": "V1.7.2: 兼容快捷指令 URL 编码及换行的 Base64 日历只读回调；严格拒绝无效格式；允许有旧日历只读待核验时继续更新，但系统写入仍阻止更新。163 项离线测试通过；待 iPhone 真机回调验收。"
 }
