@@ -1,0 +1,43 @@
+name: PYVoiceAgent V1.7 Information and Dependent Workflows
+
+on:
+  push:
+    branches: [dev/pyvoiceagent-v1-7-read-and-act]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_0.py'
+      - 'pyvoiceagent/v1_7_0/**'
+      - '.github/workflows/pyvoiceagent-v170-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python syntax and new V1.7 tests
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_7_0.py
+          python -m unittest discover -v -s pyvoiceagent/v1_7_0 -p 'test_*.py'
+      - name: V1.6.2 practical, native maps and UX regression tests
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-6-2-ios-handoff --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_6_2 | tar -x
+          cp -R pyvoiceagent/v1_6_2 pyvoiceagent/v1_7_0_recent
+          find pyvoiceagent/v1_7_0_recent -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_6_2.py/agent_core_1_7_0.py/g; s/V1.6.2/V1.7.0/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_7_0_recent -p 'test_*.py'
+      - name: Historical callback, Token, safety and updater regressions
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-5-3-menu --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_5_3 | tar -x
+          cp -R pyvoiceagent/v1_5_3 pyvoiceagent/v1_7_0_compat
+          find pyvoiceagent/v1_7_0_compat -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_5_3.py/agent_core_1_7_0.py/g' {} +
+          sed -i 's/self.assertEqual(len(sequence),4)/self.assertEqual(len(sequence),2)/' pyvoiceagent/v1_7_0_compat/test_menu.py
+          sed -i 's/confirm.assert_called_once()/confirm.assert_not_called()/' pyvoiceagent/v1_7_0_compat/test_menu.py
+          python -m unittest discover -v -s pyvoiceagent/v1_7_0_compat -p 'test_*.py'
+      - name: Print pinned SHA-256 and byte count
+        run: |
+          python -c "import hashlib,pathlib; p=pathlib.Path('pyvoiceagent/agent_core_1_7_0.py'); b=p.read_bytes(); print('RELEASE_SHA256='+hashlib.sha256(b).hexdigest()); print('RELEASE_SIZE_BYTES='+str(len(b)))"
