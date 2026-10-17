@@ -1423,8 +1423,12 @@ def _ios_calendar_events(start, end):
 def _calendar_read(choice):
     # parse_local_dt normalizes to naive device-local time, so attach the
     # device's current local tzinfo only after conversion.
-    start=parse_local_dt(choice['datetime'],'查询开始').replace(tzinfo=datetime.now().astimezone().tzinfo)
-    end=parse_local_dt(choice['end_datetime'],'查询结束').replace(tzinfo=datetime.now().astimezone().tzinfo)
+    # Parse once as timezone-aware dates, convert to the device zone at the
+    # target date (rather than assuming today's UTC offset remains valid).
+    parse_local_dt(choice['datetime'],'查询开始')
+    parse_local_dt(choice['end_datetime'],'查询结束')
+    start=datetime.fromisoformat(choice['datetime'].replace('Z','+00:00')).astimezone()
+    end=datetime.fromisoformat(choice['end_datetime'].replace('Z','+00:00')).astimezone()
     if end <= start or end-start>timedelta(days=31):
         raise ValueError('日期范围必须大于0且不超过31天')
     return _ios_calendar_events(start,end)
@@ -1625,8 +1629,18 @@ def research_then_plan(state,action):
             state['error']='日程无法读取：'+str(ex)[:190]
             put_state(state)
             return state
+        # Preserve the independently read results locally even when the user
+        # declines uploading them for the optional second AI analysis.
+        display='\n'.join('• {} ~ {}  {}'.format(
+            x.get('start','')[:16],x.get('end','')[11:16],x.get('title',''))
+            for x in rows[:20])
+        create_event(state,'calendar.list',
+                     {'title':'二阶段分析前的本地日历查询','datetime':action['datetime'],
+                      'end_datetime':action['end_datetime']},
+                     {'status':'ok','verified':True,
+                      'result':'本地日历读取到 {} 项：\n{}'.format(len(rows),display)})
         snippet=json.dumps(rows[:20],ensure_ascii=False)
-        note='已读取 {} 条日程（最多 20 条参与分析）。'.format(len(rows))
+        note='已在手机上读取 {} 条日程（最多 20 条参与分析）。'.format(len(rows))
         allowed_share=prompt_alert('授权分析日历',
             note+'是否允许将这些日程的标题、时间和地点发送至 DeepSeek 分析？')
     elif tool=='webpage.summarize':
@@ -1645,6 +1659,8 @@ def research_then_plan(state,action):
     if not allowed_share:
         state['status']='paused'
         state['error']='用户取消发送读取数据给 DeepSeek；未进行第二次请求或系统写入'
+        if tool=='calendar.assist':
+            state['final']=verified_final_summary(state,'只完成了本地日历查询')
         put_state(state)
         return state
     payload={'goal':state['goal'],'source_type':tool,'read_result':snippet[:5300],
@@ -1665,6 +1681,12 @@ def research_then_plan(state,action):
         plan=follow['actions']
         if any(act['tool']=='reminder.create' for act in plan) and '提醒' not in state['goal']:
             raise ValueError('用户没有提出创建提醒的请求')
+        if any(act['tool']=='apple_notes.create' for act in plan) and not any(
+                word in state['goal'] for word in ('保存','备忘录','记下来','记录')):
+            raise ValueError('用户没有提出创建苹果备忘录的请求')
+        if any(act['tool']=='local_note.save' for act in plan) and not any(
+                word in state['goal'] for word in ('保存','本地笔记','文本文件')):
+            raise ValueError('用户没有提出创建本地文件的请求')
     except Exception as ex:
         state['status']='paused'
         state['error']='二阶段 AI 规划已停止：'+str(ex)[:220]
