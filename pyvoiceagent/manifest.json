@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 172,
-  "version": "1.7.2",
-  "path": "agent_core_1_7_2.py",
-  "sha256": "7e70b90e34f7287a868fc5cf3e8a3d88dc8f768a5d261971b20bb483c43fa716",
-  "size_bytes": 130291,
-  "summary": "V1.7.2: 兼容快捷指令 URL 编码及换行的 Base64 日历只读回调；严格拒绝无效格式；允许有旧日历只读待核验时继续更新，但系统写入仍阻止更新。163 项离线测试通过；待 iPhone 真机回调验收。"
+  "sequence": 173,
+  "version": "1.7.3",
+  "path": "agent_core_1_7_3.py",
+  "sha256": "65205a10531c67d490056577b9b959868e6eb2f03352a06adcbc2ae11568c73c",
+  "size_bytes": 131806,
+  "summary": "V1.7.3：继续支持日历快捷指令 URL 编码、换行 Base64 回调；新增纯 calendar.list 编码失败后在首页第3项确认重查上次日历（不再调用 DeepSeek，不创建写入）。保留对待核验写入的严格保护，173 项离线回归通过，待 iPhone 真机验收。"
 }
