@@ -109,8 +109,12 @@ def _sb_text(*parts):
 def _sb_action(identifier,**params):
     if identifier not in _SB_ALLOWED:
         raise ValueError("未授权的快捷指令动作 "+identifier)
+    # Deterministic UUIDs make the same spoken recipe byte-identical on retry.
+    # This allows safe reuse without overwriting or installing a duplicate.
+    stable=_sb_json.dumps([identifier,params],sort_keys=True,ensure_ascii=False)
+    uid=str(_sb_uuid.uuid5(_sb_uuid.NAMESPACE_URL,"PYVoiceAgent/1.7.9/"+stable)).upper()
     return {"WFWorkflowActionIdentifier":identifier,
-            "WFWorkflowActionParameters":{"UUID":str(_sb_uuid.uuid4()).upper(),**params}}
+            "WFWorkflowActionParameters":{"UUID":uid,**params}}
 
 
 def _sb_workflow(plan):
