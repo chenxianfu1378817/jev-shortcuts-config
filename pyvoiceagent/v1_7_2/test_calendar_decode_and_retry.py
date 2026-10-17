@@ -30,19 +30,19 @@ class DecodeTests(unittest.TestCase):
         self.assertEqual(a.decode_shortcuts_result_b64(uri),self.body)
 
     def test_percent_encoded_padding_and_symbols(self):
-        self.assertEqual(a.decode_shortcuts_result_b64('%2B%2F8%3D'),base64.b64decode('+/8=').decode('latin1') if False else
-                         a.decode_shortcuts_result_b64('+/8='))
+        raw=base64.b64encode('举丿'.encode('utf-8')).decode('ascii')
+        self.assertIn('+',raw)
+        self.assertIn('/',raw)
+        self.assertEqual(a.decode_shortcuts_result_b64(quote(raw,safe='')),'举丿')
 
     def test_line_wrapped_base64_from_shortcuts(self):
         folded='\r\n'.join(self.b64[i:i+76] for i in range(0,len(self.b64),76))
         self.assertEqual(a.decode_shortcuts_result_b64(quote(folded,safe='')),self.body)
 
     def test_spaces_from_query_plus_conversion(self):
-        raw=base64.b64encode(bytes([251,255,250])).decode('ascii')
+        raw=base64.b64encode('举'.encode('utf-8')).decode('ascii')
         self.assertIn('+',raw)
-        self.assertEqual(a.decode_shortcuts_result_b64(raw.replace('+',' ')),
-                         bytes([251,255,250]).decode('utf-8') if False else
-                         a.decode_shortcuts_result_b64(raw)) 
+        self.assertEqual(a.decode_shortcuts_result_b64(raw.replace('+',' ')),'举') 
 
     def test_reject_plain_text_as_base64(self):
         with self.assertRaises((ValueError,UnicodeDecodeError)):
@@ -57,11 +57,11 @@ class DecodeTests(unittest.TestCase):
             a.decode_shortcuts_result_b64('A'*4001)
 
     def test_reject_invalid_base64(self):
-        with self.assertRaises((ValueError,Exception)):
+        with self.assertRaises(Exception):
             a.decode_shortcuts_result_b64('non-base64-digit!')
 
     def test_reject_overlong_decoded_result(self):
-        enc=base64.b64encode(('超长'*1100).encode()).decode()
+        enc=base64.b64encode(('A'*1900).encode()).decode()
         with self.assertRaisesRegex(ValueError,'解码内容过长'):
             a.decode_shortcuts_result_b64(enc)
 
