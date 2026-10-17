@@ -2,7 +2,7 @@ name: Validate PYVoiceAgent 1.7.4 calendar assist
 
 on:
   push:
-    branches: [fix/calendar-assist-174]
+    branches: [main, fix/calendar-assist-174]
     paths:
       - 'pyvoiceagent/agent_core_1_7_4.py'
       - 'pyvoiceagent/tests/test_calendar_assist_174.py'
