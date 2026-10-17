@@ -1,0 +1,36 @@
+name: PYVoiceAgent V1.6.1 Experience Regression
+
+on:
+  push:
+    branches: [dev/pyvoiceagent-v1-6-1-experience]
+    paths:
+      - 'pyvoiceagent/agent_core_1_6_1.py'
+      - 'pyvoiceagent/v1_6_1/**'
+      - '.github/workflows/pyvoiceagent-v161-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify syntax
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_6_1.py
+          python -m compileall -q pyvoiceagent/v1_6_1
+      - name: New phone and usability tests
+        run: python -m unittest discover -v -s pyvoiceagent/v1_6_1 -p 'test_*.py'
+      - name: Historical 80 one-shot, callback, safety, updater, and menu regressions
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-5-3-menu --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_5_3 | tar -x
+          cp -R pyvoiceagent/v1_5_3 pyvoiceagent/v1_6_1_compat
+          find pyvoiceagent/v1_6_1_compat -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_5_3.py/agent_core_1_6_1.py/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_6_1_compat -p 'test_*.py'
+      - name: Print pinned release hash
+        run: |
+          python -c "import hashlib,pathlib; p=pathlib.Path('pyvoiceagent/agent_core_1_6_1.py'); b=p.read_bytes(); print('RELEASE_SHA256='+hashlib.sha256(b).hexdigest()); print('RELEASE_SIZE_BYTES='+str(len(b)))"
