@@ -12,6 +12,16 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(self.key, operation_key('apple_notes.create', '测试备忘录', text='正文'))
         self.assertNotEqual(self.key, operation_key('apple_notes.create', '测试备忘录', text='另一段正文'))
 
+    def test_reminder_note_paraphrase_not_duplicate(self):
+        first = operation_key('reminder.create', '开会', '2026-10-18T15:00+08:00', notes='提醒我')
+        same = operation_key('reminder.create', '开会', '2026-10-18T15:00+08:00', notes='重要提醒')
+        self.assertEqual(first, same)
+
+    def test_calendar_note_paraphrase_not_duplicate(self):
+        a = operation_key('calendar.create', '周会', '2026-10-19T10:00+08:00', '2026-10-19T10:30+08:00', notes='版本1')
+        b = operation_key('calendar.create', '周会', '2026-10-19T10:00+08:00', '2026-10-19T10:30+08:00', notes='版本2')
+        self.assertEqual(a, b)
+
     def test_unknown_route_rejected(self):
         with self.assertRaises(ValueError):
             operation_key('shell.exec', 'abc')
