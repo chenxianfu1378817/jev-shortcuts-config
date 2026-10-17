@@ -173,7 +173,7 @@ def set_ai_credentials():
 def prompt_alert(title, message, ok='确认', cancel='取消'):
     import dialogs
     try:
-        return dialogs.alert(title, str(message)[:700], ok, cancel, hide_cancel_button=True) == 1
+        return dialogs.alert(title, str(message)[:700], ok, cancel, hide_cancel_button=False) == 1
     except KeyboardInterrupt:
         return False
 
@@ -573,6 +573,10 @@ def bridge_callback(token, status, result_b64=''):
         print('当前没有等待中的快捷指令，忽略回调。')
         return False
     if not isinstance(token, str) or not hmac.compare_digest(token, str(p.get('token',''))):
+        # A late callback from an archived task must never interrupt an active
+        # unrelated task, but it can still be recorded in the recovery journal.
+        if isinstance(token, str) and status in ('ok', 'failed', 'cancelled') and deferred_callback(token, status):
+            return True
         print('回调编号不匹配，忽略；未修改正在等待的任务。')
         return False
     if not isinstance(status, str) or status not in ('ok', 'failed', 'cancelled'):
@@ -920,11 +924,11 @@ def run_tool(state, choice):
         if deferred_duplicate(queue, tool, choice.get('title'), action_fingerprint(choice)):
             return {'status': 'blocked_duplicate',
                     'result': '有同功能同标题的待核验写入；为避免重复，已跳过该项但其他任务可继续。'}
-    if tool in ('local_note.save','reminder.create','apple_notes.create','calendar.create','shortcut.run'):
+    if tool in ('local_note.save','apple_notes.create','calendar.create','shortcut.run'):
         fp = action_fingerprint(choice)
         if any(e.get('params',{}).get('fingerprint') == fp and
                e.get('status') == 'ok' for e in state.get('events', [])):
-            return {'status':'ok', 'result': '此任务中相同参数操作已成功记录，已跳过重复写入。'}
+            return {'status':'ok', 'verified': False, 'result': '此前已经执行相同参数；本次未重复写入，未重新核验系统结果。'}
     if tool == 'clipboard.read':
         import clipboard
         if not prompt_alert('读取剪贴板', '将读取剪贴板文字并发送到 DeepSeek 官方 API 进行分析，可能涉及隐私。是否允许？'):
