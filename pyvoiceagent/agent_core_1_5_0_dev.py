@@ -1321,6 +1321,54 @@ def input_voice():
     return corrected.strip()
 
 
+def review_deferred_queue():
+    """Rare fallback for a single archived operation; never auto-replay it."""
+    queue = read_recovery_queue()
+    unresolved = [(i, x) for i, x in enumerate(queue) if x.get('resolved') is not True]
+    if not unresolved:
+        print('没有历史待核验写入，无需处理。')
+        return
+    import dialogs
+    options = ['{} · {}'.format(x.get('tool', ''), x.get('title', '')[:40])
+               for _, x in unresolved]
+    selected = dialogs.list_dialog('历史待核验项目（选择一项）', options)
+    if selected not in options:
+        return
+    index, pending = unresolved[options.index(selected)]
+    actions = ['已经打开苹果 App，确认该项目存在',
+               '已经打开苹果 App，确认该项目不存在',
+               '暂时无法确认']
+    action = dialogs.list_dialog('请核对后选择', actions)
+    if action not in actions[:2]:
+        return
+    if not prompt_alert('确认人工结论',
+                        '仅记录你已经亲自核实的事实，不会重新创建或删除任何项目。'):
+        return
+    # Reload to avoid overwriting an in-flight late callback on the journal.
+    current = read_recovery_queue()
+    token = str(pending.get('token', ''))
+    found = False
+    for row in current:
+        if str(row.get('token', '')) == token and row.get('resolved') is not True:
+            row['resolved'] = True
+            row['status'] = 'confirmed_exists' if action == actions[0] else 'confirmed_absent'
+            row['resolved_at'] = now_iso()
+            found = True
+            break
+    if not found:
+        print('记录已经处理或更新，未重复更改。')
+        return
+    atomic_json(RECOVERY_QUEUE_PATH, current)
+    print('核验结论已保存；不会自动重复执行原操作。')
+
+
+def print_update_status():
+    """Local visibility for the stable-entry updater without remote writes."""
+    print('当前执行引擎：{}'.format(VERSION))
+    print('固定入口 PYVoiceAgent.py 由启动器管理自动更新。')
+    print('测试版并未修改正式发布清单。')
+
+
 def show_menu():
     import dialogs
     choices = [
@@ -1334,7 +1382,7 @@ def show_menu():
         '8. 查看 PYAgentHub 配置步骤',
         '9. 登记新的快捷指令工具',
         '10. 查看已登记工具',
-        '11. 人工核验跨 App 待处理项',
+        '11. 历史待核验项目（异常时才使用）',
         '12. 清除任务历史（保留笔记）',
         '13. PYAgentHub 往返自测（不调用 AI）',
         '14. 创建一条测试备忘（不调用 AI）',
@@ -1391,7 +1439,11 @@ def show_menu():
                 for k, v in local_registry().items():
                     print('  {} → {}：{}'.format(k, v['name'], v['description']))
             elif choice.startswith('11.'):
-                review_pending()
+                old = get_state()
+                if old.get('status') in ('awaiting_callback','needs_review') and old.get('pending'):
+                    review_pending()
+                else:
+                    review_deferred_queue()
             elif choice.startswith('12.'):
                 state = get_state()
                 if state.get('pending') and state.get('status') in ('awaiting_callback', 'needs_review', 'writing'):
