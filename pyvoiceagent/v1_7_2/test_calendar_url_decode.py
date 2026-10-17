@@ -150,17 +150,11 @@ class CalendarReadBridgeTests(unittest.TestCase):
         self.assertEqual(a.decode_shortcuts_result_b64(encoded),text)
 
     def test_plus_converted_to_space_accepted(self):
-        # Some Pythonista URL argument parsers apply form-style plus decoding.
-        sample='CALREAD1\n??'
+        # "🦋" deterministically creates a '+' sextet inside UTF-8 Base64.
+        sample='CALREAD1\n🦋'
         raw=base64.b64encode(sample.encode()).decode()
-        if '+' not in raw:
-            import itertools
-            sample=next('CALREAD1\n'+x for x in
-                ('?','??','???','汉字','办公','—','费用','月度','q2','❤')
-                if '+' in base64.b64encode(('CALREAD1\n'+x).encode()).decode())
-            raw=base64.b64encode(sample.encode()).decode()
-        result=a.decode_shortcuts_result_b64(raw.replace('+',' '))
-        self.assertEqual(result,sample)
+        self.assertIn('+',raw)
+        self.assertEqual(a.decode_shortcuts_result_b64(raw.replace('+',' ')),sample)
 
     def test_malformed_percent_escape_rejected(self):
         with self.assertRaisesRegex(ValueError,'百分号'):
