@@ -1,0 +1,784 @@
+{
+  "schema_version": 1,
+  "updated": "2026-10-18",
+  "purpose": "PYVoiceAgent iPhone app capability reconnaissance",
+  "observed_count": 77,
+  "notes": [
+    "只根据截图可见名称；未抓取应用 Bundle ID 或 Info.plist",
+    "Shortcut 中出现 App ≠ 应用暴露 URL Scheme",
+    "官方接口示例不等于用户 iOS 27 真机验收",
+    "不得依据此 JSON 自动发消息、转账、付款或操作私人应用内容"
+  ],
+  "items": [
+    {
+      "name": "百度地图",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "scheme",
+      "entrypoint_example": "baidumap://map/direction",
+      "documented_actions": "地点搜索、路线规划、地图显示；示例参数需依文档",
+      "documentation": "https://lbsyun.baidu.com/docs/webapi?title=mapadjustment%2Furi%2Fios",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "百度网盘",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "备忘录",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "播客",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "测距仪",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "地图",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "https_uri",
+      "entrypoint_example": "https://maps.apple.com/directions?destination=...",
+      "documented_actions": "通过 Apple Maps 统一地图链接展示路线和位置",
+      "documentation": "https://developer.apple.com/documentation/mapkit/unified-map-urls",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "电话",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "钉钉",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "东方财富期货",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "抖音",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "翻译",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "放大器",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "高德地图",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "https_uri",
+      "entrypoint_example": "https://uri.amap.com/navigation",
+      "documented_actions": "地图/路线规划；官方公开 HTTPS URI（不冒称已检测自定义 Scheme）",
+      "documentation": "https://developer.amap.com/api/uri-api/guide/travel/route",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "股市",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "花小猪打车",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "计算器",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "家庭",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "健康",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "健身",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "京东",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "快捷指令",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "scheme+callback",
+      "entrypoint_example": "shortcuts://run-shortcut?name=NAME&input=text&text=TEXT",
+      "documented_actions": "调用已有快捷指令；x-callback-url 支持回调",
+      "documentation": "https://support.apple.com/guide/shortcuts/run-a-shortcut-from-a-url-apd624386f42/ios",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "联系人",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "美团",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "米家",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "密码",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "墨迹天气",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "企业微信",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "钱包",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "日历",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "设置",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "时钟",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "手记",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "淘宝",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "腾讯会议",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "提示",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "提醒事项",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "天气",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "图书",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "微信",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "微信输入法",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "唯品会",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "文件",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "我的助手",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "闲鱼",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "相机",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "小红书",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "新浪财经",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "信息",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "scheme",
+      "entrypoint_example": "sms:NUMBER",
+      "documented_actions": "打开短信收件人编辑界面，不包括自动发送或正文参数",
+      "documentation": "https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/SMSLinks/SMSLinks.html",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "熊掌记",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "scheme+callback",
+      "entrypoint_example": "bear://x-callback-url/create",
+      "documented_actions": "创建/搜索/打开/追加笔记；部分读取须授权 token；支持 x-success",
+      "documentation": "https://bear.app/faq/x-callback-url-scheme-documentation/",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "遥控器",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "音乐",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "邮件",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "语音备忘录",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "云之家",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "照片",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "支付宝",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "scheme",
+      "entrypoint_example": "alipays://platformapi/startapp?appId=...",
+      "documented_actions": "调起明确 ID 的支付宝小程序，不提供资金支付权限",
+      "documentation": "https://github.com/AlipayDocs/open-docs/blob/main/support/%E6%94%AF%E4%BB%98%E5%AE%9D%E5%B0%8F%E7%A8%8B%E5%BA%8F/%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90/%E5%B0%8F%E7%A8%8B%E5%BA%8Fscheme%E9%93%BE%E6%8E%A5%E4%BB%8B%E7%BB%8D.md",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "中国工商银行",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "中国建设银行",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "App Store",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Apple Store",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "ChatGPT",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Chrome",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "scheme",
+      "entrypoint_example": "googlechromes://example.com",
+      "documented_actions": "打开 HTTPS 页面（替换 https scheme）",
+      "documentation": "https://chromium.googlesource.com/chromium/src.git/+/master/docs/ios/opening_links.md",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "Facebook",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "FaceTime通话",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "GitHub",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Gmail",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Google",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Grok",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "iTunes Store",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Pythonista",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "scheme",
+      "entrypoint_example": "pythonista3://iCloud/PYVoiceAgent.py?action=run",
+      "documented_actions": "启动 Pythonista 脚本；可传入参数",
+      "documentation": "https://omz-software.com/pythonista/docs/ios/urlscheme.html",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "QQ",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Safari浏览器",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Shadowrocket",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "TikTok Pro",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "Watch",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    },
+    {
+      "name": "WhatsApp",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "https_uri",
+      "entrypoint_example": "https://wa.me/NUMBER?text=TEXT",
+      "documented_actions": "打开指定国际号码的聊天编辑界面，预填文本，不代表已发送",
+      "documentation": "https://faq.whatsapp.com/5913398998672934",
+      "evidence": "公开文档确认，尚未在用户手机验证"
+    },
+    {
+      "name": "WPS Office",
+      "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
+      "observed_type": "Shortcuts 应用候选项，非全机枚举",
+      "interface": "unknown",
+      "entrypoint_example": null,
+      "documented_actions": null,
+      "documentation": null,
+      "evidence": "仅截图中看到名称；未知是否有 Scheme/动作"
+    }
+  ]
+}
