@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 170,
-  "version": "1.7.0",
-  "path": "agent_core_1_7_0.py",
-  "sha256": "7c53f0da02fdd34ffe85f839d2d09bc592d03d2e1b6da3f7123dacdbfb8af01d",
-  "size_bytes": 127502,
-  "summary": "V1.7.0 iPhone 验收版：EventKit 有完整权限时本地读取日历；本助手自 V1.7 起创建且回调成功的备忘录本地索引搜索（不是全库 Notes 搜索）；经安全检查的公开 HTTPS 网页正文提取与 AI 总结；有依赖的日程分析经用户确认后最多二次 AI 规划并确认任何写入。原有五项首页、快捷指令回调与 Token 统计不变；144 项离线测试通过。首次使用须真机验收，日历权限不满足时会明确拒绝读取。"
+  "sequence": 171,
+  "version": "1.7.1",
+  "path": "agent_core_1_7_1.py",
+  "sha256": "d4e83b88776b09aacd31216953af623b9bcb89e85cdab3c8482b3090e73a42de",
+  "size_bytes": 129395,
+  "summary": "V1.7.1: calendar.list 通过 PYAgentCalendarRead 日历只读快捷指令返回实际查询结果；155项离线测试通过，待手机验收。"
 }
