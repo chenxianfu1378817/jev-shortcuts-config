@@ -1787,7 +1787,7 @@ def _calendar_read_insights(read_text, action):
     elif timed:
         result.append('已解析的定时日程之间未发现时间重叠（不代表未返回的日程无冲突）。')
     if all_day:
-        result.append('明确标记为全天的事件 {} 项：未作为会议时段冲突计算。'.format(len(all_day)))
+        result.append('全天事件 {} 项（有明确全天标记）：未作为会议时段冲突计算。'.format(len(all_day)))
     if all_day_candidates:
         result.append('疑似全天事件 {} 项（00:00—23:59）：{}。快捷指令未返回全天标志，需在日历中确认。'
                       .format(len(all_day_candidates), '；'.join(all_day_candidates[:4])))
