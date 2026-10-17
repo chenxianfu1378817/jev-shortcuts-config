@@ -61,6 +61,12 @@ class CalendarAssist174Tests(unittest.TestCase):
         self.assertIn('1 行未能可靠解析',result)
         self.assertIn('不能判断这些日程的冲突',result)
 
+    def test_all_day_midnight_times_stay_all_day(self):
+        raw='查询成功（最多显示8项）：\n10-18 全天 00:00—23:59 节假日\n10-18 09:00—10:00 例会'
+        result=agent._calendar_read_insights(raw, choice())
+        self.assertIn('全天事件 1 项',result)
+        self.assertIn('可解析具体起止时间的日程：1 项',result)
+
     def test_empty_result_is_not_global_calendar_assertion(self):
         result=agent._calendar_read_insights('0 项日程，查询范围内没有结果',choice())
         self.assertIn('检索范围和权限内',result)
