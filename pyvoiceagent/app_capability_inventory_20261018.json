@@ -14,11 +14,42 @@
       "name": "百度地图",
       "observed_in": "苹果快捷指令 > 添加操作 > App (8张用户截图)",
       "observed_type": "Shortcuts 应用候选项，非全机枚举",
-      "interface": "scheme",
+      "interface": "scheme + shortcuts_actions",
       "entrypoint_example": "baidumap://map/direction",
       "documented_actions": "地点搜索、路线规划、地图显示；示例参数需依文档",
       "documentation": "https://lbsyun.baidu.com/docs/webapi?title=mapadjustment%2Furi%2Fios",
-      "evidence": "公开文档确认，尚未在用户手机验证"
+      "evidence": "官方 URI 文档 + 用户手机快捷指令动作列表（9项及内置分类可见）；尚未查看每个动作参数或执行效果",
+      "shortcuts_actions_visible": [
+        "叫车",
+        "智能卡刷新按钮",
+        "周边地点",
+        "周边美食",
+        "百度地图搜索",
+        "打开百度地图",
+        "地图导航",
+        "用百度地图查地铁",
+        "用百度地图打车"
+      ],
+      "shortcuts_action_presets": {
+        "周边地点": [
+          "厕所",
+          "卫生间",
+          "药店",
+          "药房",
+          "银行"
+        ],
+        "周边美食": [
+          "小吃快餐",
+          "中餐馆",
+          "火锅",
+          "烧烤",
+          "咖啡厅"
+        ]
+      },
+      "shortcuts_action_evidence": "用户在 iPhone 苹果快捷指令 App 搜索百度地图时的动作列表截图 IMG_7723.jpeg（2026-10-18）",
+      "shortcuts_parameters_verified": false,
+      "shortcuts_execution_verified": false,
+      "x_callback_url_supported": "not_established"
     },
     {
       "name": "百度网盘",
