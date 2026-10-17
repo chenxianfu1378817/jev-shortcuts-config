@@ -26,6 +26,8 @@ jobs:
         run: python -m unittest discover -v -s pyvoiceagent/v1_6_0 -p 'test_*.py'
       - name: Run all 80 previous safety regressions against new engine
         run: |
+          git fetch origin dev/pyvoiceagent-v1-5-3-menu --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_5_3 | tar -x
           cp -R pyvoiceagent/v1_5_3 pyvoiceagent/v1_6_0_compat
           find pyvoiceagent/v1_6_0_compat -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_5_3.py/agent_core_1_6_0.py/g' {} +
           python -m unittest discover -v -s pyvoiceagent/v1_6_0_compat -p 'test_*.py'
