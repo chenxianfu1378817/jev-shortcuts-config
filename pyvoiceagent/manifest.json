@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 152,
-  "version": "1.5.2",
-  "path": "agent_core_1_5_2.py",
-  "sha256": "c188b9ca2f9882a3978bb540a6639f4939c4edde9d6f877928e2505f54be64c6",
-  "size_bytes": 87606,
-  "summary": "V1.5.2: 菜单15可立即连接GitHub、校验并安装最新版本，安装后可一键启动；菜单16保留查看状态；不改 PYAgentNotes/PYAgentCalendar；70项离线测试通过，待iPhone验收。"
+  "sequence": 153,
+  "version": "1.5.3",
+  "path": "agent_core_1_5_3.py",
+  "sha256": "c34eafee68a241da2492efeb47c2c3ad3bf0a77434aa552fdc7605f7262122d0",
+  "size_bytes": 88622,
+  "summary": "V1.5.3 精简首页：日常仅 5 项（语音、文字/剪贴板、执行结果、立即更新、更多设置）；其他配置、诊断、任务恢复归入二级菜单。保留一次 AI 规划、Token 统计、快捷指令回调；80 项离线测试通过，待 iPhone 验收。"
 }
