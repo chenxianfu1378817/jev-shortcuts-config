@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 
 ENGINE_PATH = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', 'agent_core_1_5_0_dev.py'))
+    os.path.dirname(__file__), '..', 'agent_core_1_5_0.py'))
 spec = importlib.util.spec_from_file_location('pyvoiceagent_dev_engine', ENGINE_PATH)
 agent = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent)
