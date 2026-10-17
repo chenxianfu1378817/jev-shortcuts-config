@@ -30,6 +30,17 @@ def encoded(msg):
 
 
 class CalendarAssist174Tests(unittest.TestCase):
+    def test_prior_menu_and_approved_modules_unchanged(self):
+        old_path=os.path.join(os.path.dirname(__file__),'..','agent_core_1_7_3.py')
+        old_spec=importlib.util.spec_from_file_location('pyvoice173',old_path)
+        old=importlib.util.module_from_spec(old_spec)
+        old_spec.loader.exec_module(old)
+        self.assertEqual(agent.MAIN_MENU,old.MAIN_MENU)
+        self.assertEqual(len(agent.MAIN_MENU),5)
+        self.assertEqual(agent.SYSTEM_MODULES,old.SYSTEM_MODULES)
+        self.assertEqual(agent.CALENDAR_READ_SHORTCUT,old.CALENDAR_READ_SHORTCUT)
+        self.assertEqual(agent.ONE_SHOT_TOOLS,old.ONE_SHOT_TOOLS)
+
     def test_routes_to_existing_read_shortcut_not_eventkit(self):
         st = state()
         with patch.object(agent, 'put_state'), patch.object(agent, 'execute_planned_actions', side_effect=lambda x:x):
