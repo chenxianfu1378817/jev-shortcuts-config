@@ -141,11 +141,11 @@ class DateOnly177Tests(unittest.TestCase):
 
     def test_completed_existing_task_is_not_recreated(self):
         p=a._spoken_work_plan(goal(),date(2026,10,17))
-        completed=Reminder(p['title'],p['day'],completed=True)
+        already=Reminder(p['title'],p['day'],completed=True)
         with patch.object(a,'_dayonly_load',return_value=record()),\
              patch.object(a,'atomic_json'),\
              patch.object(a,'_eventkit_date_only_save',side_effect=AssertionError('duplicate write')),\
-             patch.dict(sys.modules,{'reminders':types.SimpleNamespace(get_reminders=lambda completed=None:[completed]),
+             patch.dict(sys.modules,{'reminders':types.SimpleNamespace(get_reminders=lambda completed=None:[already]),
                  'objc_util':types.SimpleNamespace(ObjCClass=lambda k:types.SimpleNamespace(
                      authorizationStatusForEntityType_=lambda x:3))}):
             res=a._dayonly_save(state(),p)
