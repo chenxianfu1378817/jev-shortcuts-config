@@ -23,7 +23,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-VERSION = '1.6.0-dev-deepseek-flash'
+VERSION = '1.6.0-deepseek-flash'
 APP_FILE = 'PYVoiceAgent.py'
 BRIDGE_SHORTCUT = 'PYAgentHub'          # independent of previously verified PYBridgeEcho
 LEGACY_BRIDGE = 'PYAgentBridge'
