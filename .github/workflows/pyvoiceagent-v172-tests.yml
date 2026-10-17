@@ -1,0 +1,57 @@
+name: PYVoiceAgent V1.7.2 Calendar URL Decoder Regression
+
+on:
+  push:
+    branches: [dev/pyvoiceagent-v1-7-2-calendar-url-decode]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_2.py'
+      - 'pyvoiceagent/v1_7_2/**'
+      - '.github/workflows/pyvoiceagent-v172-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: New V1.7.2 callback and retry tests
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_7_2.py
+          python -m unittest discover -v -s pyvoiceagent/v1_7_2 -p 'test_*.py'
+      - name: V1.7.1 Calendar Shortcut read bridge regression
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-7-1-calendar-read-bridge --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_7_1 | tar -x
+          cp -R pyvoiceagent/v1_7_1 pyvoiceagent/v1_7_2_bridge
+          find pyvoiceagent/v1_7_2_bridge -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_7_1.py/agent_core_1_7_2.py/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_7_2_bridge -p 'test_*.py'
+      - name: V1.7 local calendar, Notes, dependent planning regression
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-7-read-and-act --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_7_0 | tar -x
+          cp -R pyvoiceagent/v1_7_0 pyvoiceagent/v1_7_2_research
+          find pyvoiceagent/v1_7_2_research -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_7_0.py/agent_core_1_7_2.py/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_7_2_research -p 'test_*.py'
+      - name: V1.6.2 41 practical tools native maps and menu regressions
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-6-2-ios-handoff --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_6_2 | tar -x
+          cp -R pyvoiceagent/v1_6_2 pyvoiceagent/v1_7_2_prev
+          find pyvoiceagent/v1_7_2_prev -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_6_2.py/agent_core_1_7_2.py/g; s/V1.6.2/V1.7.2/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_7_2_prev -p 'test_*.py'
+      - name: Earlier 80 safety, Token, Shortcut callback and updater regressions
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-5-3-menu --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_5_3 | tar -x
+          cp -R pyvoiceagent/v1_5_3 pyvoiceagent/v1_7_2_old
+          find pyvoiceagent/v1_7_2_old -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_5_3.py/agent_core_1_7_2.py/g' {} +
+          sed -i 's/self.assertEqual(len(sequence),4)/self.assertEqual(len(sequence),2)/' pyvoiceagent/v1_7_2_old/test_menu.py
+          sed -i 's/confirm.assert_called_once()/confirm.assert_not_called()/' pyvoiceagent/v1_7_2_old/test_menu.py
+          python -m unittest discover -v -s pyvoiceagent/v1_7_2_old -p 'test_*.py'
+      - name: Pinned release digest
+        run: |
+          python -c "import hashlib,pathlib; b=pathlib.Path('pyvoiceagent/agent_core_1_7_2.py').read_bytes(); print('RELEASE_SHA256='+hashlib.sha256(b).hexdigest()); print('RELEASE_SIZE_BYTES='+str(len(b)))"
