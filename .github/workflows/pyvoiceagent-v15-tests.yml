@@ -1,0 +1,29 @@
+name: PYVoiceAgent V1.5 Offline Tests
+
+on:
+  push:
+    branches:
+      - dev/pyvoiceagent-v1-5
+    paths:
+      - "pyvoiceagent/v1_5/**"
+      - "pyvoiceagent/agent_core_1_5_0_dev.py"
+      - ".github/workflows/pyvoiceagent-v15-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python unit tests
+        run: python -m unittest discover -v -s pyvoiceagent/v1_5 -p "test_*.py"
+      - name: Python syntax checks
+        run: |
+          python -m compileall -q pyvoiceagent/v1_5
+          if test -f pyvoiceagent/agent_core_1_5_0_dev.py; then
+            python -m py_compile pyvoiceagent/agent_core_1_5_0_dev.py
+          fi
