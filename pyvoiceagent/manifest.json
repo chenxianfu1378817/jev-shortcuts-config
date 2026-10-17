@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 151,
-  "version": "1.5.1",
-  "path": "agent_core_1_5_1.py",
-  "sha256": "7fb3a32f82a64b05bdaa0c1dd9e0181e38ab778afd784915576dc8c48c112c62",
-  "size_bytes": 81105,
-  "summary": "V1.5.1：简单备忘录/日历/提醒/本地笔记一次 AI 规划，多步由 Pythonista 本地执行；真实 DeepSeek Token 统计；复杂任务仍保留逐步模式。62 项回归测试通过，待 iPhone 实测。"
+  "sequence": 152,
+  "version": "1.5.2",
+  "path": "agent_core_1_5_2.py",
+  "sha256": "c188b9ca2f9882a3978bb540a6639f4939c4edde9d6f877928e2505f54be64c6",
+  "size_bytes": 87606,
+  "summary": "V1.5.2: 菜单15可立即连接GitHub、校验并安装最新版本，安装后可一键启动；菜单16保留查看状态；不改 PYAgentNotes/PYAgentCalendar；70项离线测试通过，待iPhone验收。"
 }
