@@ -1,0 +1,27 @@
+name: PYVoiceAgent V1.5.3 Compact Menu Regression
+
+on:
+  push:
+    branches:
+      - dev/pyvoiceagent-v1-5-3-menu
+    paths:
+      - "pyvoiceagent/v1_5_3/**"
+      - "pyvoiceagent/agent_core_1_5_3.py"
+      - ".github/workflows/pyvoiceagent-v153-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python syntax
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_5_3.py
+          python -m compileall -q pyvoiceagent/v1_5_3
+      - name: Full safety, token and menu test suite
+        run: python -m unittest discover -v -s pyvoiceagent/v1_5_3 -p 'test_*.py'
