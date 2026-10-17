@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""PYVoiceAgent V1.4.3 (Permanent Entry + Auto-Update + Tool Catalog) -- Pythonista 3 / iPhone
+"""PYVoiceAgent V1.5 development (Permanent Entry + Auto-Update + Tool Catalog) -- Pythonista 3 / iPhone
 
 One file, no pip installs. Uses the official DeepSeek Chat Completions API for AI planning.
 Important: do not overwrite PYVoiceCheck.py or the existing PYBridgeEcho shortcut.
@@ -52,8 +52,8 @@ TOOL_CATALOG = {
     'clipboard.read': '读取剪贴板，需同意发送给 AI',
     'local_note.save': '保存 Pythonista 本地 TXT 笔记，参数 title/text',
     'reminder.create': '创建并读回核验提醒；同标题同时间避免重复，参数 title/datetime/notes',
-    'apple_notes.create': '通过 PYAgentHub 创建苹果备忘录，参数 title/text',
-    'calendar.create': '通过 PYAgentHub 创建苹果日历事件，参数 title/datetime/end_datetime/notes',
+    'apple_notes.create': '使用已验收的 PYAgentNotes 创建备忘录，参数 title/text',
+    'calendar.create': '使用已验收的 PYAgentCalendar 创建日历事件',
     'shortcut.run': '仅调用用户已登记的快捷指令，参数 shortcut_id 等',
     'shortcut.echo': '兼容旧版快捷指令回传测试',
     'shortcut.hub_echo': 'PYAgentHub 往返通信测试',
@@ -526,7 +526,9 @@ def bridge_payload(state, choice, route, shortcut_name):
 
 
 def start_bridge_tool(state, choice, route, target_shortcut):
-    if route in SYSTEM_MODULES and verified_system_module(route) != target_shortcut:
+    enrolling = (state.get('module_enroll') == route and
+                 SYSTEM_MODULES.get(route) == target_shortcut)
+    if route in SYSTEM_MODULES and not enrolling and verified_system_module(route) != target_shortcut:
         return {'status': 'unavailable',
                 'result': '系统模块未经过安装验证，未发出创建操作：' + route}
     import shortcuts
@@ -622,7 +624,14 @@ def bridge_callback(token, status, result_b64=''):
     print('[CALLBACK OK] {}（已记录回传，不等于独立核验）'.format(tool))
     if state.get('diagnostic'):
         state['status'] = 'finished'
-        state['final'] = '离线诊断已收到快捷指令 OK 回调；请进入苹果 App 检查实体是否真的创建。'
+        enroll = state.get('module_enroll')
+        if enroll in SYSTEM_MODULES:
+            if confirm_module_install(state, enroll):
+                state['final'] = '已确认系统测试项目存在，模块 {} 已启用。'.format(SYSTEM_MODULES[enroll])
+            else:
+                state['final'] = '仅收到快捷指令回调，尚未完成苹果 App 核验；模块未启用。'
+        else:
+            state['final'] = '离线诊断已收到快捷指令 OK 回调；请进入苹果 App 检查实体是否真的创建。'
         put_state(state)
         pretty_status(state)
         return True
@@ -685,12 +694,81 @@ def review_pending():
         put_state(state)
 
 
+def install_system_module():
+    """Create one harmless, explicit test object then enroll a module once."""
+    import dialogs
+    options = ['苹果备忘录 PYAgentNotes', '苹果日历 PYAgentCalendar']
+    chosen = dialogs.list_dialog('首次安装与核验系统模块', options)
+    if chosen not in options:
+        return None
+    route = 'apple_notes.create' if chosen == options[0] else 'calendar.create'
+    target = SYSTEM_MODULES[route]
+    previous = get_state()
+    if previous.get('status') in ('awaiting_callback', 'needs_review', 'writing'):
+        try:
+            defer_current_pending(previous)
+        except (OSError, ValueError, RuntimeError) as ex:
+            print('旧任务无法安全归档：' + str(ex))
+            return None
+    if not prompt_alert('首次模块验证',
+                        '请确认快捷指令“{}”已按安装说明配置。\n'
+                        '即将实际创建一条可删除的测试项目，必须亲自检查苹果 App 后才能启用模块。'.format(target)):
+        return None
+    state = {'id': uuid.uuid4().hex[:12], 'goal': '模块首次验收：' + route,
+             'created': now_iso(), 'status': 'ready', 'steps': 0,
+             'events': [], 'pending': None, 'final': '', 'error': '',
+             'diagnostic': True, 'module_enroll': route}
+    choice = {k:'' for k in DECISION_SCHEMA['required']}
+    choice.update(tool=route, reason='首次安装验证', title='PYVoiceAgent模块验收测试')
+    if route == 'apple_notes.create':
+        choice['text'] = '这是一条首次安装验证备忘录，可以在完成验收后删除。'
+    else:
+        when = (datetime.now().astimezone() + timedelta(days=4)).replace(
+            hour=14, minute=0, second=0, microsecond=0)
+        choice['datetime'] = when.isoformat()
+        choice['end_datetime'] = (when + timedelta(minutes=30)).isoformat()
+        choice['notes'] = '首次安装日历模块的验证事件，可删除'
+    put_state(state)
+    result = start_bridge_tool(state, choice, route, target)
+    if result.get('status') != 'waiting':
+        state['status'] = 'paused'
+        state['error'] = str(result.get('result', ''))
+        put_state(state)
+    return state
+
+
+def confirm_module_install(state, route):
+    """An OK callback alone is not evidence that the Apple object exists."""
+    import dialogs
+    labels = ['我已经亲自确认测试项目存在', '尚未确认或项目不存在']
+    choice = dialogs.list_dialog('模块安装验收', labels)
+    if choice != labels[0]:
+        return False
+    target = SYSTEM_MODULES.get(route)
+    if not target:
+        return False
+    cfg = read_json(MODULE_REGISTRY_PATH, {})
+    if not isinstance(cfg, dict):
+        raise RuntimeError('模块登记信息格式错误')
+    modules = cfg.get('modules', {})
+    if not isinstance(modules, dict):
+        raise RuntimeError('模块登记表格式错误')
+    modules[route] = {'name': target, 'verified': True,
+                      'verified_at': now_iso(), 'method': 'user-checked-test-item'}
+    cfg['modules'] = modules
+    atomic_json(MODULE_REGISTRY_PATH, cfg)
+    return True
+
+
 def start_bridge_diagnostic(kind='shortcut.hub_echo'):
     """On-device loopback test, no DeepSeek account or API request required."""
     old = get_state()
     if old.get('status') in ('awaiting_callback','needs_review','writing') and old.get('pending'):
-        print('已有未核验跨 App 操作。请先完成核验，不允许覆盖。')
-        return None
+        try:
+            defer_current_pending(old)
+        except (OSError, RuntimeError, ValueError) as ex:
+            print('无法安全归档旧任务：' + str(ex))
+            return None
     if old.get('status') in ('running','paused') and not prompt_alert(
             '已有历史任务', '本次诊断会覆盖未完成任务状态，是否继续？'):
         return None
@@ -1262,11 +1340,12 @@ def show_menu():
         '14. 创建一条测试备忘（不调用 AI）',
         '15. 创建一条测试日程（不调用 AI）',
         '16. 检查更新状态',
-        '17. 退出',
+        '17. 首次安装/验证系统模块',
+        '18. 退出',
     ]
     while True:
         choice = dialogs.list_dialog('PYVoiceAgent V1.5.0 开发版 · DeepSeek Flash', choices)
-        if not choice or choice.startswith('17.'):
+        if not choice or choice.startswith('18.'):
             return
         try:
             if choice.startswith('1.'):
@@ -1329,6 +1408,8 @@ def show_menu():
                 start_bridge_diagnostic('calendar.create')
             elif choice.startswith('16.'):
                 print_update_status()
+            elif choice.startswith('17.'):
+                install_system_module()
         except KeyboardInterrupt:
             print('用户取消了当前操作。')
         except Exception as ex:
