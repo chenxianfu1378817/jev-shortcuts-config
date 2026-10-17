@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 150,
-  "version": "1.5.0",
-  "path": "agent_core_1_5_0.py",
-  "sha256": "05af87f3028658501bea6c38878ffe4ee1fdb85f487d9b94d72902d443857534",
-  "size_bytes": 72101,
-  "summary": "V1.5.0 手机验收版：PYAgentNotes/PYAgentCalendar 独立模块自动路由；首次验收登记；异常归档、防重复、真实回调；50项离线测试通过。请在真机核验后视为稳定版本。"
+  "sequence": 151,
+  "version": "1.5.1",
+  "path": "agent_core_1_5_1.py",
+  "sha256": "7fb3a32f82a64b05bdaa0c1dd9e0181e38ab778afd784915576dc8c48c112c62",
+  "size_bytes": 81105,
+  "summary": "V1.5.1：简单备忘录/日历/提醒/本地笔记一次 AI 规划，多步由 Pythonista 本地执行；真实 DeepSeek Token 统计；复杂任务仍保留逐步模式。62 项回归测试通过，待 iPhone 实测。"
 }
