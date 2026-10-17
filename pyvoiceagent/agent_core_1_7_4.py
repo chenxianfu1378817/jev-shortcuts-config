@@ -1725,6 +1725,11 @@ def _calendar_read_insights(read_text, action):
         if len(line) > 240:
             untimed.append(line[:80])
             continue
+        # An explicitly labelled all-day event is not a timed meeting, even
+        # if Shortcuts renders it as 00:00—23:59.
+        if '全天' in line:
+            all_day.append(line[:80])
+            continue
         tm = re.search(r'(?<!\d)([01]?\d|2[0-3]):([0-5]\d)\s*(?:—|–|-|~|～|至|到)\s*([01]?\d|2[0-3]):([0-5]\d)(?!\d)', line)
         if not tm:
             if '全天' in line:
