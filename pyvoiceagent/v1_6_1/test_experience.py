@@ -143,6 +143,57 @@ class ExperienceTests(unittest.TestCase):
         self.assertEqual(a.concise_execution_summary({'events':[],'status':'finished'}).splitlines()[0],
                          '操作结果：0 / 0 项报告成功')
 
+    def test_map_handoff_persisted_before_app_switch(self):
+        import copy
+        state={'id':'maps-test','single_plan':True,'plan_approved':True,
+               'plan':[action('maps.search','南宁东站')],
+               'plan_index':0,'steps':0,'events':[],'status':'ready'}
+        snapshots=[]
+        def persist(current):
+            snapshots.append(copy.deepcopy(current))
+        with patch.object(a,'put_state',side_effect=persist), \
+             patch.object(a,'final_report') as report, \
+             patch.object(a,'run_tool',side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                a.execute_planned_actions(state)
+        report.assert_called_once()
+        self.assertGreaterEqual(len(snapshots),2)
+        self.assertEqual(snapshots[-1]['status'],'finished')
+        self.assertEqual(snapshots[-1]['plan_index'],1)
+        self.assertEqual(snapshots[-1]['events'][-1]['status'],'handoff')
+
+    def test_map_handoff_result_updated_after_system_url_request_returns(self):
+        state={'id':'maps-test','single_plan':True,'plan_approved':True,
+               'plan':[action('maps.search','南宁东站')],
+               'plan_index':0,'steps':0,'events':[],'status':'ready'}
+        with patch.object(a,'put_state'),patch.object(a,'final_report'),\
+             patch.object(a,'run_tool',return_value={
+                 'status':'ok','verified':False,'result':'已请求打开原生苹果地图'}):
+            result=a.execute_planned_actions(state)
+        self.assertEqual(result['status'],'finished')
+        self.assertEqual(result['plan_index'],1)
+        self.assertEqual(result['events'][-1]['status'],'ok')
+        self.assertFalse(result['events'][-1]['verified'])
+
+    def test_map_handoff_failure_remains_recoverable_not_duplicate_launch(self):
+        state={'id':'maps-test','single_plan':True,'plan_approved':True,
+               'plan':[action('maps.search','南宁东站')],
+               'plan_index':0,'steps':0,'events':[],'status':'ready'}
+        with patch.object(a,'put_state'),patch.object(a,'final_report'),\
+             patch.object(a,'run_tool',side_effect=OSError('no map handler')) as call:
+            a.execute_planned_actions(state)
+            a.execute_planned_actions(state)
+        self.assertEqual(call.call_count,1)
+        self.assertEqual(state['status'],'paused')
+        self.assertEqual(state['events'][-1]['status'],'failed')
+
+    def test_concise_handoff_is_pending_not_false_success(self):
+        s={'events':[{'tool':'maps.search','status':'handoff',
+                     'result':'即将打开地图'}],'status':'finished'}
+        summary=a.concise_execution_summary(s)
+        self.assertIn('1 项待系统跳转',summary)
+        self.assertIn('尚未核验',summary)
+
     def test_main_menu_unchanged(self):
         self.assertEqual(len(a.MAIN_MENU),5)
         self.assertTrue(a.MAIN_MENU[3].endswith('立即更新版本'))
