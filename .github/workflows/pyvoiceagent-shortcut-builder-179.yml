@@ -1,0 +1,43 @@
+name: Validate PYVoiceAgent 1.7.9 shortcut builder
+
+on:
+  push:
+    branches: [main, feat/shortcut-builder-179]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_9.py'
+      - 'pyvoiceagent/shortcut_builder_179.py'
+      - 'pyvoiceagent/tests/test_shortcut_builder_179.py'
+      - '.github/workflows/pyvoiceagent-shortcut-builder-179.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile builder and current engine
+        run: |
+          python -m py_compile pyvoiceagent/shortcut_builder_179.py pyvoiceagent/agent_core_1_7_9.py
+      - name: Test builder implementation and voice router
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_shortcut_builder_179.py' -v
+      - name: Retest date-only reminders and predecessor
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_date_only_work_178.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_natural_work_plan_176.py' -v
+      - name: Release integrity
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          b=Path('pyvoiceagent/agent_core_1_7_9.py').read_bytes()
+          print('SHA256='+hashlib.sha256(b).hexdigest())
+          print('BYTES='+str(len(b)))
+          PY
