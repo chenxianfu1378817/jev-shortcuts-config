@@ -707,6 +707,9 @@ def install_system_module():
         return None
     route = 'apple_notes.create' if chosen == options[0] else 'calendar.create'
     target = SYSTEM_MODULES[route]
+    if verified_system_module(route) == target:
+        print('系统模块 {} 已完成验收，不重复创建测试事项。'.format(target))
+        return None
     previous = get_state()
     if previous.get('status') in ('awaiting_callback', 'needs_review', 'writing'):
         try:
@@ -1367,10 +1370,15 @@ def review_deferred_queue():
 
 
 def print_update_status():
-    """Local visibility for the stable-entry updater without remote writes."""
+    """Current engine and installation details; fixed entry handles updates."""
+    info = read_json(os.path.join(DATA_DIR, 'update_meta.json'), {})
     print('当前执行引擎：{}'.format(VERSION))
-    print('固定入口 PYVoiceAgent.py 由启动器管理自动更新。')
-    print('测试版并未修改正式发布清单。')
+    print('已安装的版本：{}'.format(info.get('installed_version', '未知')))
+    print('最近更新状态：{}'.format(info.get('last_result', '尚未检查')))
+    print('固定入口 PYVoiceAgent.py 在非回调启动时检查更新。')
+    print('已验收启用的系统模块：')
+    for route, name in SYSTEM_MODULES.items():
+        print('  {}：{}'.format(name, '可用' if verified_system_module(route) else '尚未验收'))
 
 
 def show_menu():
@@ -1438,7 +1446,11 @@ def show_menu():
             elif choice.startswith('10.'):
                 print('系统工具：')
                 for k, v in DEFAULT_LIBRARY.items():
-                    print('  {} → {}'.format(k, v['description']))
+                    if v['tool'] in SYSTEM_MODULES:
+                        status = '已验收启用' if verified_system_module(v['tool']) else '未启用（请选第17项首次安装验证）'
+                    else:
+                        status = '兼容工具'
+                    print('  {} → {} [{}]'.format(k, v['description'], status))
                 print('自定义工具：')
                 for k, v in local_registry().items():
                     print('  {} → {}：{}'.format(k, v['name'], v['description']))
