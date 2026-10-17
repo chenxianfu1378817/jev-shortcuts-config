@@ -19,7 +19,7 @@ import binascii
 import traceback
 import time
 from datetime import datetime, timedelta
-from urllib.parse import urlencode, urlsplit, unquote
+from urllib.parse import urlencode, urlsplit, unquote_to_bytes
 from urllib.request import Request, urlopen, build_opener, HTTPRedirectHandler
 from urllib.error import HTTPError, URLError
 from html.parser import HTMLParser
@@ -852,22 +852,57 @@ def start_bridge_tool(state, choice, route, target_shortcut):
     return {'status': 'waiting', 'result': '已请求快捷指令，等待带相同 token 的回调'}
 
 
-def decode_shortcut_result(value):
-    """Safely decode a Shortcut result sent as raw or URL-encoded Base64."""
-    if not isinstance(value, str) or not value or len(value) > 4000:
-        raise ValueError('回传数据为空或过长')
-    if '%' in value:
-        # Reject damaged escapes, preserve plus signs, and decode exactly once.
-        if re.search(r'%(?![0-9A-Fa-f]{2})', value):
-            raise ValueError('URL 编码格式错误')
-        value = unquote(value, encoding='utf-8', errors='strict')
-    if len(value) > 4000 or '%' in value:
-        raise ValueError('URL 编码重复或回传数据过长')
-    data = base64.b64decode(value, validate=True)
-    text = data.decode('utf-8')
-    if len(text) > 1800:
+def decode_shortcuts_result_b64(raw):
+    """Decode a single Shortcuts URL-encoded Base64 callback safely.
+
+    Shortcuts URL Encode may pass literal percent escapes in Pythonista argv;
+    some iOS handlers also convert '+' to a space or wrap Base64 across lines.
+    Only a strict Base64 result is accepted after decoding one URL layer.
+    """
+    if not isinstance(raw, str) or len(raw) > 4000:
+        raise ValueError('回传数据长度或类型不合法')
+    if re.search(r'%(?![0-9a-fA-F]{2})', raw):
+        raise ValueError('URL 编码包含不完整的百分号转义')
+    ascii_text = unquote_to_bytes(raw).decode('ascii')
+    ascii_text = ''.join(ch for ch in ascii_text if ch not in (chr(13), chr(10), chr(9)))
+    # Pythonista's scheme handler may decode query '+' as a space.
+    ascii_text = ascii_text.replace(' ', '+')
+    decoded = base64.b64decode(ascii_text, validate=True).decode('utf-8')
+    if len(decoded) > 1800:
         raise ValueError('解码内容过长')
-    return text
+    return decoded
+
+
+def can_retry_readonly_calendar(state):
+    """Retry only a single failed, approved calendar read; never any write."""
+    p=state.get('pending') or {}
+    plan=state.get('plan')
+    return bool(
+        state.get('status')=='needs_review'
+        and isinstance(p,dict) and p.get('tool')=='calendar.list'
+        and state.get('single_plan') and state.get('plan_approved')
+        and isinstance(plan,list) and len(plan)==1
+        and isinstance(plan[0],dict) and plan[0].get('tool')=='calendar.list'
+        and state.get('plan_index')==0 and not state.get('events')
+        and int(state.get('calendar_read_retry_count',0))<1
+        and any(term in str(state.get('error','')) for term in (
+            '数据编码异常','CALREAD1','查询回调正文为空')))
+
+
+def retry_last_readonly_calendar(state):
+    """Reuse original date bounds locally; do not consume DeepSeek Tokens."""
+    if not can_retry_readonly_calendar(state):
+        return False
+    if not prompt_alert('重新查询上次日历（无需 AI）',
+            '只重新查询上次的日期，不创建或修改事项，不向 DeepSeek 发起新请求。继续吗？'):
+        return False
+    state['calendar_read_retry_count']=1
+    state['pending']=None
+    state['status']='ready'
+    state['error']=''
+    put_state(state)
+    execute_planned_actions(state)
+    return True
 
 
 def bridge_callback(token, status, result_b64=''):
@@ -892,13 +927,11 @@ def bridge_callback(token, status, result_b64=''):
     if not isinstance(status, str) or status not in ('ok', 'failed', 'cancelled'):
         print('回调状态无效，忽略；未修改正在等待的任务。')
         return False
-    # Shortcut URL parameters may arrive as raw Base64 or as once
-    # percent-encoded Base64 (%2B, %2F, %3D). Preserve '+' using unquote,
-    # never unquote_plus. Decode exactly once, check strict Base64 and UTF-8.
+    # Optional untrusted tool output is data, not a command. Keep it small.
     returned_text = ''
     if result_b64:
         try:
-            returned_text = decode_shortcut_result(result_b64)
+            returned_text = decode_shortcuts_result_b64(result_b64)
         except (ValueError, UnicodeDecodeError, binascii.Error) as ex:
             state['status'] = 'needs_review'
             state['error'] = '快捷指令返回的数据编码异常，待人工核验：{}'.format(ex)
@@ -2339,8 +2372,9 @@ def _update_atomic_bytes(path, data):
 def immediate_check_and_update():
     """Fetch and install a newer verified core. Never replay an in-flight task."""
     state = get_state()
-    if state.get('pending') and state.get('status') in (
-            'awaiting_callback','needs_review','writing'):
+    if (state.get('pending') and state.get('status') in (
+            'awaiting_callback','needs_review','writing')
+            and (state.get('pending') or {}).get('tool') != 'calendar.list'):
         return {'updated': False,
                 'message': '存在待核验的系统写入，已禁止自动更新；请先人工核实'}
     meta = read_json(UPDATE_META_PATH, {})
@@ -2620,7 +2654,10 @@ def show_menu():
                 if show_text_menu():
                     return  # A submitted task owns execution; do not reopen menus.
             elif choice.startswith('3.'):
-                pretty_status(get_state())
+                saved=get_state()
+                pretty_status(saved)
+                if retry_last_readonly_calendar(saved):
+                    return  # New shortcut callback will own this read-only query.
             elif choice.startswith('4.'):
                 if update_from_menu():
                     return  # Do not keep the old engine alive after installing another.
