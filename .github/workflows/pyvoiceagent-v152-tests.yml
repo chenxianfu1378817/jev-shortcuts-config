@@ -1,0 +1,27 @@
+name: PYVoiceAgent V1.5.2 Immediate Update Tests
+
+on:
+  push:
+    branches:
+      - dev/pyvoiceagent-v1-5-2
+    paths:
+      - "pyvoiceagent/v1_5_2/**"
+      - "pyvoiceagent/agent_core_1_5_2.py"
+      - ".github/workflows/pyvoiceagent-v152-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python syntax
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_5_2.py
+          python -m compileall -q pyvoiceagent/v1_5_2
+      - name: Run entire V1.5.2 safety and updater suite
+        run: python -m unittest discover -s pyvoiceagent/v1_5_2 -p 'test_*.py' -v
