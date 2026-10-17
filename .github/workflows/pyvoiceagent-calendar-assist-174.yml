@@ -1,0 +1,36 @@
+name: Validate PYVoiceAgent 1.7.4 calendar assist
+
+on:
+  push:
+    branches: [fix/calendar-assist-174]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_4.py'
+      - 'pyvoiceagent/tests/test_calendar_assist_174.py'
+      - '.github/workflows/pyvoiceagent-calendar-assist-174.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile source and run regression suite
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_7_4.py
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_calendar_assist_174.py' -v
+      - name: Print release pin
+        run: |
+          python - <<'PY'
+          import pathlib, hashlib
+          p=pathlib.Path('pyvoiceagent/agent_core_1_7_4.py')
+          data=p.read_bytes()
+          print('RELEASE_SHA256='+hashlib.sha256(data).hexdigest())
+          print('RELEASE_BYTES='+str(len(data)))
+          PY
