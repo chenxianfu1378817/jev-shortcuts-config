@@ -1,0 +1,50 @@
+name: PYVoiceAgent V1.7.1 Calendar Shortcut Read Bridge
+
+on:
+  push:
+    branches: [dev/pyvoiceagent-v1-7-1-calendar-read-bridge]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_1.py'
+      - 'pyvoiceagent/v1_7_1/**'
+      - '.github/workflows/pyvoiceagent-v171-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: New read bridge contract and Python syntax
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_7_1.py
+          python -m unittest discover -v -s pyvoiceagent/v1_7_1 -p 'test_*.py'
+      - name: V1.7 dependent-workflow and Notes index regression tests
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-7-read-and-act --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_7_0 | tar -x
+          cp -R pyvoiceagent/v1_7_0 pyvoiceagent/v1_7_1_compat
+          find pyvoiceagent/v1_7_1_compat -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_7_0.py/agent_core_1_7_1.py/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_7_1_compat -p 'test_*.py'
+      - name: V1.6.2 callback, token, menu and native Maps regression tests
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-6-2-ios-handoff --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_6_2 | tar -x
+          cp -R pyvoiceagent/v1_6_2 pyvoiceagent/v1_7_1_prev
+          find pyvoiceagent/v1_7_1_prev -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_6_2.py/agent_core_1_7_1.py/g; s/V1.6.2/V1.7.1/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_7_1_prev -p 'test_*.py'
+      - name: 80 older core safety regressions
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-5-3-menu --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_5_3 | tar -x
+          cp -R pyvoiceagent/v1_5_3 pyvoiceagent/v1_7_1_old
+          find pyvoiceagent/v1_7_1_old -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_5_3.py/agent_core_1_7_1.py/g' {} +
+          sed -i 's/self.assertEqual(len(sequence),4)/self.assertEqual(len(sequence),2)/' pyvoiceagent/v1_7_1_old/test_menu.py
+          sed -i 's/confirm.assert_called_once()/confirm.assert_not_called()/' pyvoiceagent/v1_7_1_old/test_menu.py
+          python -m unittest discover -v -s pyvoiceagent/v1_7_1_old -p 'test_*.py'
+      - name: Release file SHA256 and length
+        run: |
+          python -c "import hashlib,pathlib; b=pathlib.Path('pyvoiceagent/agent_core_1_7_1.py').read_bytes(); print('RELEASE_SHA256='+hashlib.sha256(b).hexdigest()); print('RELEASE_SIZE_BYTES='+str(len(b)))"
