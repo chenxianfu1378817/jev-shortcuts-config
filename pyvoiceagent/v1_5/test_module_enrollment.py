@@ -60,6 +60,15 @@ class ModuleEnrollmentTests(unittest.TestCase):
             self.assertTrue(agent.bridge_callback(state['pending']['token'], 'ok'))
         self.assertIsNone(agent.verified_system_module('apple_notes.create'))
 
+    def test_second_enrollment_does_not_create_duplicate(self):
+        agent.atomic_json(agent.MODULE_REGISTRY_PATH,
+                          {'modules': {'apple_notes.create':
+                                       {'name': 'PYAgentNotes', 'verified': True}}})
+        with patch.object(agent, 'prompt_alert', return_value=True):
+            result = agent.install_system_module()
+        self.assertIsNone(result)
+        self.assertEqual(self.opened, [])
+
     def test_wrong_callback_token_never_enables_module(self):
         with patch.object(agent, 'prompt_alert', return_value=True):
             agent.install_system_module()
