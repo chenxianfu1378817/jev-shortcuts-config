@@ -555,6 +555,42 @@ def execute_planned_actions(state):
             return state
         action = parse_decision(state['plan'][state['plan_index']])
         tool = action['tool']
+        if tool == 'maps.search':
+            # Changing to another iOS app may suspend Pythonista immediately.
+            # Persist the final handoff intention and other verified actions
+            # BEFORE asking iOS to launch the native Maps app.
+            if state['plan_index'] != len(state['plan'])-1 or not action['title'].strip():
+                state['status']='paused'
+                state['error']='地图搜索必须是最后一步且有明确目的地'
+                put_state(state)
+                return state
+            before={'status':'handoff','verified':False,
+                    'result':'即将交给 iOS 原生地图搜索「{}」；点击结果弹窗确定后继续。'.format(
+                        action['title'][:100])}
+            params={'title':action['title'],'datetime':'','end_datetime':'',
+                    'fingerprint':action_fingerprint(action)}
+            create_event(state,tool,params,before)
+            state['plan_index']+=1
+            state['status']='finished'
+            state['final']=verified_final_summary(state,'本地执行完成，地图待切换')
+            put_state(state)
+            final_report(state)
+            # No automatic retry: a process suspension is indistinguishable
+            # from a successful system app handoff until the user checks it.
+            try:
+                actual=run_tool(state,action)
+            except Exception as ex:
+                actual={'status':'failed','verified':False,
+                        'result':'地图链接提交失败：'+str(ex)[:150]}
+            state['events'][-1]['status']=actual.get('status','failed')
+            state['events'][-1]['result']=str(actual.get('result',''))[:500]
+            state['events'][-1]['verified']=False
+            if actual.get('status')!='ok':
+                state['status']='paused'
+                state['error']=str(actual.get('result','地图请求失败'))[:300]
+            state['final']=verified_final_summary(state,'本地执行完成')
+            put_state(state)
+            return state
         if tool not in ONE_SHOT_TOOLS:
             state['status']='paused'
             state['error']='执行时发现未授权工具'
@@ -1574,7 +1610,9 @@ def concise_execution_summary(state):
     events=state.get('events', [])
     ok=sum(item.get('status')=='ok' for item in events)
     total=len(events)
-    lines=['操作结果：{} / {} 项报告成功'.format(ok,total)]
+    waiting=sum(item.get('status')=='handoff' for item in events)
+    lines=['操作结果：{} / {} 项报告成功{}'.format(
+        ok,total,'（{} 项待系统跳转）'.format(waiting) if waiting else '')]
     labels={'reminder.list':'提醒查询','contacts.lookup':'联系人','maps.search':'地图',
             'apple_notes.create':'备忘录','calendar.create':'日历',
             'reminder.create':'新提醒','reminder.complete':'完成提醒',
@@ -1583,7 +1621,9 @@ def concise_execution_summary(state):
         tool=item.get('tool','')
         label=labels.get(tool,tool)
         status=item.get('status')
-        if status!='ok':
+        if status=='handoff' and tool=='maps.search':
+            msg='点击确定后将跳转苹果地图；尚未核验'
+        elif status!='ok':
             msg='未成功：'+_brief_result_text(item.get('result'),110)
         elif tool in ('apple_notes.create','calendar.create','shortcut.run'):
             msg='快捷指令回调成功，待到苹果 App 核验'
