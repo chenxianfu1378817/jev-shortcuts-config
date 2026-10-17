@@ -1,0 +1,36 @@
+name: Validate PYVoiceAgent 1.7.6 spoken work intent
+
+on:
+  push:
+    branches: [main, fix/natural-work-plan-176]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_6.py'
+      - 'pyvoiceagent/tests/test_natural_work_plan_176.py'
+      - '.github/workflows/pyvoiceagent-natural-intent-176.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Python syntax and spoken-intent regression
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_7_6.py
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_natural_work_plan_176.py' -v
+      - name: Print release hash and length
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          data=Path('pyvoiceagent/agent_core_1_7_6.py').read_bytes()
+          print('SHA256='+hashlib.sha256(data).hexdigest())
+          print('BYTES='+str(len(data)))
+          PY
