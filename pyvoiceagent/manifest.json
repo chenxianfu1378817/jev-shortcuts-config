@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 161,
-  "version": "1.6.1",
-  "path": "agent_core_1_6_1.py",
-  "sha256": "f14980ccedc6e50c25c64e2b3ad189062cccacf9965af10a0b9af4eb6e10f8a0",
-  "size_bytes": 108188,
-  "summary": "V1.6.1: 原生 Apple 地图优先；联系人精确姓名优先并提示收窄模糊搜索；简洁中文执行结果弹窗，详细报告仍保留控制台；最后的地图跳转前持久保存执行状态，防止后台中断及重放。116 项离线回归测试通过，等待 iPhone 真机验收。"
+  "sequence": 162,
+  "version": "1.6.2",
+  "path": "agent_core_1_6_2.py",
+  "sha256": "fac2973242a9a9724276c506eeaa72dd98e35cd2d2d01dc5374e7492975017e5",
+  "size_bytes": 108476,
+  "summary": "V1.6.2: 原生地图改由 iOS UIApplication 直接打开，拒绝退回 Pythonista 内置网页；打开地图前持久保存任务且不叠加结果弹窗；剪贴板任务仅一次 AI 发送确认；提交任务后不重开二级菜单；首页显示加载中的真实版本。41 新测试+80 历史回归通过，原生 App 跳转待 iPhone 验收。"
 }
