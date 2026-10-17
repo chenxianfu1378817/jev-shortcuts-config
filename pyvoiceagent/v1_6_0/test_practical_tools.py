@@ -175,6 +175,37 @@ class PracticalTests(unittest.TestCase):
             a.plan_once(state('找张经理的电话'))
         self.assertNotIn('clipboard_text',logged[0])
 
+    def test_readonly_contact_lookup_has_no_extra_confirmation(self):
+        self.contacts_items=[types.SimpleNamespace(full_name='张经理',organization='',
+                              phone=[('mobile','13800000000')],email=[])]
+        plan={'actions':[action('contacts.lookup','张经理')],'question':''}
+        with patch.object(a,'_deepseek_request',return_value=plan) as model, \
+             patch.object(a,'prompt_alert') as confirm:
+            done=a.plan_once(state('找张经理电话'))
+        self.assertEqual(done['status'],'finished')
+        model.assert_called_once()
+        confirm.assert_not_called()
+        self.assertIn('13800000000',done['final'])
+
+    def test_mark_complete_requires_exact_confirmation_but_no_double_dialog(self):
+        self.reminder_items=[ReminderStub('谈价格')]
+        plan={'actions':[action('reminder.complete','谈价格')],'question':''}
+        with patch.object(a,'_deepseek_request',return_value=plan), \
+             patch.object(a,'prompt_alert',return_value=True) as confirm:
+            done=a.plan_once(state('把谈价格标记完成'))
+        self.assertEqual(done['status'],'finished')
+        self.assertTrue(self.reminder_items[0].completed)
+        self.assertEqual(confirm.call_count,1)
+
+    def test_unrequested_contacts_never_read(self):
+        plan={'actions':[action('text.respond',body='好的，明白')],'question':''}
+        contacts=sys.modules['contacts']
+        with patch.object(contacts,'get_all_people') as get, \
+             patch.object(a,'_deepseek_request',return_value=plan):
+            done=a.plan_once(state('给我一个简短回复'))
+        self.assertEqual(done['status'],'finished')
+        get.assert_not_called()
+
     def test_clipboard_refusal_does_not_call_model(self):
         with patch.object(a,'prompt_alert',return_value=False), \
              patch.object(a,'_deepseek_request') as request:
