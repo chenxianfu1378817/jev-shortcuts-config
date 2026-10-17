@@ -478,6 +478,8 @@ def plan_once(state):
         state['error'] = '用户未批准执行计划，未进行系统写入'
         put_state(state)
         return state
+    state['plan_approved'] = True
+    put_state(state)
     return execute_planned_actions(state)
 
 
@@ -485,6 +487,11 @@ def execute_planned_actions(state):
     """Advance locally; never call DeepSeek again after a Shortcut callback."""
     if not state.get('single_plan'):
         return drive_agent(state)
+    if not state.get('plan_approved'):
+        state['status'] = 'paused'
+        state['error'] = 'AI 操作计划尚未获得用户确认，拒绝执行'
+        put_state(state)
+        return state
     if state.get('status') in ('awaiting_callback','needs_review','finished'):
         return state
     if not isinstance(state.get('plan'),list):
@@ -691,7 +698,7 @@ def start_bridge_tool(state, choice, route, target_shortcut):
     summary = ('快捷指令：{}\n工具：{}\n标题：{}\n{}'.format(
         target_shortcut, route, payload['title'],
         (payload['text'] or payload['notes'])[:250]))
-    if not prompt_alert('确认跨 App 操作', summary):
+    if not (state.get('single_plan') and state.get('plan_approved')) and not prompt_alert('确认跨 App 操作', summary):
         return {'status': 'declined', 'result': '用户拒绝跨 App 操作'}
     # Persist the exact pending operation BEFORE leaving Pythonista.
     state['pending'] = {
@@ -1111,7 +1118,7 @@ def run_tool(state, choice):
         if not body:
             return {'status': 'failed', 'result': '笔记正文为空'}
         sample = (title + '\n\n' + body)[:650]
-        if not prompt_alert('保存本地笔记', '仅保存在 Pythonista 的 txt 文件（不是苹果备忘录）：\n' + sample):
+        if not (state.get('single_plan') and state.get('plan_approved')) and not prompt_alert('保存本地笔记', '仅保存在 Pythonista 的 txt 文件（不是苹果备忘录）：\n' + sample):
             return {'status': 'declined', 'result': '用户取消保存笔记'}
         clean = re.sub(r'[\\/:*?"<>|\x00-\x1f]', '_', title).strip(' .')[:45] or '笔记'
         os.makedirs(NOTES_DIR, exist_ok=True)
@@ -1175,7 +1182,7 @@ def run_tool(state, choice):
                       else '找到同标题同时间提醒，但到期/闹铃字段不匹配')
             return {'status': 'needs_review', 'result': reason +
                     '；已拦截再次创建，请到苹果提醒事项中核对，必要时使用菜单第11项人工核验'}
-        if not prompt_alert('确认创建提醒', '{}\n时间：{}\n备注：{}'.format(
+        if not (state.get('single_plan') and state.get('plan_approved')) and not prompt_alert('确认创建提醒', '{}\n时间：{}\n备注：{}'.format(
                 title, date.strftime('%Y-%m-%d %H:%M'), choice['notes'][:220])):
             return {'status': 'declined', 'result': '用户取消创建提醒'}
 
