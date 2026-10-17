@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 143,
-  "version": "1.4.3",
-  "path": "agent_core_1_4_3.py",
-  "sha256": "adf50cb26c511b86874bc72504cdcc873a63d639f761015a12864294e295e9f7",
-  "size_bytes": 58448,
-  "summary": "V1.4.3: 持久提醒防重；苹果提醒系统读回不一致时暂停；V1.4.1 末次成功记录在开启新任务前迁移；防止跨任务重复创建"
+  "sequence": 150,
+  "version": "1.5.0",
+  "path": "agent_core_1_5_0.py",
+  "sha256": "05af87f3028658501bea6c38878ffe4ee1fdb85f487d9b94d72902d443857534",
+  "size_bytes": 72101,
+  "summary": "V1.5.0 手机验收版：PYAgentNotes/PYAgentCalendar 独立模块自动路由；首次验收登记；异常归档、防重复、真实回调；50项离线测试通过。请在真机核验后视为稳定版本。"
 }
