@@ -9,7 +9,7 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-CORE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'agent_core_1_5_0_dev.py'))
+CORE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'agent_core_1_5_0.py'))
 spec = importlib.util.spec_from_file_location('pyvoiceagent_multistep', CORE)
 agent = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent)
