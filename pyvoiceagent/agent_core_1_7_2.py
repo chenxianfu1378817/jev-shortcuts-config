@@ -864,7 +864,7 @@ def decode_shortcuts_result_b64(raw):
     if re.search(r'%(?![0-9a-fA-F]{2})', raw):
         raise ValueError('URL 编码包含不完整的百分号转义')
     ascii_text = unquote_to_bytes(raw).decode('ascii')
-    ascii_text = ascii_text.replace('\\r','').replace('\\n','').replace('\\t','')
+    ascii_text = ''.join(ch for ch in ascii_text if ch not in (chr(13), chr(10), chr(9)))
     # Pythonista's scheme handler may decode query '+' as a space.
     ascii_text = ascii_text.replace(' ', '+')
     decoded = base64.b64decode(ascii_text, validate=True).decode('utf-8')
