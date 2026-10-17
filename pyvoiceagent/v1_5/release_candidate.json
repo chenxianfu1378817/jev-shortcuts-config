@@ -1,19 +1,19 @@
 {
-  "candidate": "1.5.0-dev",
+  "candidate": "1.5.0",
   "branch": "dev/pyvoiceagent-v1-5",
-  "source_path": "pyvoiceagent/agent_core_1_5_0_dev.py",
-  "source_sha256": "07cce177f0fe8dbabc8051955ad2f7080842e768b7faec3b29f43507ed363f01",
-  "source_bytes": 70968,
+  "source_path": "pyvoiceagent/agent_core_1_5_0.py",
+  "source_sha256": "05af87f3028658501bea6c38878ffe4ee1fdb85f487d9b94d72902d443857534",
+  "source_bytes": 72101,
   "source_syntax_check": "passed",
-  "unit_tests": 43,
-  "ci_run": "https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/runs/39005108762",
-  "ios_shortcuts_tests": "PYAgentNotes and PYAgentCalendar independent iOS write smoke tests passed as confirmed by user; task-matched callbacks and enrollment not yet tested",
+  "unit_tests": 50,
+  "ci_run": "https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/runs/39011946050",
+  "ios_shortcuts_tests": "Independent Notes/Calendar writing confirmed by user; matching-token enrollment and automated multi-task iPhone test pending",
   "ios_write_verified": false,
-  "official_manifest_changed": false,
+  "official_manifest_changed": true,
   "release_blockers": [
-    "On-device confirmed task-token callback and enrollment workflow not yet tested",
-    "Official update can be blocked if V1.4.3 has an unresolved pending operation; reconcile it once before installing a candidate",
-    "True multi-step AI continuation and no-duplicate test on device remain pending"
+    "Verify live V1.5.0 matching-token callback with PYAgentNotes and PYAgentCalendar",
+    "Confirm multi-step DeepSeek continuation on iPhone",
+    "If legacy pending state blocks update, reconcile only the known uncreated older Note once"
   ],
   "notes_direct_write_observed": true,
   "calendar_direct_write_observed": true,
@@ -22,5 +22,6 @@
     "start_time": "15:00",
     "end_time": "15:30",
     "remarks_verified": true
-  }
+  },
+  "release_enabled_for_phone_acceptance": true
 }
