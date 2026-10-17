@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 174,
-  "version": "1.7.4",
-  "path": "agent_core_1_7_4.py",
-  "sha256": "471bb4e0ea546b597f223de605bf0c2134021d62bf679b9280e7e37e59aacbea",
-  "size_bytes": 138009,
-  "summary": "V1.7.4：calendar.assist 复用已验证的 PYAgentCalendarRead（CALREAD1 回调），不走 Pythonista EventKit；本地保守检查起止时间、全天及冲突，授权后 DeepSeek 分析，先展示建议和提醒时间再单独确认写入。保留 V1.7.3 五项首页、原快捷指令与防重复机制；12 项新增离线回归通过，待 iPhone 真机验收。"
+  "sequence": 175,
+  "version": "1.7.5",
+  "path": "agent_core_1_7_5.py",
+  "sha256": "b2488927f8bc6b23c289df3c17790e9e5a1a12b61747708f1858f7b8462ec459",
+  "size_bytes": 140648,
+  "summary": "V1.7.5：修复 PYAgentCalendarRead 实际中文日期及无分隔符时间（例如 2026年10月18日 09:0009:30）的解析；正确过滤查询数量标题，区分 00:00—23:59 疑似全天事件；calendar.assist 最终只显示一份分析，不再重复打印只读结果。五项首页、原快捷指令、两阶段 AI 与防重复/写入确认逻辑保留。19 项 GitHub Actions 回归通过，等待 iPhone 真机复验。"
 }
