@@ -525,7 +525,7 @@ def _spoken_work_plan(raw, today=None):
         day = (now+timedelta(days={'今天':0,'明天':1,'后天':2}[m.group(1)])).isoformat()
         text=m.group(2)
     else:
-        m = re.match(r'^(?:我|我们)?(?:(本周|下周))?(?:周|星期)([一二三四五六日天])(.+)$',text)
+        m = re.match(r'^(?:我|我们)?(?:(本周|下周)|周|星期)([一二三四五六日天])(.+)$',text)
         if m:
             weekday='一二三四五六日'.index('日' if m.group(2)=='天' else m.group(2))
             target=now-timedelta(days=now.weekday())+timedelta(
@@ -554,7 +554,7 @@ def _spoken_work_plan(raw, today=None):
         return None
     if any(x in text for x in ('今天','明天','后天','本周','下周')):
         return None
-    if any(x in text for x in ('顺便','另外','然后','分别','两件事')):
+    if any(x in text for x in ('顺便','另外','然后','分别','两件事','，再','，还要','；',';')):
         return None
     if not day and not any(x in text for x in _AUTO_INTENT):
         return None
