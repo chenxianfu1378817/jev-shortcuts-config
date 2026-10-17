@@ -425,6 +425,11 @@ def parse_action_plan(data, allowed_tools):
         return {'actions': [], 'question': question.strip()}
     if not actions:
         raise ValueError('AI 未给出可执行计划')
+    # Reject mixed read-then-reason workflows before touching parameters of
+    # unrelated actions. This also prevents partially executing a mixed plan.
+    if len(actions)>1 and any(isinstance(x,dict) and x.get('tool') in RESEARCH_ACTIONS
+                              for x in actions):
+        raise ValueError('读取后再次 AI 分析的任务必须单独执行，不能与其他计划混合')
     permitted = set(ONE_SHOT_TOOLS)
     checked = []
     for i, raw in enumerate(actions):
