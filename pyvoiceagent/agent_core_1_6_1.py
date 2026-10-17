@@ -545,9 +545,16 @@ def execute_planned_actions(state):
         return state
     if not isinstance(state.get('plan'),list):
         raise RuntimeError('执行计划不存在，不进行操作')
-    # A completed/failed external-app handoff must never be replayed, and
-    # a later callback must not silently turn a failure into success.
+    # On the last Shortcut callback plan_index is already advanced to the
+    # end while status is 'running': finish the batch normally.
+    # After an external Maps handoff, status is 'finished' or 'paused': preserve
+    # it without replay or accidentally treating a failure as success.
     if state.get('plan_index',0) >= len(state['plan']):
+        if state.get('status') == 'running':
+            state['status']='finished'
+            state['final']=verified_final_summary(state,'本地执行完成')
+            put_state(state)
+            final_report(state)
         return state
     state['status']='running'
     put_state(state)
