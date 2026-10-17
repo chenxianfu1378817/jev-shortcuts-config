@@ -119,6 +119,29 @@ class NotesTests(unittest.TestCase):
         a._index_agent_note_after_callback(st,{'marker':'m'})
         self.assertEqual(a._agent_notes_index_load(),[])
 
+    def test_real_matching_callback_updates_local_index_only(self):
+        old_path=a.STATE_PATH
+        a.STATE_PATH=os.path.join(self.tmp.name,'current_task.json')
+        try:
+            when=datetime.now().timestamp()
+            st=initial('创建备忘录')
+            st.update(single_plan=True,plan=[decision('apple_notes.create',
+                       title='V1.7实际回调索引',text='仅做本地索引')],plan_index=0,
+                      plan_approved=True,status='awaiting_callback',
+                      pending={'tool':'apple_notes.create','token':'token170',
+                               'marker':'[notes170]','created':when,
+                               'name':'PYAgentNotes','title':'V1.7实际回调索引',
+                               'fingerprint':'fp'})
+            a.put_state(st)
+            self.assertTrue(a.bridge_callback('token170','ok'))
+            self.assertEqual(a.get_state()['status'],'finished')
+            entries=a._agent_notes_index_load()
+            self.assertEqual(len(entries),1)
+            self.assertIn('V1.7实际回调索引',entries[0]['title'])
+            self.assertIn('not independent Notes readback',entries[0]['source'])
+        finally:
+            a.STATE_PATH=old_path
+
     def test_unknown_apple_notes_not_claimed(self):
         result=a._local_agent_notes_search(decision('notes.search_agent','在旧版App创建的笔记'))
         self.assertIn('并非苹果备忘录全库搜索',result['result'])
@@ -224,6 +247,8 @@ class WorkflowTests(unittest.TestCase):
             done=a.plan_once(st)
         self.assertEqual(ai.call_count,1)
         self.assertEqual(done['status'],'paused')
+        self.assertTrue(any(e.get('tool')=='calendar.list' for e in done['events']))
+        self.assertIn('私密会议',done['final'])
 
     def test_webpage_refusal_no_second_ai_call(self):
         first={'actions':[decision('webpage.summarize',title='https://example.com/article')],'question':''}
@@ -257,7 +282,7 @@ class WorkflowTests(unittest.TestCase):
              patch.object(a,'prompt_alert',return_value=True):
             done=a.plan_once(st)
         self.assertEqual(done['status'],'paused')
-        self.assertEqual(len(done['events']),0)
+        self.assertTrue(all(e.get('tool')=='calendar.list' for e in done['events']))
 
     def test_calendar_missing_permission_halts_without_second_ai_request(self):
         first={'actions':[decision('calendar.assist',start=interval()[0],end=interval()[1])],'question':''}
