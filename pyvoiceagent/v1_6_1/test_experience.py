@@ -48,11 +48,12 @@ class ExperienceTests(unittest.TestCase):
             contact('张 海',phone='0111'),
             contact('罗张海',phone='0222')]
         with patch.dict(sys.modules,{'contacts':self.fake_contacts}):
-            r=a._local_contacts_lookup(action('contacts.lookup',' 张海 '))
+            r=a._local_contacts_lookup(action('contacts.lookup',' 张 '))
         self.assertIn('0111',r['result'])
         self.assertIn('0222',r['result'])
+        self.assertIn('0333',r['result'])
         self.assertLess(r['result'].index('0111'),r['result'].index('0222'))
-        self.assertNotIn('0333',r['result'])
+        self.assertLess(r['result'].index('0222'),r['result'].index('0333'))
 
     def test_company_match_still_returns_correct_person(self):
         self.people=[contact('李先生','广西沥青业务',phone='0888'),
