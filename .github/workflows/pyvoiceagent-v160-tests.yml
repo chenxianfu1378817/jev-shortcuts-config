@@ -24,6 +24,9 @@ jobs:
           python -m compileall -q pyvoiceagent/v1_6_0
       - name: Practical tools tests
         run: python -m unittest discover -v -s pyvoiceagent/v1_6_0 -p 'test_*.py'
+      - name: Print frozen release SHA-256 and size
+        run: |
+          python -c "import hashlib,pathlib; p=pathlib.Path('pyvoiceagent/agent_core_1_6_0.py'); b=p.read_bytes(); print('RELEASE_SHA256='+hashlib.sha256(b).hexdigest()); print('RELEASE_SIZE_BYTES='+str(len(b)))"
       - name: Run all 80 previous safety regressions against new engine
         run: |
           git fetch origin dev/pyvoiceagent-v1-5-3-menu --depth=1
