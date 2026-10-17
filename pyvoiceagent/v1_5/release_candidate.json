@@ -1,0 +1,18 @@
+{
+  "candidate": "1.5.0-dev",
+  "branch": "dev/pyvoiceagent-v1-5",
+  "source_path": "pyvoiceagent/agent_core_1_5_0_dev.py",
+  "source_sha256": "07cce177f0fe8dbabc8051955ad2f7080842e768b7faec3b29f43507ed363f01",
+  "source_bytes": 70968,
+  "source_syntax_check": "passed",
+  "unit_tests": 43,
+  "ci_run": "https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/runs/39005108762",
+  "ios_shortcuts_tests": "not_tested",
+  "ios_write_verified": false,
+  "official_manifest_changed": false,
+  "release_blockers": [
+    "V1.4.3 waiting tasks must be reconciled once because old fixed updater blocks installing any new version during pending cross-app writes",
+    "PYAgentNotes and PYAgentCalendar need one-time Shortcuts setup and actual on-device callback test",
+    "Native Apple Notes/Calendar write verification and permission UX cannot be established offline"
+  ]
+}
