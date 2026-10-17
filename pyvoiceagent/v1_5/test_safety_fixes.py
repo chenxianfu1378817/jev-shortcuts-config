@@ -9,7 +9,7 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-ENGINE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'agent_core_1_5_0_dev.py'))
+ENGINE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'agent_core_1_5_0.py'))
 spec = importlib.util.spec_from_file_location('pyvoiceagent_safety', ENGINE)
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
