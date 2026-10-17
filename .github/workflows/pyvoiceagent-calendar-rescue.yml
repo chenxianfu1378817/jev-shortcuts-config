@@ -1,0 +1,35 @@
+name: Verify PYVoiceAgent calendar recovery helper
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pyvoiceagent-calendar-rescue.yml'
+      - 'pyvoiceagent/recover_calendar_read_update.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check script and verify exact recovery limits
+        run: |
+          python -m py_compile pyvoiceagent/recover_calendar_read_update.py
+          python - <<'PY'
+          import ast
+          src=open('pyvoiceagent/recover_calendar_read_update.py',encoding='utf-8').read()
+          assert "'calendar.list'" in src
+          assert "state.get('status') == 'needs_review'" in src
+          assert "and '编码异常' in str(state.get('error', ''))" in src
+          assert "if state.get('pending') and state.get('status')" in src
+          assert "hashlib.sha256(new).hexdigest() != expected_hash" in src
+          print('Safe recovery preflight and release hash verification present.')
+          PY
+      - name: Print script pin SHA-256
+        run: |
+          python -c "import pathlib,hashlib; b=pathlib.Path('pyvoiceagent/recover_calendar_read_update.py').read_bytes(); print('RESCUE_SHA256='+hashlib.sha256(b).hexdigest()); print('RESCUE_BYTES='+str(len(b)))"
