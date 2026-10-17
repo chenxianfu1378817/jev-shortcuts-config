@@ -545,6 +545,10 @@ def execute_planned_actions(state):
         return state
     if not isinstance(state.get('plan'),list):
         raise RuntimeError('执行计划不存在，不进行操作')
+    # A completed/failed external-app handoff must never be replayed, and
+    # a later callback must not silently turn a failure into success.
+    if state.get('plan_index',0) >= len(state['plan']):
+        return state
     state['status']='running'
     put_state(state)
     while state['plan_index'] < len(state['plan']):
