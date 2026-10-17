@@ -1810,6 +1810,9 @@ def _finish_research_plan(state, tool, snippet, allowed_share):
         plan=follow['actions']
         if any(act['tool']=='reminder.create' for act in plan) and '提醒' not in state['goal']:
             raise ValueError('用户没有提出创建提醒的请求')
+        if tool=='calendar.assist' and any(act['tool']=='reminder.create' for act in plan) and not any(
+                act['tool']=='text.respond' for act in plan):
+            raise ValueError('必须先给出日程分析建议，不能直接生成提醒写入')
         if any(act['tool']=='apple_notes.create' for act in plan) and not any(
                 word in state['goal'] for word in ('保存','备忘录','记下来','记录')):
             raise ValueError('用户没有提出创建苹果备忘录的请求')
@@ -1826,9 +1829,11 @@ def _finish_research_plan(state, tool, snippet, allowed_share):
     state.update(single_plan=True, plan=plan, plan_index=0, research_phase='analysis_complete')
     put_state(state)
     writes=[x for x in plan if x['tool'] in ('apple_notes.create','local_note.save','reminder.create')]
-    if writes and not prompt_alert('确认基于已读资料创建事项',
-            '\n'.join('{}：{} @ {}'.format(x['tool'],x['title'],
-                       x.get('datetime','')) for x in writes)[:550]):
+    suggestions='\n'.join(x['text'] for x in plan if x['tool']=='text.respond')[:250]
+    write_summary='\n'.join('{}：{} @ {}'.format(x['tool'],x['title'],
+                       x.get('datetime','')) for x in writes)
+    approval_text=('分析建议：\n'+suggestions+'\n\n' if suggestions else '') + '计划创建：\n'+write_summary
+    if writes and not prompt_alert('确认基于已读资料创建事项', approval_text[:650]):
         state['status']='paused'
         state['error']='用户取消创建事项，没有写入系统'
         put_state(state)
