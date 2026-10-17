@@ -137,7 +137,7 @@ class DateOnly177Tests(unittest.TestCase):
              patch.object(a,'_eventkit_date_only_save',side_effect=AssertionError('duplicate write')),\
              patch.dict(sys.modules,{'reminders':types.SimpleNamespace(get_reminders=lambda completed=None:[])}):
             res=a._dayonly_save(state(),p)
-        self.assertEqual(res['outcome'],'existing')
+        self.assertEqual(res.get('outcome'),'existing',repr(res))
 
     def test_completed_existing_task_is_not_recreated(self):
         p=a._spoken_work_plan(goal(),date(2026,10,17))
