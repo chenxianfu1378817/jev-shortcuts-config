@@ -7,13 +7,20 @@
   "source_syntax_check": "passed",
   "unit_tests": 43,
   "ci_run": "https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/runs/39005108762",
-  "ios_shortcuts_tests": "PYAgentNotes direct write confirmed by user, callback still unverified",
+  "ios_shortcuts_tests": "PYAgentNotes and PYAgentCalendar independent iOS write smoke tests passed as confirmed by user; task-matched callbacks and enrollment not yet tested",
   "ios_write_verified": false,
   "official_manifest_changed": false,
   "release_blockers": [
-    "Only Notes direct-write smoke test has been confirmed on iPhone; registered-token callback and module enrollment remain untested",
-    "V1.4.3 prior pending state may prevent official updater until its uncertain write is reconciled",
-    "PYAgentCalendar shortcut and real event creation not yet tested"
+    "On-device confirmed task-token callback and enrollment workflow not yet tested",
+    "Official update can be blocked if V1.4.3 has an unresolved pending operation; reconcile it once before installing a candidate",
+    "True multi-step AI continuation and no-duplicate test on device remain pending"
   ],
-  "notes_direct_write_observed": true
+  "notes_direct_write_observed": true,
+  "calendar_direct_write_observed": true,
+  "calendar_observation": {
+    "date": "2026-10-20",
+    "start_time": "15:00",
+    "end_time": "15:30",
+    "remarks_verified": true
+  }
 }
