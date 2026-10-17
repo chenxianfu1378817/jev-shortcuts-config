@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 140,
-  "version": "1.4.0",
-  "path": "agent_core_1_4_0.py",
-  "sha256": "c79b991390cb41b38430814537fb24baac69ad51fe0970a87e782b33d1645287",
-  "size_bytes": 47047,
-  "summary": "V1.4: 工具目录和永久启动器更新基线，保留 V1.3 全部功能"
+  "sequence": 141,
+  "version": "1.4.1",
+  "path": "agent_core_1_4_1.py",
+  "sha256": "95c8d2c8e5369324c5f0492538a67f2f60cc4d317c9b32247ae86030b716847f",
+  "size_bytes": 53218,
+  "summary": "V1.4.1: 提醒事项按标题/到期时间/闹铃三重读回核验；跨任务去重；不确定写入转人工核验；多任务总结严格依据工具执行记录"
 }
