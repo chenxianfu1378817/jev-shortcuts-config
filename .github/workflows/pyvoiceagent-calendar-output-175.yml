@@ -1,0 +1,36 @@
+name: Validate PYVoiceAgent 1.7.5 calendar output
+
+on:
+  push:
+    branches: [main, fix/calendar-output-175]
+    paths:
+      - 'pyvoiceagent/agent_core_1_7_5.py'
+      - 'pyvoiceagent/tests/test_calendar_assist_175.py'
+      - '.github/workflows/pyvoiceagent-calendar-output-175.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile and run 1.7.5 regression
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_7_5.py
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_calendar_assist_175.py' -v
+      - name: Pin release digest
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          data=Path('pyvoiceagent/agent_core_1_7_5.py').read_bytes()
+          print('SHA256='+hashlib.sha256(data).hexdigest())
+          print('BYTES='+str(len(data)))
+          PY
