@@ -1431,7 +1431,7 @@ def callback(answer):
     return True
 
 
-def start_new(goal):
+def start_new(goal, force_stepwise=False):
     goal = str(goal or '').strip()
     if not goal:
         print('没有识别到任务文字。')
@@ -1465,7 +1465,7 @@ def start_new(goal):
         print('历史提醒的防重复记录无法保存；为避免重建重复项，新任务已取消：' + str(ex)[:150])
         return None
     put_state(state)
-    return plan_once(state)
+    return drive_agent(state) if force_stepwise else plan_once(state)
 
 
 def input_voice():
@@ -1569,11 +1569,12 @@ def show_menu():
         '15. 创建一条测试日程（不调用 AI）',
         '16. 检查更新状态',
         '17. 首次安装/验证系统模块',
-        '18. 退出',
+        '18. 复杂任务逐步 AI 模式（更多 Token）',
+        '19. 退出',
     ]
     while True:
         choice = dialogs.list_dialog('PYVoiceAgent V1.5.0 · DeepSeek Flash', choices)
-        if not choice or choice.startswith('18.'):
+        if not choice or choice.startswith('19.'):
             return
         try:
             if choice.startswith('1.'):
@@ -1646,6 +1647,10 @@ def show_menu():
                 print_update_status()
             elif choice.startswith('17.'):
                 install_system_module()
+            elif choice.startswith('18.'):
+                txt = ask_text('复杂任务：逐步 AI 规划（会增加 Token 消耗）')
+                if txt:
+                    start_new(txt, force_stepwise=True)
         except KeyboardInterrupt:
             print('用户取消了当前操作。')
         except Exception as ex:
