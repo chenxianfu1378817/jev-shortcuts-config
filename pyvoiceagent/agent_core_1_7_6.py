@@ -560,18 +560,22 @@ def plan_once(state):
         put_state(state)
         print(state['error'])
         return state
+    # An unrequested calendar/reminder/note is never justified by a mere
+    # statement of work intent, even if the model wrongly proposes a write.
+    casual_plan = _casual_dated_work_plan(state['goal'])
+    unintended_write = any(
+        action.get('tool') in ('calendar.create','reminder.create',
+                              'apple_notes.create','local_note.save')
+        for action in plan['actions'])
+    if casual_plan and (plan['question'] or unintended_write):
+        state.update(single_plan=True,plan=[{
+            'tool':'text.respond','reason':'日期型工作目标，无写入授权',
+            'text':casual_plan,'title':'','datetime':'',
+            'end_datetime':'','notes':'','shortcut_id':''
+        }],plan_index=0,plan_approved=True)
+        put_state(state)
+        return execute_planned_actions(state)
     if plan['question']:
-        # If the user merely spoke a dated work intention, do not stall asking
-        # for appointment hours: this is not authorization to write a calendar.
-        clarification = _casual_dated_work_plan(state['goal'])
-        if clarification:
-            state.update(single_plan=True,plan=[{
-                'tool':'text.respond','reason':'日期型工作目标，无写入授权',
-                'text':clarification,'title':'','datetime':'',
-                'end_datetime':'','notes':'','shortcut_id':''
-            }],plan_index=0,plan_approved=True)
-            put_state(state)
-            return execute_planned_actions(state)
         state['status'] = 'paused'
         state['error'] = '需要补充信息：' + plan['question']
         put_state(state)
