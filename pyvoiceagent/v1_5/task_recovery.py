@@ -17,7 +17,15 @@ def operation_key(route, title, start='', end='', text='', notes=''):
     """Stable operation identity. Text/notes are hashed, never stored in a key."""
     if route not in WRITE_ROUTES:
         raise ValueError('Operation is not a registered write route')
-    fields = [str(x or '').strip() for x in (route, title, start, end, text, notes)]
+    # iOS reminder/calendar identities must not change when the AI rewrites a note.
+    # Notes are user content, not an idempotency discriminator for these routes.
+    if route == 'reminder.create':
+        fields = [route, title, start]
+    elif route == 'calendar.create':
+        fields = [route, title, start, end]
+    else:
+        fields = [route, title, start, end, text, notes]
+    fields = [str(x or '').strip() for x in fields]
     canonical = json.dumps(fields, ensure_ascii=False, separators=(',', ':'))
     return hashlib.sha256(canonical.encode('utf-8')).hexdigest()
 
