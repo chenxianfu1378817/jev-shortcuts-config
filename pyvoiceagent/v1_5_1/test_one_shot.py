@@ -156,6 +156,16 @@ class OneShotTests(unittest.TestCase):
         self.assertEqual(s['token_usage']['prompt_cache_hit_tokens'],260)
         self.assertIn('DeepSeek 2 次',a.token_usage_report(s))
 
+    def test_complex_mode_keeps_legacy_planner(self):
+        with patch.object(a,'api_key',return_value='test-key'), \
+             patch.object(a,'prompt_alert',return_value=True), \
+             patch.object(a,'drive_agent',side_effect=lambda st: st) as old, \
+             patch.object(a,'plan_once') as new:
+            result = a.start_new('先读取剪贴板再分析', force_stepwise=True)
+        self.assertIsInstance(result,dict)
+        self.assertEqual(old.call_count,1)
+        self.assertEqual(new.call_count,0)
+
     def test_missing_usage_does_not_invent_tokens(self):
         s=state()
         a.record_token_usage(s,None)
