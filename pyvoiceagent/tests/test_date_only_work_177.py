@@ -149,7 +149,7 @@ class DateOnly177Tests(unittest.TestCase):
                  'objc_util':types.SimpleNamespace(ObjCClass=lambda k:types.SimpleNamespace(
                      authorizationStatusForEntityType_=lambda x:3))}):
             res=a._dayonly_save(state(),p)
-        self.assertEqual(res['outcome'],'existing')
+        self.assertEqual(res.get('outcome'),'existing',repr(res))
 
     def test_failed_readback_keeps_intent_and_no_retry(self):
         st=state()
