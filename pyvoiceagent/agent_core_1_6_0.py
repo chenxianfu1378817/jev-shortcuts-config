@@ -515,7 +515,12 @@ def plan_once(state):
     put_state(state)
     summary = '\n'.join('{}. {}：{}'.format(i+1, a['tool'], a['title'])
                         for i,a in enumerate(state['plan']))
-    if not prompt_alert('确认 AI 操作计划', '计划执行：\n' + summary):
+    # Read-only queries and map searches need no extra plan-confirmation dialog.
+    # Completing an existing reminder has its own precise-title confirmation.
+    needs_write_confirmation = any(item['tool'] in (
+        'apple_notes.create','calendar.create','reminder.create','local_note.save')
+        for item in state['plan'])
+    if needs_write_confirmation and not prompt_alert('确认 AI 操作计划', '计划执行：\n' + summary):
         state['status'] = 'paused'
         state['error'] = '用户未批准执行计划，未进行系统写入'
         put_state(state)
@@ -1459,7 +1464,9 @@ def verified_final_summary(state, ai_text=''):
               'calendar.create', 'shortcut.run')
     events = [x for x in state.get('events', []) if x.get('tool') in writes]
     if not events:
-        return str(ai_text or '任务已结束')[:1000]
+        readings = [str(item.get('result','')) for item in state.get('events', [])
+                    if item.get('tool') in LOCAL_READ_ACTIONS]
+        return ('\n'.join(readings) if readings else str(ai_text or '任务已结束'))[:1000]
     lines = []
     labels = {'reminder.create': '提醒', 'local_note.save': '本地笔记',
               'apple_notes.create': '苹果备忘录', 'calendar.create': '日历',
@@ -1491,6 +1498,9 @@ def verified_final_summary(state, ai_text=''):
         lines.insert(0, '任务存在未成功或未核验的操作，请逐项核对：')
     else:
         lines.insert(0, '逐项执行结果：')
+    for item in state.get('events', []):
+        if item.get('tool') in LOCAL_READ_ACTIONS:
+            lines.append(str(item.get('result',''))[:350])
     return '\n'.join(lines)[:1000]
 
 
