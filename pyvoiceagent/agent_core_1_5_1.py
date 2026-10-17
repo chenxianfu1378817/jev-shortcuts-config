@@ -23,7 +23,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-VERSION = '1.5.1-dev-deepseek-flash'
+VERSION = '1.5.1-deepseek-flash'
 APP_FILE = 'PYVoiceAgent.py'
 BRIDGE_SHORTCUT = 'PYAgentHub'          # independent of previously verified PYBridgeEcho
 LEGACY_BRIDGE = 'PYAgentBridge'
@@ -1573,7 +1573,7 @@ def show_menu():
         '19. 退出',
     ]
     while True:
-        choice = dialogs.list_dialog('PYVoiceAgent V1.5.0 · DeepSeek Flash', choices)
+        choice = dialogs.list_dialog('PYVoiceAgent V1.5.1 · DeepSeek Flash', choices)
         if not choice or choice.startswith('19.'):
             return
         try:
