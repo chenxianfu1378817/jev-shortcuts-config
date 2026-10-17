@@ -590,8 +590,9 @@ def _dayonly_existing(reminders_module,title,day,key):
             actual=str(due.isoformat())[:10]
         else:
             actual=''
-        if ('[PYVoiceAgent dayonly:'+key+']') in notes or (
-                _dayonly_key(str(getattr(item,'title','') or ''),day)==key and actual==day):
+        has_marker=('[PYVoiceAgent dayonly:'+key+']') in notes
+        same_name=(_dayonly_key(str(getattr(item,'title','') or ''),day)==key)
+        if (has_marker or same_name) and actual==day:
             result.append(item)
     return result
 
@@ -1610,6 +1611,7 @@ def _local_reminder_list(choice):
         if not name:
             continue
         due=getattr(entry,'due_date',None)
+        date_only_source='[PYVoiceAgent dayonly:' in str(getattr(entry,'notes','') or '')
         # Today and similar ranges include overdue items, but not future ones.
         if start is not None:
             if not isinstance(due,datetime):
@@ -1619,13 +1621,16 @@ def _local_reminder_list(choice):
                 continue
         else:
             local=due.astimezone().replace(tzinfo=None) if isinstance(due,datetime) and due.tzinfo else due
-        found.append((local,name))
+        found.append((local,name,date_only_source))
     found.sort(key=lambda item:(item[0] is None,item[0] or datetime.max,item[1]))
     if not found:
         return {'status':'ok','verified':True,'result':'未查询到符合条件的未完成提醒事项。'}
     lines=[]
-    for when,title in found[:25]:
-        day=when.strftime('%m-%d %H:%M') if isinstance(when,datetime) else '无到期日'
+    for when,title,date_only_source in found[:25]:
+        if isinstance(when,datetime):
+            day=when.strftime('%m-%d')+'（仅日期）' if date_only_source else when.strftime('%m-%d %H:%M')
+        else:
+            day='无到期日'
         lines.append('• {}  {}'.format(day,title[:90]))
     tail='；另有 {} 项未展示'.format(len(found)-25) if len(found)>25 else ''
     return {'status':'ok','verified':True,'result':'本地查询到 {} 项未完成提醒{}：\n{}'.format(len(found),tail,'\n'.join(lines))}
