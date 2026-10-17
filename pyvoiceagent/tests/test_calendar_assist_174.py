@@ -114,16 +114,29 @@ class CalendarAssist174Tests(unittest.TestCase):
         st['status']='running'
         reminder=dict(choice('reminder.create'),title='提前准备',
                       datetime='2026-10-18T08:30:00+08:00')
-        follow={'actions':[reminder], 'question':''}
+        follow={'actions':[dict(choice('text.respond'),text='两项会议冲突，建议提前准备'),reminder], 'question':''}
         approval=[]
         with patch.object(agent,'put_state'), \
-             patch.object(agent,'prompt_alert',side_effect=lambda *a,**k:(approval.append(a[0]) or False)), \
+             patch.object(agent,'prompt_alert',side_effect=lambda *a,**k:(approval.append((a[0],a[1])) or False)), \
              patch.object(agent,'_deepseek_request',return_value=follow), \
              patch.object(agent,'execute_planned_actions',side_effect=AssertionError('must not write')):
             agent._finish_research_plan(st,'calendar.assist','已读取日程',True)
-        self.assertIn('确认基于已读资料创建事项',approval)
+        self.assertEqual(approval[0][0],'确认基于已读资料创建事项')
+        self.assertIn('两项会议冲突，建议提前准备',approval[0][1])
+        self.assertIn('08:30',approval[0][1])
         self.assertEqual(st['status'],'paused')
         self.assertIn('没有写入系统',st['error'])
+
+    def test_calendar_write_without_explanation_is_rejected(self):
+        st=state(goal='分析日历并提醒我准备')
+        st['status']='running'
+        follow={'actions':[dict(choice('reminder.create'),title='准备',datetime='2026-10-18T08:30:00+08:00')], 'question':''}
+        with patch.object(agent,'put_state'), \
+             patch.object(agent,'_deepseek_request',return_value=follow), \
+             patch.object(agent,'prompt_alert',side_effect=AssertionError('no approval without suggestions')):
+            agent._finish_research_plan(st,'calendar.assist','从日历读取的原文',True)
+        self.assertEqual(st['status'],'paused')
+        self.assertIn('先给出日程分析建议',st['error'])
 
     def test_user_declines_data_upload_no_second_model_call(self):
         st=state()
