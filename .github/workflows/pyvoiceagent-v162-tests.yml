@@ -1,0 +1,36 @@
+name: PYVoiceAgent V1.6.2 Native iOS Handoff Regression
+
+on:
+  push:
+    branches: [dev/pyvoiceagent-v1-6-2-ios-handoff]
+    paths:
+      - 'pyvoiceagent/agent_core_1_6_2.py'
+      - 'pyvoiceagent/v1_6_2/**'
+      - '.github/workflows/pyvoiceagent-v162-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile main engine
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_6_2.py
+          python -m compileall -q pyvoiceagent/v1_6_2
+      - name: V1.6.2 system app and interaction tests
+        run: python -m unittest discover -v -s pyvoiceagent/v1_6_2 -p 'test_*.py'
+      - name: Historical V1.5.3 80 safety/token/callback/update/menu tests
+        run: |
+          git fetch origin dev/pyvoiceagent-v1-5-3-menu --depth=1
+          git archive FETCH_HEAD pyvoiceagent/v1_5_3 | tar -x
+          cp -R pyvoiceagent/v1_5_3 pyvoiceagent/v1_6_2_compat
+          find pyvoiceagent/v1_6_2_compat -name 'test_*.py' -type f -exec sed -i 's/agent_core_1_5_3.py/agent_core_1_6_2.py/g' {} +
+          python -m unittest discover -v -s pyvoiceagent/v1_6_2_compat -p 'test_*.py'
+      - name: Print release SHA-256 and byte size
+        run: |
+          python -c "import hashlib,pathlib; p=pathlib.Path('pyvoiceagent/agent_core_1_6_2.py'); b=p.read_bytes(); print('RELEASE_SHA256='+hashlib.sha256(b).hexdigest()); print('RELEASE_SIZE_BYTES='+str(len(b)))"
