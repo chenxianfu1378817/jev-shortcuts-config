@@ -39,6 +39,9 @@ jobs:
           import hashlib,json
           from pathlib import Path
           m=json.loads(Path('pyvoiceagent/manifest.json').read_text())
+          candidate=Path('pyvoiceagent/agent_core_1_8_2.py').read_bytes()
+          print('1.8.2 Candidate SHA256:',hashlib.sha256(candidate).hexdigest())
+          print('1.8.2 Candidate bytes:',len(candidate))
           if m['version']!='1.8.2':
               print('1.8.2 not published yet. Test candidate passed.')
           else:
