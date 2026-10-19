@@ -283,7 +283,8 @@ def _cc_parse_clipboard(raw):
             unknown=unknown[1:]
         elif len(unknown)==1:
             match=re.fullmatch(r'([\u4e00-\u9fff·]{2,5})[\s,，]+(.{3,90})',first)
-            if match:
+            if (match and match.group(1) not in ('你好','您好','请问','谢谢','我们','老板')
+                    and re.search(r'公司|集团|有限|股份|工程|项目部|分公司|研究院|交通|建设|供应链|养护|材料|科技|商贸|中建|中铁|交投|北投|石化|高速|管理局|设计院',match.group(2))):
                 fields['name'].append(match.group(1))
                 unknown=[_cc_clean(match.group(2))]
     if not fields['organization'] and unknown:
