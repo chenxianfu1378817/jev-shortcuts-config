@@ -472,7 +472,7 @@ _LOCAL_COMPOUND_OR_UNSAFE = (
     '如果','假如','若是','先查','先看','一边','另外',
     '整理','总结','分析','翻译','发给','发送','分享',
     '保存到','保存进','加入','加到','录入','创建',
-    '下载','导出','删除','修改','转账','付款','支付','发消息','发微信',
+    '下载','导出','删除','修改','转账','付款','发消息','发微信',
 )
 _LOCAL_PREFIX = re.compile(
     r'^(?:(?:请|麻烦你|麻烦|帮我|替我|给我|我想|我要|'
@@ -493,6 +493,11 @@ def _local_quick_intent(goal):
     for key,aliases in _LOCAL_QUICK_STATIC.items():
         if text in aliases:
             return {'type':'LOCAL','shortcut_id':key,'text':''}
+    # Clarify exact search commands BEFORE regex alternation can split
+    # 搜索 into the shorter verb 搜 plus the one-character query 索.
+    if re.fullmatch(r'(?:抖音|小红书|淘宝|熊掌记|百度地图|高德地图)'
+                    r'(?:上|里)?(?:搜索|查询|查找|搜一下|查一下|搜|查)',text):
+        return {'type':'CLARIFY','question':'请补充要搜索的关键词。'}
     for key,pattern in _LOCAL_QUICK_DYNAMIC:
         found=re.fullmatch(pattern,text,flags=re.I)
         if not found:
@@ -507,9 +512,6 @@ def _local_quick_intent(goal):
         except (ValueError,TypeError):
             return None
         return {'type':'LOCAL','shortcut_id':key,'text':query}
-    if re.fullmatch(r'(?:抖音|小红书|淘宝|熊掌记|百度地图|高德地图)'
-                    r'(?:上|里)?(?:搜索|查询|查找|搜一下|查一下|搜|查)',text):
-        return {'type':'CLARIFY','question':'请补充要搜索的关键词。'}
     return None
 
 
