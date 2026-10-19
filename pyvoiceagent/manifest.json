@@ -3,7 +3,7 @@
   "sequence": 180,
   "version": "1.8.0",
   "path": "agent_core_1_8_0.py",
-  "sha256": "c2fe53e10f773c304f530e0e8b8e9aad4453388897cdc5e55e78b61cbbb9691f",
-  "size_bytes": 176339,
+  "sha256": "d384a6878c0dbebe0ae90ccf0fc70957817db310e665de2af632c92a417670cb",
+  "size_bytes": 176485,
   "summary": "V1.8.0：新增可选 PYAgentAppRouter 通用 App 页面直达工具，22 个固定白名单入口，含微信扫一扫、企业微信文档、钉钉待办、百度/高德地图搜索、抖音/小红书/淘宝搜索、熊掌记查询、支付宝快递及新浪财经行情。Pythonista 本机明确启用后 DeepSeek 才能选择 app.navigate；动态参数严格 URL 编码且禁止任意 URL、支付、消息发送及代理修改。页面跳转前持久化意图，不等待不存在的结果回调，不宣称已打开或任务完成。保留原五项首页、已有 Hub、日历、提醒和 V1.7.9 生成器。需要 Mac 本地签名并 iPhone 真机验证各 App 深链。"
 }
