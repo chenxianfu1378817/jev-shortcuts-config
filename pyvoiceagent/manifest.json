@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 179,
-  "version": "1.7.9",
-  "path": "agent_core_1_7_9.py",
-  "sha256": "576d8ccb2dd668f8445c91ba4826f0969343f1cf04ebabc27b3091658de03618",
-  "size_bytes": 168987,
-  "summary": "V1.7.9：新增 Pythonista 本地快捷指令自动生成器。支持自然语言生成显示传入文字、显示固定提示、打开公开HTTPS网站、用苹果地图动态搜索地点的未签名.shortcut文件，无需手动堆砌系统动作；使用固定安全模板、校验动作/变量/URL及确定性UUID防覆盖，明确区分生成与签名/导入。配套Mac双击式系统签名导入工具。保留五项首页、已验收快捷指令、日历与提醒事项模块。GitHub Actions 61项离线回归通过；等待iOS27真机签名、导入与执行验收。"
+  "sequence": 180,
+  "version": "1.8.0",
+  "path": "agent_core_1_8_0.py",
+  "sha256": "c2fe53e10f773c304f530e0e8b8e9aad4453388897cdc5e55e78b61cbbb9691f",
+  "size_bytes": 176339,
+  "summary": "V1.8.0：新增可选 PYAgentAppRouter 通用 App 页面直达工具，22 个固定白名单入口，含微信扫一扫、企业微信文档、钉钉待办、百度/高德地图搜索、抖音/小红书/淘宝搜索、熊掌记查询、支付宝快递及新浪财经行情。Pythonista 本机明确启用后 DeepSeek 才能选择 app.navigate；动态参数严格 URL 编码且禁止任意 URL、支付、消息发送及代理修改。页面跳转前持久化意图，不等待不存在的结果回调，不宣称已打开或任务完成。保留原五项首页、已有 Hub、日历、提醒和 V1.7.9 生成器。需要 Mac 本地签名并 iPhone 真机验证各 App 深链。"
 }
