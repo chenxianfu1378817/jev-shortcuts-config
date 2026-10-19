@@ -1,0 +1,47 @@
+name: Validate PYVoiceAgent 1.8.0 app routing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pyvoiceagent/agent_core_1_8_0.py'
+      - 'pyvoiceagent/tests/test_app_route_180.py'
+      - 'pyvoiceagent/manifest.json'
+      - '.github/workflows/pyvoiceagent-app-router-180.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile and route tests
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_8_0.py
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_app_route_180.py' -v
+      - name: Existing safety regression
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_shortcut_builder_179.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_date_only_work_178.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_natural_work_plan_176.py' -v
+      - name: Verify published update SHA-256 and byte count
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib
+          m=json.loads(Path('pyvoiceagent/manifest.json').read_text())
+          assert m['version']=='1.8.0', m
+          assert m['path']=='agent_core_1_8_0.py',m
+          b=Path('pyvoiceagent/agent_core_1_8_0.py').read_bytes()
+          sha=hashlib.sha256(b).hexdigest()
+          assert m['sha256']==sha, (m['sha256'],sha)
+          assert m['size_bytes']==len(b),(m['size_bytes'],len(b))
+          print('SHA256:',sha,'Bytes:',len(b))
+          PY
