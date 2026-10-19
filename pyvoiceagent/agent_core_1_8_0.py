@@ -143,7 +143,10 @@ def _app_route_target(choice):
     if route_id not in APP_FEATURE_ROUTES:
         raise ValueError('未知或未授权的 App 功能 ID：' + route_id[:36])
     label, base, param = APP_FEATURE_ROUTES[route_id]
-    query = str(choice.get('text', '')).strip()
+    raw_query = str(choice.get('text', ''))
+    if re.search(r'[\x00-\x1f\x7f]', raw_query):
+        raise ValueError('搜索参数不得包含换行或控制字符')
+    query = raw_query.strip()
     if param:
         if not (1 <= len(query) <= 90) or re.search(r'[\x00-\x1f\x7f]', query):
             raise ValueError('搜索词/目的地必须明确，长度 1～90 字，放在 text 字段')
