@@ -207,7 +207,7 @@ def _cc_trigger(goal):
         '删除','修改','更新','发给','发送','转发','分享','传给',
         '群发','打电话','拨打','照片','头像','截图','二维码','视频','语音',
     )
-    if any(x in g for x in disallowed):
+    if any(x in g for x in disallowed) or re.search(r'先.+再', g):
         return False
     # A different explicit destination must not silently become Contacts.
     not_contacts_destinations = (
