@@ -145,7 +145,7 @@ def _app_route_target(choice):
     label, base, param = APP_FEATURE_ROUTES[route_id]
     query = str(choice.get('text', '')).strip()
     if param:
-        if not (1 <= len(query) <= 90) or re.search(r'[\\x00-\\x1f\\x7f]', query):
+        if not (1 <= len(query) <= 90) or re.search(r'[\x00-\x1f\x7f]', query):
             raise ValueError('搜索词/目的地必须明确，长度 1～90 字，放在 text 字段')
         target = base + ('&' if '?' in base else '?') + urlencode({param:query})
     else:
