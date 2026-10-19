@@ -1,0 +1,53 @@
+name: Validate PYVoiceAgent 1.8.3 spoken contacts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pyvoiceagent/agent_core_1_8_3.py'
+      - 'pyvoiceagent/tests/test_clipboard_contact_speech_183.py'
+      - 'pyvoiceagent/manifest.json'
+      - '.github/workflows/pyvoiceagent-contact-speech-183.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile engine and test spoken contact import
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_8_3.py
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_clipboard_contact_speech_183.py' -v
+      - name: Earlier versions regression
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_dual_engine_182.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_clipboard_contacts_181.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_app_route_180.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_shortcut_builder_179.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_date_only_work_178.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_natural_work_plan_176.py' -v
+      - name: Validate release metadata
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          b=Path('pyvoiceagent/agent_core_1_8_3.py').read_bytes()
+          d=hashlib.sha256(b).hexdigest()
+          print('Candidate V1.8.3 SHA-256:',d)
+          print('Candidate V1.8.3 size:',len(b))
+          m=json.loads(Path('pyvoiceagent/manifest.json').read_text())
+          if m['version']=='1.8.3':
+              assert m['sequence']==183 and m['path']=='agent_core_1_8_3.py'
+              assert m['sha256']==d and m['size_bytes']==len(b)
+              print('Release manifest validated')
+          else:
+              print('Release not published yet')
+          PY
