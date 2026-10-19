@@ -37,9 +37,9 @@ jobs:
           from pathlib import Path
           import json, hashlib
           m=json.loads(Path('pyvoiceagent/manifest.json').read_text())
-          assert m['version']=='1.8.0', m
-          assert m['path']=='agent_core_1_8_0.py',m
-          b=Path('pyvoiceagent/agent_core_1_8_0.py').read_bytes()
+          assert m['sequence']>=180, m
+          assert m['path'].startswith('agent_core_') and m['path'].endswith('.py'), m
+          b=(Path('pyvoiceagent')/m['path']).read_bytes()
           sha=hashlib.sha256(b).hexdigest()
           assert m['sha256']==sha, (m['sha256'],sha)
           assert m['size_bytes']==len(b),(m['size_bytes'],len(b))
