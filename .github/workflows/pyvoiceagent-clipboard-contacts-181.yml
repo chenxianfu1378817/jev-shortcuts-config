@@ -1,0 +1,49 @@
+name: Validate PYVoiceAgent 1.8.1 clipboard contacts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pyvoiceagent/agent_core_1_8_1.py'
+      - 'pyvoiceagent/tests/test_clipboard_contacts_181.py'
+      - 'pyvoiceagent/manifest.json'
+      - '.github/workflows/pyvoiceagent-clipboard-contacts-181.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile 1.8.1 and offline contact tests
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_8_1.py
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_clipboard_contacts_181.py' -v
+      - name: Previous 1.8.0 and 1.7.x regression
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_app_route_180.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_shortcut_builder_179.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_date_only_work_178.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_natural_work_plan_176.py' -v
+      - name: Published version integrity
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          manifest=json.loads(Path('pyvoiceagent/manifest.json').read_text())
+          if manifest['version']!='1.8.1':
+              print('V1.8.1 has not been released yet; syntax and regression passed.')
+          else:
+              data=Path('pyvoiceagent/agent_core_1_8_1.py').read_bytes()
+              assert manifest['path']=='agent_core_1_8_1.py'
+              assert manifest['sha256']==hashlib.sha256(data).hexdigest()
+              assert manifest['size_bytes']==len(data)
+              print('Verified published SHA256', manifest['sha256'])
+          PY
