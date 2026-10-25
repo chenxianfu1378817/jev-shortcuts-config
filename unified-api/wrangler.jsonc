@@ -1,0 +1,14 @@
+{
+  // Unified Personal Automation API. Deploy from repository subdirectory.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "personal-shortcuts-api",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "services": [
+    {
+      "binding": "WORKDAY_SERVICE",
+      "service": "cn-restday-shortcuts"
+    }
+  ]
+}
