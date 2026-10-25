@@ -3,8 +3,9 @@
  * Official schedule data from NateScarlet/holiday-cn (government notices).
  * GitHub Actions daily sync, optional Cloudflare Cron, KV persistence, fail-closed behavior.
  *
- * 1 = holiday/weekend, 0 = working day including makeup weekends.
- * UNKNOWN (HTTP 422) = no verified complete holiday calendar.
+ * Default/plain API: only output "0" for known workdays.
+ * Rest days or unverified dates: empty HTTP 200 response (safe to skip).
+ * JSON diagnostics: ?format=json. Previous codes: ?format=legacy.
  */
 const DATA_HOSTS = [
   'https://raw.githubusercontent.com/chenxianfu1378817/jev-shortcuts-config/main/rest-day-api/data/',
@@ -196,15 +197,22 @@ function unknown(date) {
   };
 }
 
-function respond(data,status,plain,head=false) {
-  return new Response(head?null:(plain ?
-    (data.known ? (data.isRestDay?'1':'0') : 'UNKNOWN') : JSON.stringify(data)),{
-      status,headers:{
-        'Content-Type':plain?'text/plain; charset=utf-8':'application/json; charset=utf-8',
-        'Cache-Control':'no-store, max-age=0','Access-Control-Allow-Origin':'*',
-        'X-Content-Type-Options':'nosniff'
-      }
-    });
+function respond(data,status,format='json',head=false) {
+  const json = format === 'json';
+  const legacy = format === 'legacy';
+  const text = json ? JSON.stringify(data)
+    : legacy ? (data.known ? (data.isRestDay ? '1' : '0') : 'UNKNOWN')
+    : (data.known === true && data.isWorkday === true ? '0' : '');
+  // Shortcuts should receive an empty *successful* response, rather than
+  // an HTTP 422 exception, when next year's official schedule is unavailable.
+  const httpStatus = !json && !legacy && status === 422 ? 200 : status;
+  return new Response(head ? null : text,{
+    status:httpStatus,headers:{
+      'Content-Type':json ? 'application/json; charset=utf-8' : 'text/plain; charset=utf-8',
+      'Cache-Control':'no-store, max-age=0','Access-Control-Allow-Origin':'*',
+      'X-Content-Type-Options':'nosniff'
+    }
+  });
 }
 
 export default {
@@ -233,22 +241,21 @@ export default {
         liveFallback:true
       },200,false,head);
     }
-    const format=url.searchParams.get('format')||'json';
-    if(!['json','plain','text'].includes(format))
-      return respond({error:'INVALID_FORMAT',known:false},400,false,head);
-    const plain=format!=='json';
+    const format=url.searchParams.get('format')||'workonly';
+    if(!['json','workonly','plain','text','legacy'].includes(format))
+      return respond({error:'INVALID_FORMAT',known:false},400,'json',head);
     if(!validDate(date))
       return respond({date,known:false,isRestDay:null,shouldRun:false,
-        error:'INVALID_DATE',reason:'请使用 YYYY-MM-DD 日期'},400,plain,head);
+        error:'INVALID_DATE',reason:'请使用 YYYY-MM-DD 日期'},format==='json'?400:200,format,head);
     const year=Number(date.slice(0,4));
-    if(year<MIN_YEAR||year>2100) return respond(unknown(date),422,plain,head);
+    if(year<MIN_YEAR||year>2100) return respond(unknown(date),422,format,head);
     const primary=await getCalendar(year,env,now);
-    if (!primary) return respond(unknown(date),422,plain,head);
+    if (!primary) return respond(unknown(date),422,format,head);
     // The following year's notice can modify dates in late December.
     const adjacent=date.slice(5,7)==='12' ?
       await getCalendar(year+1,env,now):null;
     const result=classify(date,primary,adjacent);
-    return respond(result,200,plain,head);
+    return respond(result,200,format,head);
   },
   async scheduled(controller,env) {
     const now=new Date(controller.scheduledTime || Date.now());
