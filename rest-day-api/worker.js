@@ -7,6 +7,7 @@
  * UNKNOWN (HTTP 422) = no verified complete holiday calendar.
  */
 const DATA_HOSTS = [
+  'https://raw.githubusercontent.com/chenxianfu1378817/jev-shortcuts-config/main/rest-day-api/data/',
   'https://raw.githubusercontent.com/NateScarlet/holiday-cn/master/',
   'https://cdn.jsdelivr.net/gh/NateScarlet/holiday-cn@master/'
 ];
@@ -146,16 +147,24 @@ async function syncYear(year,env,now) {
 
 async function getCalendar(year,env,now) {
   const cached=await safeGet(env,'calendar:'+year);
-  if (completeCalendar(cached,year)) return cached;
-  if (year===2026) return BOOTSTRAP_2026;
+  const hasCached=completeCalendar(cached,year);
+  const lastVerified=hasCached ? Date.parse(cached.verifiedAt || '') : NaN;
+  // Revalidate official data once daily even after an initial KV cache hit,
+  // so subsequent government corrections can reach the iOS Shortcuts endpoint.
+  if (hasCached && Number.isFinite(lastVerified) &&
+      now.getTime()-lastVerified < 24*60*60*1000) return cached;
   const current=Number(todayInChina(now).slice(0,4));
-  if (year<MIN_YEAR || year<current-1 || year>current+1) return null;
-  // Recovery if scheduled sync has not yet succeeded, e.g. year-end outage.
+  if (year<MIN_YEAR || year<current-1 || year>current+1)
+    return hasCached ? cached : (year===2026?BOOTSTRAP_2026:null);
   const fresh=await fetchOfficialCalendar(year);
-  if(!fresh) return null;
-  try {await safePut(env,'calendar:'+year,{...fresh,verifiedAt:now.toISOString()});}
-  catch(e) {console.warn('KV put failed (live recovery): '+String(e));}
-  return fresh;
+  if (fresh) {
+    const value={...fresh,verifiedAt:now.toISOString()};
+    try {await safePut(env,'calendar:'+year,value);}
+    catch(e) {console.warn('KV put failed (live recovery): '+String(e));}
+    return value;
+  }
+  if (hasCached) return cached;
+  return year===2026 ? BOOTSTRAP_2026 : null;
 }
 
 function classify(date,primary,adjacent) {
