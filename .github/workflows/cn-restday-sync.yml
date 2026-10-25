@@ -1,0 +1,39 @@
+name: CN Rest Day Calendar Auto-Sync
+
+on:
+  schedule:
+    # 08:37 Beijing every day, including December 31.
+    # Daily retries handle late announcements and corrections.
+    - cron: "37 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cn-rest-day-sync
+  cancel-in-progress: false
+
+jobs:
+  update-calendar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Fetch, verify and store government holiday schedule
+        run: python rest-day-api/sync.py
+      - name: Commit verified changes
+        shell: bash
+        run: |
+          git add rest-day-api/data/
+          if git diff --cached --quiet; then
+            echo "No changes in verified holiday calendar."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(rest-day): sync verified official holiday calendar [skip ci]"
+          git push
