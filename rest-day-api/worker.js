@@ -3,7 +3,7 @@
  * Official schedule data from NateScarlet/holiday-cn (government notices).
  * GitHub Actions daily sync, optional Cloudflare Cron, KV persistence, fail-closed behavior.
  *
- * Default/plain API: only output "0" for known workdays.
+ * Default/plain API: only output "1" for known workdays.
  * Rest days or unverified dates: empty HTTP 200 response (safe to skip).
  * JSON diagnostics: ?format=json. Previous codes: ?format=legacy.
  */
@@ -202,7 +202,7 @@ function respond(data,status,format='json',head=false) {
   const legacy = format === 'legacy';
   const text = json ? JSON.stringify(data)
     : legacy ? (data.known ? (data.isRestDay ? '1' : '0') : 'UNKNOWN')
-    : (data.known === true && data.isWorkday === true ? '0' : '');
+    : (data.known === true && data.isWorkday === true ? '1' : '');
   // Shortcuts should receive an empty *successful* response, rather than
   // an HTTP 422 exception, when next year's official schedule is unavailable.
   const httpStatus = !json && !legacy && status === 422 ? 200 : status;
