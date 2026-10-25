@@ -59,3 +59,17 @@ Cloudflare 免费套餐的 Cron 触发器名额已满，所以**实际定时任�
 - .github/workflows/cn-restday-sync.yml：真正运行的自动更新工作流
 
 查看 Actions 运行记录：https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/workflows/cn-restday-sync.yml
+
+
+## 可选：完全离线工作日判断（iPhone Pythonista）
+
+仓库内 [offline_shortcuts.py](offline_shortcuts.py) 已包含2026年国务院公布的完整节假日区间和补班日期。
+
+在 iOS「快捷指令」中添加 **运行 Pythonista 脚本 (Run Pythonista Script)** 动作：
+
+1. 选择 **Inline Script / 内联脚本**，粘贴 Python 文件全部内容，或者选择保存到 Pythonista 的 `offline_shortcuts.py`。
+2. 关闭 **Run in Pythonista / 在 Pythonista 中运行**，让脚本直接在快捷指令内执行并把标准输出传给下一步；关闭 **Show When Run / 运行时显示**。
+3. 添加「如果（运行 Pythonista 脚本的结果）等于 1」：执行任务，否则结束快捷指令。
+4. 调试时可在动作的 Arguments / 参数里传入 `2026-10-26` 或 `2026-10-25`。
+
+本地脚本 **不需要网络**，已覆盖2026年已核验数据；未配置年度会直接输出空白（不是默认按周一至周五执行）。**年度自动更新仅作用于云端接口，无法在永远离线的手机上自动更新年份数据**，因此进入2027年前，需将官方新年日历同步到该本地脚本。其他没安装 Pythonista 的手机也可用原生快捷指令日期与“如果”动作实现，但步骤较多。
