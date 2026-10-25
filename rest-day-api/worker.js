@@ -1,7 +1,7 @@
 /**
  * China rest-day checker for iOS Shortcuts.
  * Official schedule data from NateScarlet/holiday-cn (government notices).
- * Automatic Cloudflare Cron refresh + KV persistence + conservative fail-closed behavior.
+ * GitHub Actions daily sync, optional Cloudflare Cron, KV persistence, fail-closed behavior.
  *
  * 1 = holiday/weekend, 0 = working day including makeup weekends.
  * UNKNOWN (HTTP 422) = no verified complete holiday calendar.
@@ -222,13 +222,15 @@ export default {
       if (!Number.isInteger(year)||year<MIN_YEAR||year>2100)
         return respond({error:'INVALID_YEAR'},400,false,head);
       const [calendar,sync]=await Promise.all([
-        safeGet(env,'calendar:'+year),safeGet(env,'sync:'+year)
+        getCalendar(year,env,now),safeGet(env,'sync:'+year)
       ]);
       return respond({
-        year,calendarReady:completeCalendar(calendar,year) || year===2026,
-        dataSource:calendar?.papers?.[0] || (year===2026?SOURCE_2026:null),
+        year,calendarReady:completeCalendar(calendar,year),
+        dataSource:calendar?.papers?.[0] || null,
         lastVerifiedAt:calendar?.verifiedAt || null,
-        sync:sync||null,runAt:'01:05 UTC (09:05 Beijing) daily, including December 31'
+        sync:sync||null,
+        scheduledBy:'GitHub Actions (daily 00:37 UTC / 08:37 Beijing, including December 31)',
+        liveFallback:true
       },200,false,head);
     }
     const format=url.searchParams.get('format')||'json';
