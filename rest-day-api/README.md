@@ -1,69 +1,62 @@
-# 中国大陆休息日判断 API（用于 iOS 快捷指令）
+# 中国大陆休息日判断接口 V2：每年自动更新
 
-通过一个 URL 判断指定日期是不是中国大陆的休息日，含国务院放假安排以及周末调休补班。
+iPhone 快捷指令查询中国大陆国务院公布的节假日、调休补班安排；接口网址和返回协议与 V1 完全兼容。
 
-## 已部署网址
+## 接口地址
 
-- 纯文本（供快捷指令使用）：https://cn-restday-shortcuts.cxfoffice.workers.dev/?format=plain
-- JSON（查看判断详情）：https://cn-restday-shortcuts.cxfoffice.workers.dev/
-- 检查指定日期：https://cn-restday-shortcuts.cxfoffice.workers.dev/?date=2026-10-10&format=plain
+纯文本（快捷指令）：
+https://cn-restday-shortcuts.cxfoffice.workers.dev/?format=plain
 
-未传入 date 时，自动使用 **北京时间 Asia/Shanghai** 的当天日期（不受手机所处时区影响）。
+详细 JSON：
+https://cn-restday-shortcuts.cxfoffice.workers.dev/
 
-### 纯文本返回值
+指定日期：
+https://cn-restday-shortcuts.cxfoffice.workers.dev/?date=2026-10-10&format=plain
 
-| 结果 | 含义 | 推荐任务行为 |
+查询年份数据是否准备好：
+https://cn-restday-shortcuts.cxfoffice.workers.dev/status?year=2027
+
+日期缺省按照北京时间（Asia/Shanghai）判断。
+
+| 返回 | 含义 | 推荐行为 |
 | --- | --- | --- |
-| 1 | 休息日（周末或节假日） | 停止 |
-| 0 | 工作日（含周末补班） | 执行 |
-| UNKNOWN（HTTP 422） | 该年安排未配置 | 安全停止 |
+| 0 | 工作日，包括周末调休补班 | 执行 |
+| 1 | 周末或官方节假日 | 停止 |
+| UNKNOWN / HTTP 422 | 年度官方数据不完整、未公布或验证失败 | 停止 |
 
-对网络错误、空结果、任何非 0/1 的返回值，**不要执行任务**。
+**快捷指令只在严格等于 0 时执行，其他情况都安全停止。**
 
-### JSON 返回示例
+## 自动更新机制
 
-GET \`/?date=2026-10-10\`：
+- **GitHub Actions 每天北京时间 08:37 检查一次，包含每年12月31日**；如果数据尚未发布，次日自动重试。
+- 每年9–12月自动抓取**下一年**的国务院节假日数据，1月补查上一年可能出现的跨年调整。
+- 数据来自 [NateScarlet/holiday-cn](https://github.com/NateScarlet/holiday-cn)，其自动采集国务院公告并保存政府原文链接。只有含有效 .gov.cn 公告、完整日期及补班信息的年表才会接受；空白占位文件不接受。
+- 校验成功后写入本仓库的 rest-day-api/data/YYYY.json。Cloudflare Worker 通过这一持久化副本及上游备用来源读取数据。
+- Worker 使用 Cloudflare KV 缓存已核验的年表，并在客户端查询时每24小时尝试重新校验，以接收后续公告变动。
+- GitHub Actions 每月更新 rest-day-api/data/heartbeat.json 以减少公共仓库因60天无活动而停用工作流的可能。
+- GitHub 定时任务可能延迟、因仓库设置暂停或因服务故障失败。校验失败不把下一年误判为正常工作日，返回 UNKNOWN，避免误执行。
 
-\`\`\`json
-{"date":"2026-10-10","timezone":"Asia/Shanghai","known":true,"isRestDay":false,"isWorkday":true,"shouldRun":true,"type":"makeup_workday","reason":"调休补班","source":"https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html"}
-\`\`\`
+Cloudflare 免费套餐的 Cron 触发器名额已满，所以**实际定时任务由 GitHub Actions 执行**，未新增 Cloudflare Cron 配额用量。Worker 的 scheduled 处理器已预留，将来可以启用。
 
-### 在 iPhone「快捷指令」中接入
+## 快捷指令步骤
 
-1. 在原任务的第一步添加「URL」，填入上方纯文本网址。
-2. 添加「获取 URL 内容」，方式选 **GET**。
-3. 添加「如果」：**获取 URL 内容 等于 0** → 执行现有任务；否则「停止此快捷指令」。
-4. 原有任务动作放在「如果 等于 0」的分支里，不要放在「结束如果」后，否则休息日仍可能执行。
+1. 「URL」：粘贴上述纯文本接口地址。
+2. 「获取 URL 内容」：GET。
+3. 「如果 URL 内容 等于 0」，执行你原有的任务；「否则」停止此快捷指令。
 
-> 只允许 **0** 执行，连接失败、超时、UNKNOWN、异常内容一律不执行，避免节假日误触发。
+不能用「不等于1就执行」——UNKNOWN 不应该执行。
 
-## 2026 年已录入的国务院安排
+## 官方来源与年度限制
 
-节假日：
-- 元旦：1/1–1/3
-- 春节：2/15–2/23
-- 清明节：4/4–4/6
-- 劳动节：5/1–5/5
-- 端午节：6/19–6/21
-- 中秋节：9/25–9/27
-- 国庆节：10/1–10/7
+2026 年已根据[国务院办公厅关于2026年部分节假日安排的通知](https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm)核验（包括1/4、2/14、2/28、5/9、9/20、10/10的补班）。
 
-周末调休上班日：**1/4、2/14、2/28、5/9、9/20、10/10**。
+截至2026-10-25，上游2027年文件仍为空，尚不能判断2027年官方调休；等公告发布且数据更新、通过核验后，自动启用。
 
-官方依据：[国务院办公厅关于2026年部分节假日安排的通知（国办发明电〔2025〕7号）](https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html)。
+## 代码位置
 
-## 更新后续年度
+- rest-day-api/worker.js：接口、缓存、数据校验
+- rest-day-api/sync.py：Python 标准库自动数据同步脚本
+- rest-day-api/data/YYYY.json：已核验的数据
+- .github/workflows/cn-restday-sync.yml：真正运行的自动更新工作流
 
-当前仅配置 **2026 年** 正式日历。其他年份会明确返回 UNKNOWN，**不会把未知年份误判为普通工作日**。
-
-当国务院公布 2027 年放假调休安排后，将相应条目录入 \`YEARS[2027]\` 并重新部署 Cloudflare Worker。GitHub 是代码保存位置，Cloudflare Worker 是在线执行接口：**仅修改 GitHub 文件不会自动部署**。
-
-## 开发测试
-
-- 2026-10-01（国庆放假）→ 1
-- 2026-10-10（周六补班）→ 0
-- 2026-10-25（普通周日）→ 1
-- 2026-10-26（普通周一）→ 0
-- 2027-01-01（未录入）→ UNKNOWN/422
-
-代码：\`worker.js\`，无需数据库和每日定时任务，运行时按北京时间判断。
+查看 Actions 运行记录：https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/workflows/cn-restday-sync.yml
