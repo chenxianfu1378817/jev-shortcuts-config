@@ -13,7 +13,7 @@ def recognize_bytes(data,engine=None):
     if not isinstance(data,bytes) or not (10<len(data)<=MAX_IMAGE_BYTES):
         raise ValueError("图片为空或超过15MB")
     if engine is not None: return _result(engine(data))
-    if not (data.startswith(b"\xff\xd8\xff") or data.startswith(b"\x89PNG\\r\\n\x1a\\n")):
+    if not (data.startswith(b"\xff\xd8\xff") or data.startswith(bytes((137,80,78,71,13,10,26,10)))):
         raise ValueError("图片格式必须为 JPEG 或 PNG")
     try:
         from objc_util import ObjCClass,ns,nsurl,load_framework
@@ -29,7 +29,7 @@ def recognize_bytes(data,engine=None):
         req.setRecognitionLevel_(1)
         req.setUsesLanguageCorrection_(True)
         # A local image file URL avoids Pythonista's NSData bytearray conversion.
-        suffix=".png" if data.startswith(b"\x89PNG") else ".jpg"
+        suffix=".png" if data.startswith(bytes((137,80,78,71))) else ".jpg"
         with tempfile.NamedTemporaryFile(prefix="pyvoice_ocr_",suffix=suffix,delete=False) as temp:
             path=temp.name
             temp.write(data)
