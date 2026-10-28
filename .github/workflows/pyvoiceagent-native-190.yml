@@ -1,0 +1,24 @@
+name: PYVoiceAgent V1.9 native module regressions
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/agent_core_1_9_0.py'
+      - 'pyvoiceagent/pynative_*.py'
+      - 'pyvoiceagent/native_modules_manifest.json'
+      - 'pyvoiceagent/manifest.json'
+      - 'pyvoiceagent/tests/test_native_190.py'
+      - '.github/workflows/pyvoiceagent-native-190.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-native-190.yml'
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: python -m unittest discover -s pyvoiceagent/tests -p test_native_190.py -v
+      - run: python -m compileall -q pyvoiceagent/agent_core_1_9_0.py pyvoiceagent/pynative_router.py pyvoiceagent/pynative_contacts.py pyvoiceagent/pynative_registry.py pyvoiceagent/pynative_vision.py pyvoiceagent/pynative_updater.py
