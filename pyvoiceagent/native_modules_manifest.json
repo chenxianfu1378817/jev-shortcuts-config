@@ -21,9 +21,9 @@
     },
     {
       "name": "pynative_vision",
-      "sequence": 192,
-      "sha256": "5534d94ae985b008542fee894ee313baa9998eb047ea41498b6cacffabf7b9f1",
-      "size_bytes": 6815
+      "sequence": 193,
+      "sha256": "847898fd34b7c4e20f3c03c1655ffb2d79a8b0deef7ee2da555925ada1d7795d",
+      "size_bytes": 8290
     },
     {
       "name": "pynative_updater",
