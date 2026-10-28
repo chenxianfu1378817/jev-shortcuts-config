@@ -126,6 +126,26 @@ class NativeTests(unittest.TestCase):
         with patch.object(vision,"_select_mode",return_value=None):
             self.assertEqual(vision.run_ocr()["status"],"declined")
 
+    def test_ocr_compare_same_original_photo_and_warn(self):
+        from unittest.mock import patch
+        class FakePhoto:
+            size=(1284,2778)
+        calls=[]
+        def fake_recognize(data,engine=None,mode="zh"):
+            calls.append((data,mode))
+            if mode=="zh":
+                return vision._result(["LDL-C 3.53"],[0.5],mode="zh")
+            return vision._result(["LDL-C 3.53 mmol/L"],[0.85],mode="en")
+        with patch.object(vision,"_encode_image",return_value=b"image"):
+            with patch.object(vision,"recognize_bytes",side_effect=fake_recognize):
+                answer=vision.run_ocr(photo_picker=lambda:FakePhoto(),mode="compare")
+        self.assertEqual(answer["status"],"needs_review")
+        self.assertFalse(answer["verified"])
+        self.assertIn("原图1284×2778",answer["result"])
+        self.assertIn("中文优先",answer["result"])
+        self.assertIn("英文优先",answer["result"])
+        self.assertEqual(calls,[(b"image","zh"),(b"image","en")])
+
     def test_contacts_match_previous_parser(self):
         inputs=("姓名：张三\n单位：测试科技有限公司\n电话：13800138000",
                 "姓名:李四，单位:广西交通集团，手机:+86 139 1234 5678",
