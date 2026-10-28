@@ -72,11 +72,14 @@ class NativeTests(unittest.TestCase):
         class FakeRequest:
             def alloc(self): return self
             def init(self): return self
-            def setRecognitionLevel_(self,level): pass
-            def setUsesLanguageCorrection_(self,value): pass
+            def setRecognitionLevel_(self,level): self.level=level
+            def setRecognitionLanguages_(self,languages): self.languages=list(languages)
+            def setAutomaticallyDetectsLanguage_(self,value): self.auto=value
+            def setUsesLanguageCorrection_(self,value): self.correction=value
             def results(self): return [self]
             def topCandidates_(self,limit): return [self]
             def string(self): return "本地中文识别正常"
+            def confidence(self): return 0.92
         class FakeHandler:
             def alloc(self): return self
             def initWithURL_options_(self,url,opts):
@@ -101,8 +104,28 @@ class NativeTests(unittest.TestCase):
         with patch.dict(sys.modules,{"objc_util":fake}):
             recognized=vision.recognize_bytes(bytes((255,216,255))+b"test_jpeg_payload"*3)
         self.assertEqual(recognized["text"],"本地中文识别正常")
+        self.assertEqual(recognized["mode"],"zh")
+        self.assertFalse(recognized["verified"])
+        self.assertEqual(recognized["confidence_average"],0.92)
         self.assertEqual(len(calls),1)
         self.assertFalse(os.path.exists(calls[0]))
+    def test_ocr_languages_and_uncertainty(self):
+        self.assertEqual(vision.MODES["zh"],["zh-Hans","en-US"])
+        self.assertEqual(vision.MODES["en"],["en-US"])
+        score=vision._result(["中文"],[0.22],mode="zh")
+        self.assertTrue(score["needs_review"])
+        self.assertFalse(score["verified"])
+        self.assertEqual(score["low_confidence_lines"],1)
+        score2=vision._result(["English"],[0.96],mode="en")
+        self.assertFalse(score2["needs_review"])
+        data=vision.recognize_bytes(b"fake_image_data"*2,engine=lambda x:["测试"],mode="en")
+        self.assertEqual(data["mode"],"en")
+        with self.assertRaises(ValueError):
+            vision.recognize_bytes(b"test"*4,engine=lambda x:["abc"],mode="unknown")
+        from unittest.mock import patch
+        with patch.object(vision,"_select_mode",return_value=None):
+            self.assertEqual(vision.run_ocr()["status"],"declined")
+
     def test_contacts_match_previous_parser(self):
         inputs=("姓名：张三\n单位：测试科技有限公司\n电话：13800138000",
                 "姓名:李四，单位:广西交通集团，手机:+86 139 1234 5678",
