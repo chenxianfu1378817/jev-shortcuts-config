@@ -11,15 +11,16 @@ def recognize_bytes(data,engine=None):
     if not isinstance(data,bytes) or not (10<len(data)<=MAX_IMAGE_BYTES):
         raise ValueError("图片为空或超过15MB")
     if engine is not None: return _result(engine(data))
-    try: from objc_util import ObjCClass,ns
+    try: from objc_util import ObjCClass,ns,load_framework
     except ImportError: raise RuntimeError("Apple Vision 仅能在 Pythonista 设备上运行")
     try:
+        load_framework("Vision")
         Request=ObjCClass("VNRecognizeTextRequest")
         Handler=ObjCClass("VNImageRequestHandler")
         req=Request.alloc().init()
         req.setRecognitionLevel_(1)
         req.setUsesLanguageCorrection_(True)
-        handler=Handler.alloc().initWithData_options_(ns(data),ns({}))
+        handler=Handler.alloc().initWithData_options_(ns(bytearray(data)),ns({}))
         if not handler.performRequests_error_(ns([req]),None): raise RuntimeError("图像处理失败")
         lines=[]
         for obs in (req.results() or []):
