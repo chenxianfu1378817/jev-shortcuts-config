@@ -64,6 +64,45 @@ class NativeTests(unittest.TestCase):
         self.assertEqual(registry.tool_info("vision.ocr")["permission"],"photo_read")
         with self.assertRaises(ValueError):registry.tool_info("unlisted.execute")
         with self.assertRaises(ValueError):vision.recognize_bytes(b"x"* (15*1024*1024+1))
+    def test_ocr_file_url_bridge_and_cleanup(self):
+        """Simulate Objective-C signatures and inspect the real temporary image."""
+        import types
+        from unittest.mock import patch
+        calls=[]
+        class FakeRequest:
+            def alloc(self): return self
+            def init(self): return self
+            def setRecognitionLevel_(self,level): pass
+            def setUsesLanguageCorrection_(self,value): pass
+            def results(self): return [self]
+            def topCandidates_(self,limit): return [self]
+            def string(self): return "本地中文识别正常"
+        class FakeHandler:
+            def alloc(self): return self
+            def initWithURL_options_(self,url,opts):
+                self.assert_exists(url)
+                return self
+            def assert_exists(self,path):
+                self_path=path
+                self.assert_valid_image(self_path)
+            def assert_valid_image(self,path):
+                self_checked=os.path.isfile(path)
+                if not self_checked: raise AssertionError("temporary image absent")
+                with open(path,"rb") as handle:
+                    if not handle.read().startswith(bytes((255,216,255))):
+                        raise AssertionError("temporary image bytes invalid")
+                calls.append(path)
+            def performRequests_error_(self,reqs,error): return True
+        fake=types.ModuleType("objc_util")
+        fake.ObjCClass=lambda name:FakeRequest() if name=="VNRecognizeTextRequest" else FakeHandler()
+        fake.load_framework=lambda name:None
+        fake.ns=lambda value:value
+        fake.nsurl=lambda path:path
+        with patch.dict(sys.modules,{"objc_util":fake}):
+            recognized=vision.recognize_bytes(bytes((255,216,255))+b"test_jpeg_payload"*3)
+        self.assertEqual(recognized["text"],"本地中文识别正常")
+        self.assertEqual(len(calls),1)
+        self.assertFalse(os.path.exists(calls[0]))
     def test_contacts_match_previous_parser(self):
         inputs=("姓名：张三\n单位：测试科技有限公司\n电话：13800138000",
                 "姓名:李四，单位:广西交通集团，手机:+86 139 1234 5678",
