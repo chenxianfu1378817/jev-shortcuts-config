@@ -156,7 +156,7 @@ def run_ocr(image_bytes=None, photo_picker=None, mode="choose"):
                 confidence = ("{:.0f}%".format(100 * item["confidence_average"])
                               if item["confidence_average"] is not None else "未知")
                 return "{}：{}行，平均置信度{}\n{}".format(
-                    tag, item["lines"], confidence, item["text"][:1600] or "(空)")
+                    tag, item["lines"], confidence, item["text"][:650] or "(空)")
             compared = (img_detail+"\n"+summary("中文优先",left)
                         +"\n\n"+summary("英文优先",right))
             # Don't convert higher OCR confidence into an accuracy guarantee.
