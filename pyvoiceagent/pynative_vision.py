@@ -95,7 +95,8 @@ def recognize_bytes(data, engine=None, mode="zh"):
 def _select_mode():
     try:
         import dialogs
-        choice = dialogs.list_dialog("选择图片主要文字", [
+        choice = dialogs.list_dialog("图片文字识别方式", [
+            "双模式对照（推荐）",
             "中文优先（简体中文＋英文）",
             "英文优先（英文／数字）",
         ])
@@ -103,6 +104,7 @@ def _select_mode():
         choice = "中文优先"
     if not choice:
         return None
+    if choice.startswith("双模式"): return "compare"
     return "en" if choice.startswith("英文") else "zh"
 
 
@@ -131,17 +133,38 @@ def run_ocr(image_bytes=None, photo_picker=None, mode="choose"):
             if mode is None:
                 return {"status": "declined", "verified": False,
                         "result": "用户取消选择识别模式"}
-        if mode not in MODES:
+        if mode not in MODES and mode != "compare":
             raise ValueError("未知 OCR 语言模式")
+        dims = None
         if image_bytes is None:
             if photo_picker is None:
                 import photos
-                photo_picker = photos.pick_image
+                photo_picker = lambda: photos.pick_image(original=True)
             image = photo_picker()
             if image is None:
                 return {"status": "declined", "verified": False,
                         "result": "用户取消选择图片"}
+            dims = tuple(image.size)
             image_bytes = _encode_image(image)
+        img_detail = "{}，图像{}字节".format(
+            ("原图{}×{}".format(dims[0], dims[1]) if dims else "外部传入图片"),
+            len(image_bytes))
+        if mode == "compare":
+            left = recognize_bytes(image_bytes, mode="zh")
+            right = recognize_bytes(image_bytes, mode="en")
+            def summary(tag, item):
+                confidence = ("{:.0f}%".format(100 * item["confidence_average"])
+                              if item["confidence_average"] is not None else "未知")
+                return "{}：{}行，平均置信度{}\n{}".format(
+                    tag, item["lines"], confidence, item["text"][:1600] or "(空)")
+            compared = (img_detail+"\n"+summary("中文优先",left)
+                        +"\n\n"+summary("英文优先",right))
+            # Don't convert higher OCR confidence into an accuracy guarantee.
+            any_text = bool(left["text"] or right["text"])
+            return {"status":"needs_review" if any_text else "empty",
+                    "verified":False, "mode":"compare", "result":
+                    compared+"\n\n对照原图与系统相册的实况文本。"
+                    "哪一种模式更准确应由用户判断；不自动保存或上传。"}
         out = recognize_bytes(image_bytes, mode=mode)
         if out["status"] == "empty":
             return {"status": "needs_review", "verified": False,
@@ -155,8 +178,8 @@ def run_ocr(image_bytes=None, photo_picker=None, mode="choose"):
             "status": "needs_review" if out["needs_review"] else "ok",
             "verified": False,
             "mode": mode,
-            "result": "OCR 模式：{}；{}行；平均置信度：{}\n{}{}".format(
-                mode_label, out["lines"], quality, out["text"], warning),
+            "result": "OCR 模式：{}；{}；{}行；平均置信度：{}\n{}{}".format(
+                mode_label, img_detail, out["lines"], quality, out["text"], warning),
             "text": out["text"],
             "confidence_average": out["confidence_average"],
             "truncated": out["truncated"],
