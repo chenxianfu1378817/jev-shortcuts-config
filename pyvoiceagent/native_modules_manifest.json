@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "modules": [
+    {
+      "name": "pynative_router",
+      "sequence": 190,
+      "sha256": "68a80c674cc368ba7e66d027e4a9dcbbe26dc8e56e9961cf3c80171c2bdf5dff",
+      "size_bytes": 1894
+    },
+    {
+      "name": "pynative_contacts",
+      "sequence": 190,
+      "sha256": "a792198b7b6f5843a77a77e687cdc2d6a5fc07b685027f314d618aafd2d35379",
+      "size_bytes": 5791
+    },
+    {
+      "name": "pynative_registry",
+      "sequence": 190,
+      "sha256": "0b3d33d39ee0702266837dfcd2fe3656cc649c59e8db8ab72565ed42ef2aa13f",
+      "size_bytes": 607
+    },
+    {
+      "name": "pynative_vision",
+      "sequence": 190,
+      "sha256": "4c4799e606289c72eb9e155b29d488ca59d8922491c48f5ae7c306e9cbdc554f",
+      "size_bytes": 2277
+    },
+    {
+      "name": "pynative_updater",
+      "sequence": 190,
+      "sha256": "8bb7b8896f74ea7e00185192b8ae71308ed1c82b08705cc04b4d313ded368844",
+      "size_bytes": 4289
+    }
+  ]
+}
