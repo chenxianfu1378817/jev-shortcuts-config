@@ -52,7 +52,9 @@ def install(root,manifest,download):
     try:
         for name,(data,row) in changes.items():
             path=os.path.join(live,name+".py")
-            with open(path,"rb") as f: backups[name]=f.read() if os.path.isfile(path) else None
+            if os.path.isfile(path):
+                with open(path,"rb") as f: backups[name]=f.read()
+            else: backups[name]=None
             atomic_write(path,data);applied.append(name)
             state.setdefault("modules",{})[name]={"sequence":row["sequence"],"sha256":row["sha256"]}
         atomic_write(os.path.join(root,"installed.json"),
