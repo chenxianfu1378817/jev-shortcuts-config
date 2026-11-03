@@ -569,6 +569,7 @@ def _local_fast_execute(goal,intent):
     state={'id':uuid.uuid4().hex[:12],'goal':goal,'created':now_iso(),
            'status':'ready','steps':0,'events':[],'pending':None,
            'final':'','error':'','routing_engine':'local',
+           'voice_session':bool(VOICE_SESSION_ACTIVE),
            'single_plan':True,'plan':[action],
            'plan_index':0,'plan_approved':True}
     put_state(state)
@@ -1210,7 +1211,8 @@ def _maybe_auto_work_plan(goal):
         defer_current_pending(current)
     reminder_seed_prior_state(current)
     state={'id':uuid.uuid4().hex[:12],'goal':goal,'created':now_iso(),
-           'status':'ready','steps':0,'events':[],'pending':None,'final':'','error':''}
+           'status':'ready','steps':0,'events':[],'pending':None,'final':'','error':'',
+           'voice_session':bool(VOICE_SESSION_ACTIVE)}
     put_state(state)
     result=_dayonly_save(state,plan)
     params={'title':plan['title'],'datetime':plan['day'],
@@ -1228,6 +1230,8 @@ def _maybe_auto_work_plan(goal):
     put_state(state)
     print('\n=== 语音工作待办 ===\n'+state['final'])
     print('日期：{}；不添加钟点；没有调用 DeepSeek。'.format(plan['day'] or '未指定'))
+    if state.get('voice_session'):
+        _voice_report(state)
     return state
 
 
@@ -1407,21 +1411,23 @@ def _voice_report(state):
 
 
 def _ask_clarification(question):
-    """One on-screen question; voice is the preferred answer, text is a fallback."""
+    """Voice-originated tasks speak the question and listen automatically."""
+    if get_state().get('voice_session'):
+        print('\\n【AI 需要补充】' + question)
+        return input_voice(hands_free=True, prompt=question)
     import dialogs
     print('\\n【AI 需要补充】' + question)
     try:
-        selection = dialogs.alert('继续刚才的任务', question[:300],
-                                  '语音回答', '文字回答', '稍后继续',
-                                  hide_cancel_button=True)
+        choice = dialogs.alert('继续刚才的任务', question[:300],
+                               '语音回答', '文字回答', '稍后继续',
+                               hide_cancel_button=True)
     except KeyboardInterrupt:
         return None
-    if selection == 1:
-        return input_voice()
-    if selection == 2:
+    if choice == 1:
+        return input_voice(hands_free=True, prompt=question)
+    if choice == 2:
         return ask_text('回复 AI：' + question[:60])
     return None
-
 
 def _clarification_payload(state, allowed_tools):
     """Keep the original intent authoritative; previous answers only fill gaps."""
@@ -3364,7 +3370,9 @@ def final_report(state, show_dialog=True):
         print('日历读取通道：PYAgentCalendarRead（单次只读回调）')
         print(token_usage_report(state))
         print('============================')
-        if show_dialog:
+        if state.get('voice_session'):
+            _voice_report(state)
+        elif show_dialog:
             try:
                 import dialogs
                 dialogs.alert('PYVoiceAgent 日历分析', concise_execution_summary(state),
@@ -3380,6 +3388,9 @@ def final_report(state, show_dialog=True):
                str(event.get('result', ''))[:limit]))
     print(token_usage_report(state))
     print('=============================')
+    if state.get('voice_session'):
+        _voice_report(state)
+        return
     if not show_dialog:
         return
     try:
@@ -3749,6 +3760,23 @@ def start_new(goal, force_stepwise=False):
     if not force_stepwise and old_dialogue.get('status') in ('needs_input','replan_pending'):
         if goal in ('继续对话','继续刚才的任务','继续上次任务','回答刚才的问题'):
             return resume_clarification(old_dialogue)
+        if VOICE_SESSION_ACTIVE and old_dialogue.get('status') == 'needs_input':
+            if goal in ('取消任务','取消刚才的任务','停止本次任务','暂停本次任务','稍后继续'):
+                if goal == '稍后继续':
+                    old_dialogue['status'] = 'needs_input'
+                else:
+                    old_dialogue['status'] = 'paused'
+                old_dialogue['error'] = '用户语音请求暂停本次问答；无任何新系统写入。'
+                put_state(old_dialogue)
+                _voice_speak('已暂停当前任务。')
+                return old_dialogue
+            if goal.startswith(('新任务：','新任务，','开始新任务：','开始新任务，')):
+                goal = goal.split('：',1)[-1] if '：' in goal else goal.split('，',1)[-1]
+                if not goal.strip():
+                    _voice_speak('请再说出新任务内容。')
+                    return old_dialogue
+            else:
+                return resume_clarification(old_dialogue, initial_answer=goal)
         if old_dialogue.get('status') == 'needs_input':
             msg = ('之前的任务：' + old_dialogue.get('goal','')[:110]
                    + '\\nAI的问题：' + old_dialogue.get('clarify_question','')[:130]
@@ -3794,8 +3822,9 @@ def start_new(goal, force_stepwise=False):
             return None
     state = {'id': uuid.uuid4().hex[:12], 'goal': goal, 'created': now_iso(),
              'status': 'ready', 'steps': 0, 'events': [], 'pending': None,
+             'voice_session': bool(VOICE_SESSION_ACTIVE),
              'final': '', 'error': ''}
-    if not prompt_alert('发送给 AI 规划', '下面的目标文字将发送至 DeepSeek：\n' + goal[:400]):
+    if not _voice_authorize_ai(state):
         return None
     # Before replacing V1.4.1's last-task file, migrate verified writes.
     try:
@@ -4225,7 +4254,9 @@ def show_menu():
             if not choice:
                 return
             if choice.startswith('1.'):
-                txt = input_voice()
+                global VOICE_SESSION_ACTIVE
+                VOICE_SESSION_ACTIVE = True
+                txt = input_voice(hands_free=True)
                 if txt:
                     start_new(txt)
                     return
@@ -4257,6 +4288,7 @@ def show_menu():
 
 
 def main():
+    global VOICE_SESSION_ACTIVE
     # URL scheme incoming callback on iCloud root (verified by user in previous testing).
     if len(sys.argv) > 1:
         if sys.argv[1] == 'bridge_callback':
@@ -4268,7 +4300,8 @@ def main():
             callback(sys.argv[2] if len(sys.argv) > 2 else '')
             return
         if sys.argv[1] == 'voice':
-            txt = input_voice()
+            VOICE_SESSION_ACTIVE = True
+            txt = input_voice(hands_free=True)
             if txt:
                 start_new(txt)
             return
