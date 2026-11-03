@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 183,
-  "version": "1.8.3",
-  "path": "agent_core_1_8_3.py",
-  "sha256": "b8a0e7c1985fa2edaddc1c9ae5dfb3ce19028e01281b23155cfea6330c6fcb00",
-  "size_bytes": 197503,
-  "summary": "修复 V1.8.2 的微信联系人语音入库意图漏识别：说“保存我刚才复制的联系人”及类似表述，无需强调“通讯录”，Pythonista 即在本机执行原有剪贴板解析、手机号重复检查、手动保存确认、通讯录读回核验。明确否定、查询、转发、其他目标 App/文件或先后多步骤指令不误入本地单步写入；不上传联系人信息给 DeepSeek，减少一次无意义的 Token 调用。保留原背面双击固定入口、五项首页、22条AppRouter功能、日历/提醒事项/备忘录等全部已有流程。GitHub CI 新增8项专项测试及101项旧版回归共109项通过；iPhone 真机需验收。"
+  "sequence": 190,
+  "version": "1.9.0",
+  "path": "agent_core_1_9_0.py",
+  "sha256": "2a32881f0ce5e608e8fb6666c95e36474d67af0a83a7074979eb2302b880a04e",
+  "size_bytes": 203909,
+  "summary": "V1.9.0 native modular candidate: direct route with guarded legacy fallback, extracted local contact parsing, on-device Vision OCR, permission-aware native calendar read, SHA256-bounded atomic module updates. Preserve fixed launcher, legacy Shortcuts, approval, and recovery ledger. Validate on device before merging."
 }
