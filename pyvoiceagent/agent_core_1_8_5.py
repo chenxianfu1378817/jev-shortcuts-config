@@ -1390,6 +1390,27 @@ def _voice_authorize_ai(state):
         return False
 
 
+def _voice_privacy_controls():
+    """Enable or revoke persistent cloud consent from the existing settings menu."""
+    import dialogs
+    allowed = read_json(VOICE_PRIVACY_PATH, {}).get('voice_text_auto_share') is True
+    print('语音联网自动授权：' + ('已启用' if allowed else '未启用'))
+    choices = ('启用自动发送语音文字', '关闭自动发送（下次再询问）', '返回')
+    selected = dialogs.list_dialog('语音文字 AI 授权', list(choices))
+    if selected == choices[0]:
+        if not prompt_alert('语音文字自动发送',
+                '今后你主动启动语音助手后，识别出的任务文字将直接发给 DeepSeek 规划。'
+                '剪贴板、日历等其他隐私内容仍需独立授权。确认启用吗？'):
+            return
+        atomic_json(VOICE_PRIVACY_PATH,
+                    {'voice_text_auto_share': True, 'approved_at': now_iso()})
+        print('已启用语音文字的自动云端规划授权。')
+    elif selected == choices[1]:
+        atomic_json(VOICE_PRIVACY_PATH,
+                    {'voice_text_auto_share': False, 'revoked_at': now_iso()})
+        print('已关闭自动发送，下次联网规划前将再次询问。')
+
+
 def _voice_report(state):
     """Speak a short completion notice without reading private local data aloud."""
     if not state.get('voice_session') or state.get('voice_report_spoken'):
@@ -3853,6 +3874,7 @@ def input_voice(hands_free=False, prompt=None):
                 status = 'meter_unavailable'
             if status == 'no_speech':
                 print('没有检测到有效语音。本次不向 AI 发送任何任务。')
+                _voice_speak('没有听到回答，本次没有执行任务。')
                 return None
             if status == 'meter_unavailable':
                 if not prompt_alert('自动收音不可用', '是否改用手动录音？'):
@@ -4100,7 +4122,8 @@ SETTINGS_MENU = (
     '3. 查看当前版本',
     '4. 首次安装／验证系统模块',
     '5. 高级操作与故障排查',
-    '6. 返回首页',
+    '6. 语音 AI 自动发送授权',
+    '7. 返回首页',
 )
 ADVANCED_MENU = (
     '1. 继续暂停的任务',
@@ -4229,7 +4252,7 @@ def show_settings_menu():
     import dialogs
     while True:
         choice = dialogs.list_dialog('更多与设置', list(SETTINGS_MENU))
-        if not choice or choice.startswith('6.'):
+        if not choice or choice.startswith('7.'):
             return
         if choice.startswith('1.'):
             show_tool_status()
@@ -4241,6 +4264,8 @@ def show_settings_menu():
             install_system_module()
         elif choice.startswith('5.'):
             show_advanced_menu()
+        elif choice.startswith('6.'):
+            _voice_privacy_controls()
         if waiting_for_shortcut():
             return
 
