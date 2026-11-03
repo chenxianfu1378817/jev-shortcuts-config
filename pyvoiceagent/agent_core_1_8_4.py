@@ -3592,6 +3592,22 @@ def start_new(goal, force_stepwise=False):
     if len(goal) > 2000:
         print('任务文字过长，请先简化（最多 2000 字）。')
         return None
+    old_dialogue = get_state()
+    if not force_stepwise and old_dialogue.get('status') in ('needs_input','replan_pending'):
+        if goal in ('继续对话','继续刚才的任务','继续上次任务','回答刚才的问题'):
+            return resume_clarification(old_dialogue)
+        if old_dialogue.get('status') == 'needs_input':
+            msg = ('之前的任务：' + old_dialogue.get('goal','')[:110]
+                   + '\\nAI的问题：' + old_dialogue.get('clarify_question','')[:130]
+                   + '\\n本次输入：' + goal[:100]
+                   + '\\n将本次内容作为上个问题的回答吗？')
+            if prompt_alert('继续未完成的对话', msg, ok='作为回答', cancel='开始新任务'):
+                return resume_clarification(old_dialogue, initial_answer=goal)
+        else:
+            if prompt_alert('上次回答等待 AI 规划',
+                    '上次回答已保存，但规划尚未完成。先重试原任务吗？',
+                    ok='继续原任务', cancel='开始新任务'):
+                return resume_clarification(old_dialogue)
     # Explicit contacts import takes precedence over DeepSeek and never uploads
     # any clipboard or private contacts data to the model.
     if _cc_trigger(goal):
@@ -3609,22 +3625,6 @@ def start_new(goal, force_stepwise=False):
         quick_result=_local_or_ai_dispatch(goal)
         if quick_result is not None:
             return quick_result
-    old_dialogue = get_state()
-    if not force_stepwise and old_dialogue.get('status') in ('needs_input','replan_pending'):
-        if goal in ('继续对话','继续刚才的任务','继续上次任务','回答刚才的问题'):
-            return resume_clarification(old_dialogue)
-        if old_dialogue.get('status') == 'needs_input':
-            msg = ('之前的任务：' + old_dialogue.get('goal','')[:110]
-                   + '\\nAI的问题：' + old_dialogue.get('clarify_question','')[:130]
-                   + '\\n本次输入：' + goal[:100]
-                   + '\\n将本次内容作为上个问题的回答吗？')
-            if prompt_alert('继续未完成的对话', msg, ok='作为回答', cancel='开始新任务'):
-                return resume_clarification(old_dialogue, initial_answer=goal)
-        else:
-            if prompt_alert('上次回答等待 AI 规划',
-                    '上次回答已保存，但规划尚未完成。先重试原任务吗？',
-                    ok='继续原任务', cancel='开始新任务'):
-                return resume_clarification(old_dialogue)
     if not api_key():
         print('尚未配置 DeepSeek API Key。请先打开菜单 → 设置 DeepSeek AI。')
         return None
