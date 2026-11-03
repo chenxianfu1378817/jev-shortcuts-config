@@ -96,7 +96,7 @@ class Interactive184Tests(unittest.TestCase):
         with self.available(),\
              patch.object(agent, "api_key", return_value="test-key"),\
              patch.object(agent, "_deepseek_request", return_value=plan([action()])),\
-             patch.object(agent, "execute_planned_actions", return_value=self.state) as execute:
+             patch.object(agent, "execute_planned_actions", side_effect=lambda s: s) as execute:
             result = agent.resume_clarification(agent.get_state(), initial_answer="明天14点")
         execute.assert_called_once()
         self.assertEqual(result["clarify_history"][0]["answer"], "明天14点")
