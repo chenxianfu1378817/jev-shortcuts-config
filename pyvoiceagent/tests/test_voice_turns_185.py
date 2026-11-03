@@ -178,6 +178,18 @@ class HandsFree185Tests(unittest.TestCase):
             self.assertFalse(agent._voice_authorize_ai(state))
         self.assertFalse(Path(agent.VOICE_PRIVACY_PATH).exists())
 
+    def test_long_term_consent_can_be_revoked_in_settings(self):
+        agent.atomic_json(agent.VOICE_PRIVACY_PATH,
+                          {'voice_text_auto_share': True})
+        options=types.SimpleNamespace(
+            list_dialog=lambda title, items: '关闭自动发送（下次再询问）')
+        with patch.dict(sys.modules, {'dialogs': options}):
+            agent._voice_privacy_controls()
+        self.assertFalse(agent.read_json(
+            agent.VOICE_PRIVACY_PATH,{}).get('voice_text_auto_share'))
+        self.assertEqual(len(agent.MAIN_MENU), 5)
+        self.assertIn('6. 语音 AI 自动发送授权', agent.SETTINGS_MENU)
+
     def test_recording_removed_after_transcription(self):
         class FakeSpeech:
             @staticmethod
