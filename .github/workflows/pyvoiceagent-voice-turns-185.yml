@@ -1,0 +1,56 @@
+name: PYVoiceAgent V1.8.5 foreground voice turns
+on:
+  pull_request:
+    paths:
+      - 'pyvoiceagent/agent_core_1_8_5.py'
+      - 'pyvoiceagent/tests/test_voice_turns_185.py'
+      - '.github/workflows/pyvoiceagent-voice-turns-185.yml'
+      - 'pyvoiceagent/manifest.json'
+  push:
+    branches: [main]
+    paths:
+      - 'pyvoiceagent/agent_core_1_8_5.py'
+      - 'pyvoiceagent/tests/test_voice_turns_185.py'
+      - '.github/workflows/pyvoiceagent-voice-turns-185.yml'
+      - 'pyvoiceagent/manifest.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  voice-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile current voice engine
+        run: python -m py_compile pyvoiceagent/agent_core_1_8_5.py
+      - name: Test current voice engine with simulated Pythonista modules
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_voice_turns_185.py' -v
+      - name: Historical interactive engine and compatibility tests
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_interactive_184.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_clipboard_contact_speech_183.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_dual_engine_182.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_clipboard_contacts_181.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_app_route_180.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_shortcut_builder_179.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_date_only_work_178.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_natural_work_plan_176.py' -v
+      - name: Check release digest if pinned
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          b=Path('pyvoiceagent/agent_core_1_8_5.py').read_bytes()
+          sha=hashlib.sha256(b).hexdigest()
+          print('V1.8.5 SHA256:', sha, 'bytes:', len(b))
+          m=json.loads(Path('pyvoiceagent/manifest.json').read_text())
+          if m['version']=='1.8.5':
+              assert m['sequence']==185 and m['path']=='agent_core_1_8_5.py'
+              assert m['sha256']==sha and m['size_bytes']==len(b)
+          PY
