@@ -3,8 +3,18 @@
   "app": "myassistant-pythonista",
   "version": "1.1.4",
   "sequence": 114,
-  "release_note": "AI 接口配置页改为逐项菜单：解决服务商标签与输入值重叠；分服务商保存模型名称；Keychain 独立密钥及需确认的 AI 连接测试。",
+  "release_note": "AI 接口配置改为手机友好的分步菜单，修复文字与输入值重叠。完整累积发布保留此前 SQLite 跨线程及运费修复，允许旧版直接升级。",
   "files": [
+    {
+      "path": "myassistant_core/store.py",
+      "size": 9975,
+      "sha256": "78de317bbaff540d8251c4a2c2caef24f56d005a8250dd6a6c9b2b0a14f9c9ec"
+    },
+    {
+      "path": "myassistant_core/calc.py",
+      "size": 11650,
+      "sha256": "41f3c4128de428a7ed86a11c5cf8b1fa612f7d4adb4f7c9e40467d4b1744679c"
+    },
     {
       "path": "myassistant_core/mobile.py",
       "size": 42865,
