@@ -1,29 +1,19 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.1.3",
-  "sequence": 113,
-  "release_note": "修复 GitHub 文件尾换行缺失导致的更新校验失败；保留 V1.1.2 的 SQLite 线程和汽运费修复。",
+  "version": "1.1.4",
+  "sequence": 114,
+  "release_note": "AI 接口配置页改为逐项菜单：解决服务商标签与输入值重叠；分服务商保存模型名称；Keychain 独立密钥及需确认的 AI 连接测试。",
   "files": [
     {
-      "path": "myassistant_core/store.py",
-      "size": 9975,
-      "sha256": "78de317bbaff540d8251c4a2c2caef24f56d005a8250dd6a6c9b2b0a14f9c9ec"
-    },
-    {
-      "path": "myassistant_core/calc.py",
-      "size": 11650,
-      "sha256": "41f3c4128de428a7ed86a11c5cf8b1fa612f7d4adb4f7c9e40467d4b1744679c"
-    },
-    {
       "path": "myassistant_core/mobile.py",
-      "size": 38958,
-      "sha256": "972eda5c4ff57fc04f78d125aba076d3b3a89c18d40bd684276b6ea0bd35f5e3"
+      "size": 42865,
+      "sha256": "f91f1f8a764192b63be102be9fe587e278000c031e397570e793783d6a61aab2"
     },
     {
       "path": "myassistant_core/release_info.py",
-      "size": 230,
-      "sha256": "310a5a5188253de2373728f783431728c1df195af6d9caa249475ae6b0cbd3bc"
+      "size": 239,
+      "sha256": "b325c10ebc9a5948f0f3ff72272dc775aec3b25d66986777242b7cda80274730"
     }
   ]
 }
