@@ -1,13 +1,14 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.0.1",
-  "sequence": 101,
+  "version": "1.1.1",
+  "sequence": 111,
+  "release_note": "Pythonista 完整版首次一键在线更新验证，不更改经营测算功能。",
   "files": [
     {
-      "path": "我的助手_在线版本标记.py",
-      "size": 192,
-      "sha256": "7168f9c8f136c7e69ae800c77720da8f88556f7714d19aa51685ea388c4316f2"
+      "path": "myassistant_core/release_info.py",
+      "size": 223,
+      "sha256": "5faa74107659b90ceac6e6cd8656b3a003895806d5c1fc6a89205ee579d3a475"
     }
   ]
 }
