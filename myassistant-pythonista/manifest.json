@@ -1,14 +1,29 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.1.1",
-  "sequence": 111,
-  "release_note": "Pythonista 完整版首次一键在线更新验证，不更改经营测算功能。",
+  "version": "1.1.2",
+  "sequence": 112,
+  "release_note": "修复配置大模型/运费测算时 SQLite 跨线程错误，完善运价区间和计算展示，业务数据保持不变。",
   "files": [
     {
+      "path": "myassistant_core/store.py",
+      "size": 9975,
+      "sha256": "78de317bbaff540d8251c4a2c2caef24f56d005a8250dd6a6c9b2b0a14f9c9ec"
+    },
+    {
+      "path": "myassistant_core/calc.py",
+      "size": 11650,
+      "sha256": "41f3c4128de428a7ed86a11c5cf8b1fa612f7d4adb4f7c9e40467d4b1744679c"
+    },
+    {
+      "path": "myassistant_core/mobile.py",
+      "size": 38958,
+      "sha256": "972eda5c4ff57fc04f78d125aba076d3b3a89c18d40bd684276b6ea0bd35f5e3"
+    },
+    {
       "path": "myassistant_core/release_info.py",
-      "size": 223,
-      "sha256": "5faa74107659b90ceac6e6cd8656b3a003895806d5c1fc6a89205ee579d3a475"
+      "size": 243,
+      "sha256": "736cf11a2fe457dcdc7fc644397d63b11616deff3597dcabaeacad7270f7e35b"
     }
   ]
 }
