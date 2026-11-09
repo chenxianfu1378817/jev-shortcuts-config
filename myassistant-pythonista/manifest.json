@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.2.3",
-  "sequence": 123,
-  "release_note": "修复高德地址输入频繁闪退：连续键入只启用一个防抖定时器、后台搜索单请求队列、旧请求结果丢弃、关闭页面后不刷新、地址选择后先关闭再通知运费页；输入联想不自动收起键盘，保留全部旧业务与 Keychain。",
+  "version": "1.2.4",
+  "sequence": 124,
+  "release_note": "高德地图搜索崩溃隔离修复：UIKit 页面创建、关闭与搜索结果渲染统一在主线程；网络请求使用单独线程。输入时暂停自动联想，点击搜索后显示分页地址结果；保留原 Keychain、六段运价、业务数据和历史记录。62项离线测试通过，真机稳定性仍需确认。",
   "files": [
     {
       "path": "myassistant_core/store.py",
@@ -47,13 +47,13 @@
     },
     {
       "path": "myassistant_core/freight_ui.py",
-      "size": 22011,
-      "sha256": "9e16765223a34ffe071d31aa6422dfe52a329a80c0df13314dd54188d9431607"
+      "size": 22284,
+      "sha256": "390527cfd0fd221f7f21226fae608a0110b7689f8908bea364536e2bb827d1f0"
     },
     {
       "path": "myassistant_core/release_info.py",
-      "size": 464,
-      "sha256": "b8458e4bbd84a3ec1d20a85b35e553969813d164289be4264a24c40ff149093c"
+      "size": 451,
+      "sha256": "e26450da07a0b71604ee155bf0bae3d4aed1764d2f037c9a6e74b9a9bc6d7174"
     },
     {
       "path": "myassistant_core/amap_service.py",
@@ -62,8 +62,8 @@
     },
     {
       "path": "myassistant_core/amap_ui.py",
-      "size": 11077,
-      "sha256": "fd0e4adbbd8970f43984eddf691f9996369bd1f2ca7f80f437af440cf76fee4f"
+      "size": 11469,
+      "sha256": "8c5dad9517e5c66582d43e059e68fc3be4c0386fbacfefd316ae247ead801e68"
     }
   ]
 }
