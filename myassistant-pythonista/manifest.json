@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.2.2",
-  "sequence": 122,
-  "release_note": "高德地图智能运距：起点/终点关键词联想搜索、POI地址与坐标选择、驾车路线备选、自动带入公里数与原六段汽运费计算；支持手工改距、离线手工录入、历史保存。高德 Web 服务 Key 仅存 Pythonista Keychain，原业务模块不变。",
+  "version": "1.2.3",
+  "sequence": 123,
+  "release_note": "修复高德地址输入频繁闪退：连续键入只启用一个防抖定时器、后台搜索单请求队列、旧请求结果丢弃、关闭页面后不刷新、地址选择后先关闭再通知运费页；输入联想不自动收起键盘，保留全部旧业务与 Keychain。",
   "files": [
     {
       "path": "myassistant_core/store.py",
@@ -52,8 +52,8 @@
     },
     {
       "path": "myassistant_core/release_info.py",
-      "size": 417,
-      "sha256": "ded92c4a9391021501c578b357878ab3b24ac0ec2f29a905bd465fb60ce57ff8"
+      "size": 464,
+      "sha256": "b8458e4bbd84a3ec1d20a85b35e553969813d164289be4264a24c40ff149093c"
     },
     {
       "path": "myassistant_core/amap_service.py",
@@ -62,8 +62,8 @@
     },
     {
       "path": "myassistant_core/amap_ui.py",
-      "size": 8754,
-      "sha256": "5c8d7ac5caebcfbcf2e47ccd59849a590533d6538955ec404b8f48a26c119325"
+      "size": 11077,
+      "sha256": "fd0e4adbbd8970f43984eddf691f9996369bd1f2ca7f80f437af440cf76fee4f"
     }
   ]
 }
