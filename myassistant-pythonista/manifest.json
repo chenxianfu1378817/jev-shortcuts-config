@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.2.1",
-  "sequence": 121,
-  "release_note": "全菜单界面统一：新版安全区首页、报价、汽运费全页测算，以及投标、销存、工作记录、AI、备份共享卡片菜单/表单；保留全部旧业务计算与本地记录。",
+  "version": "1.2.2",
+  "sequence": 122,
+  "release_note": "高德地图智能运距：起点/终点关键词联想搜索、POI地址与坐标选择、驾车路线备选、自动带入公里数与原六段汽运费计算；支持手工改距、离线手工录入、历史保存。高德 Web 服务 Key 仅存 Pythonista Keychain，原业务模块不变。",
   "files": [
     {
       "path": "myassistant_core/store.py",
@@ -47,13 +47,23 @@
     },
     {
       "path": "myassistant_core/freight_ui.py",
-      "size": 15958,
-      "sha256": "063dd9e25ca825fe8d335932cdec9da602f7f0117bde891fef3a503083a55a5f"
+      "size": 22011,
+      "sha256": "9e16765223a34ffe071d31aa6422dfe52a329a80c0df13314dd54188d9431607"
     },
     {
       "path": "myassistant_core/release_info.py",
-      "size": 276,
-      "sha256": "816b0a8591de8bc2d5773dce3133c7236fa5cef444e83dddf068296dc77f9a4e"
+      "size": 417,
+      "sha256": "ded92c4a9391021501c578b357878ab3b24ac0ec2f29a905bd465fb60ce57ff8"
+    },
+    {
+      "path": "myassistant_core/amap_service.py",
+      "size": 8182,
+      "sha256": "8ff4b87ba81c87a7a448c279012500c6ed1d9ac3ad130176ed9f58c298b457c0"
+    },
+    {
+      "path": "myassistant_core/amap_ui.py",
+      "size": 8754,
+      "sha256": "5c8d7ac5caebcfbcf2e47ccd59849a590533d6538955ec404b8f48a26c119325"
     }
   ]
 }
