@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.2.0",
-  "sequence": 120,
-  "release_note": "按原生 iOS Build93 重设计日常报价：四品类独立组合、成本税率明细、SBS/乳化材料配方、交货运费、资金条件、利润与报价文本，保留 AI 设置、SQLite 和运费修复；旧记录原样保留。",
+  "version": "1.2.1",
+  "sequence": 121,
+  "release_note": "全菜单界面统一：新版安全区首页、报价、汽运费全页测算，以及投标、销存、工作记录、AI、备份共享卡片菜单/表单；保留全部旧业务计算与本地记录。",
   "files": [
     {
       "path": "myassistant_core/store.py",
@@ -16,24 +16,44 @@
       "sha256": "41f3c4128de428a7ed86a11c5cf8b1fa612f7d4adb4f7c9e40467d4b1744679c"
     },
     {
-      "path": "myassistant_core/mobile.py",
-      "size": 42310,
-      "sha256": "a81d47247c3c4dcb46d11bc7032fba8f5b2711abda9ef1df61e8c8b18c28341e"
-    },
-    {
       "path": "myassistant_core/quote_full.py",
       "size": 10751,
       "sha256": "18512cfe79546f996edc0b903f6c34aeb4b58843d59c8c2a34b8f7731f81c510"
     },
     {
       "path": "myassistant_core/quote_ui.py",
-      "size": 17698,
-      "sha256": "fd87f8cb616d53d942da0ac5b67887512e6b454a8c2e95d3890bf00db6228279"
+      "size": 17467,
+      "sha256": "b73932137c2f15121e19e0b012ee7d1484323f0cabdb658840d9b2a1c8c85f0c"
+    },
+    {
+      "path": "myassistant_core/mobile.py",
+      "size": 36526,
+      "sha256": "b8f49a234c5d31c80926cf1e2a9b7e97e1bc208b987a3e4f4f2852f7d3972bd9"
+    },
+    {
+      "path": "myassistant_core/ui_style.py",
+      "size": 1349,
+      "sha256": "d4900becf309a5e200397a1b4e940b2c4ad237da6cc1fc6e33c01dc14cac76c6"
+    },
+    {
+      "path": "myassistant_core/ui_kit.py",
+      "size": 8229,
+      "sha256": "11754dd5b1da343163a26235f199759e1314b2ee036c0c418c39cdaa5cf0949c"
+    },
+    {
+      "path": "myassistant_core/home_ui.py",
+      "size": 4118,
+      "sha256": "64fd97a1cd7cf101db48694cfc5dd58c18c29008088226d2d2d6ac9171557992"
+    },
+    {
+      "path": "myassistant_core/freight_ui.py",
+      "size": 15958,
+      "sha256": "063dd9e25ca825fe8d335932cdec9da602f7f0117bde891fef3a503083a55a5f"
     },
     {
       "path": "myassistant_core/release_info.py",
-      "size": 176,
-      "sha256": "fa3e0a41a76977be906e5547059f8e1c99411bd3a85d6f61da16e3dad6ee6f77"
+      "size": 276,
+      "sha256": "816b0a8591de8bc2d5773dce3133c7236fa5cef444e83dddf068296dc77f9a4e"
     }
   ]
 }
