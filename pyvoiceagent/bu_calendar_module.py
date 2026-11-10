@@ -161,7 +161,7 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
     # notes. Only the token is needed to match the callback.
     internal_marker = payload.get('marker', '')
     payload['marker'] = ''
-    import base64  # Standalone BU module must not rely on the monolithic engine's imports.
+    import base64, json  # Standalone helper must not rely on monolithic engine imports.
     encoded = base64.b64encode(json.dumps(
         payload, ensure_ascii=False, separators=(',', ':')).encode('utf-8')).decode('ascii')
     # Log every explicit run under a unique ID. Keep old dated entries intact.
