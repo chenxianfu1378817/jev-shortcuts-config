@@ -14,9 +14,9 @@ import unittest
 from urllib.parse import parse_qs, urlparse
 import uuid
 
-MODULE = Path(__file__).with_name('bu_calendar_module.py')
+MODULE = Path(__file__).with_name('bu_calendar_module_v193.py')
 if not MODULE.exists():
-    MODULE = Path(__file__).resolve().parents[1] / 'bu_calendar_module.py'
+    MODULE = Path(__file__).resolve().parents[1] / 'bu_calendar_module_v193.py'
 
 
 def snapshot(mode='day',dt='2026-11-10T15:03:00+08:00'):
