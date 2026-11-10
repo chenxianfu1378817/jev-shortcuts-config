@@ -5420,8 +5420,8 @@ def show_menu():
 HISTORY_DIR = os.path.join(DATA_DIR, 'history')
 HISTORY_SCAN_LIMIT = 1600
 HISTORY_RESULT_LIMIT = 80
-_HIST_KEY_RX = re.compile(r'^\d{4}-\d{2}/task_[A-Za-z0-9_-]{6,80}\.json)
-_HIST_BU_RX = re.compile(r'^bu/bu_[A-Za-z0-9_-]{8,100}\.json)
+_HIST_KEY_RX = re.compile(r'^\d{4}-\d{2}/task_[A-Za-z0-9_-]{6,80}\.json$')
+_HIST_BU_RX = re.compile(r'^bu/bu_[A-Za-z0-9_-]{8,100}\.json$')
 
 
 def _history_plain(value, max_len=7000):
@@ -5498,6 +5498,10 @@ def _history_record_from_state(state):
         'final': _history_plain(state.get('final'), 11000),
         'error': _history_plain(state.get('error'), 1200),
         'events': events, 'source': 'PYVoiceAgent',
+        'pending_action': {
+            'tool': _history_plain((state.get('pending') or {}).get('tool'), 100),
+            'title': _history_plain((state.get('pending') or {}).get('title'), 180),
+        } if isinstance(state.get('pending'), dict) else {},
         'note': '快捷指令回报成功不等于苹果 App 实际内容已核验。',
     }
 
@@ -5512,6 +5516,10 @@ def _history_md(record):
         lines += ['## 任务结果', '', _history_plain(record['final'], 11000), '']
     if record.get('error'):
         lines += ['## 异常／待核验事项', '', _history_plain(record['error'], 1200), '']
+    if record.get('pending_action'):
+        pending = record['pending_action']
+        lines += ['## 当前待核验操作', '',
+                  '{}：{}'.format(pending.get('tool', ''), pending.get('title', '')), '']
     if record.get('events'):
         lines += ['## 逐项执行凭据', '']
         for i, event in enumerate(record['events'], 1):
@@ -5671,7 +5679,6 @@ def main():
     except (OSError, ValueError, TypeError, UnicodeError) as error:
         print('【历史归档】旧任务迁移未完成：'+str(error)[:150])
     return _V193_MAIN()
-
 
 if __name__ == "__main__":
     main()
