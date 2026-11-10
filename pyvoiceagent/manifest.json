@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 200,
-  "version": "2.0.0",
-  "path": "agent_core_2_0_0.py",
-  "sha256": "39382694eff4ff7506f76728f97a5ad41e115d10ba9c60a4a9680fc3400824c7",
-  "size_bytes": 294867,
-  "summary": "统一原生结果卡片：苹果日历查询回调显示日程标题、日期、起止时间，普通任务显示可滚动正文，提供复制结果/完成按钮，八套主题与首页同步；不再用回调日志/Token统计作为普通返回。首页执行结果入口同样改成卡片。保留详细历史记录和技术诊断、手动录音、DeepSeek、BU期货/日历、地图及原快捷指令入口。14项离线结果层测试通过，静态主程序兼容核对通过；GitHub CI已配置但结果和iPhone真机显示待验收。"
+  "sequence": 201,
+  "version": "2.0.1",
+  "path": "agent_core_2_0_1.py",
+  "sha256": "198804f9b83ba750a91a16e1118bd8482a4fa423ac5ab71527e44325e7c399fa",
+  "size_bytes": 297579,
+  "summary": "修复语音、文字及剪贴板任务执行后回到 Pythonista 控制台；结果卡片关闭后恢复助手首页。固定入口与匹配的快捷指令回调也恢复首页；等待新回调及原生地图/App 跳转不抢焦点。保留全部旧功能、本地数据与八主题。GitHub Actions 目前 startup_failure，iPhone 真机待验收。"
 }
