@@ -81,6 +81,10 @@ def _history_record_from_state(state):
         'final': _history_plain(state.get('final'), 11000),
         'error': _history_plain(state.get('error'), 1200),
         'events': events, 'source': 'PYVoiceAgent',
+        'pending_action': {
+            'tool': _history_plain((state.get('pending') or {}).get('tool'), 100),
+            'title': _history_plain((state.get('pending') or {}).get('title'), 180),
+        } if isinstance(state.get('pending'), dict) else {},
         'note': '快捷指令回报成功不等于苹果 App 实际内容已核验。',
     }
 
@@ -95,6 +99,10 @@ def _history_md(record):
         lines += ['## 任务结果', '', _history_plain(record['final'], 11000), '']
     if record.get('error'):
         lines += ['## 异常／待核验事项', '', _history_plain(record['error'], 1200), '']
+    if record.get('pending_action'):
+        pending = record['pending_action']
+        lines += ['## 当前待核验操作', '',
+                  '{}：{}'.format(pending.get('tool', ''), pending.get('title', '')), '']
     if record.get('events'):
         lines += ['## 逐项执行凭据', '']
         for i, event in enumerate(record['events'], 1):
