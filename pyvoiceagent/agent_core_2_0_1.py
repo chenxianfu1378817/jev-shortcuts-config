@@ -6036,7 +6036,7 @@ def final_report(state, show_dialog=True):
 # V2.0.1: lifecycle repair; original task execution remains untouched.
 _V200_DISPATCH = _card_dispatch
 
-def _card_should_show_home():
+def _card_should_show_home(previous_state=None):
     try:
         state = get_state()
         if state.get('status') == 'awaiting_callback':
@@ -6047,7 +6047,12 @@ def _card_should_show_home():
             if (isinstance(last, dict)
                     and last.get('tool') in ('app.navigate', 'maps.search')
                     and last.get('status') in ('ok', 'handoff')):
-                return False  # Do not steal focus from a native app.
+                # An earlier map task must not strand a cancelled new recording.
+                if (isinstance(previous_state, dict)
+                        and previous_state.get('id') == state.get('id')
+                        and len(previous_state.get('events') or []) == len(events)):
+                    return True
+                return False  # Do not steal focus from a just-opened native app.
         return True
     except Exception:
         return True
@@ -6064,9 +6069,10 @@ def _card_current_callback(token):
 
 def _card_dispatch(action, payload=''):
     """V2.0.0 closed the home and unconditionally exited after local actions."""
+    before = get_state()
     outcome = _V200_DISPATCH(action, payload)
     if (action in ('voice', 'input', 'clipboard', 'stepwise')
-            and outcome == 'handoff' and _card_should_show_home()):
+            and outcome == 'handoff' and _card_should_show_home(before)):
         return 'stay'
     return outcome
 
@@ -6086,10 +6092,11 @@ def main():
                                and pending.get('tool') == 'shortcut.echo')
         except Exception:
             pass
+    before = get_state() if entry in ('voice', 'text') else None
     _V200_MAIN()
     if (entry == 'voice' or (entry == 'text' and len(sys.argv) > 2)
             or active_callback):
-        if _card_should_show_home():
+        if _card_should_show_home(before):
             show_menu()
 
 if __name__ == "__main__":
