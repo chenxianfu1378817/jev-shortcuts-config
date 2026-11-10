@@ -207,3 +207,193 @@ def _card_dispatch(action, payload=''):
     return 'stay'
 
 
+    elif action == 'resume':
+        resume_old_task()
+    elif action == 'review':
+        state = _card_task_snapshot()
+        if state.get('pending') and state.get('status') in ('awaiting_callback', 'needs_review', 'writing'):
+            review_pending()
+        else:
+            review_deferred_queue()
+    elif action == 'add_shortcut':
+        add_shortcut_registration()
+    elif action == 'stepwise':
+        text = ask_text('输入复杂任务')
+        if text:
+            start_new(text, force_stepwise=True)
+            return 'handoff'
+    elif action == 'ai_test':
+        test_deepseek_connection()
+    elif action == 'hub_echo':
+        start_bridge_diagnostic('shortcut.hub_echo')
+    elif action == 'notes_test':
+        start_bridge_diagnostic('apple_notes.create')
+    elif action == 'calendar_test':
+        start_bridge_diagnostic('calendar.create')
+    elif action == 'clear_state':
+        state = _card_task_snapshot()
+        if state.get('pending') and state.get('status') in ('awaiting_callback','needs_review','writing'):
+            print('当前有待核验操作，禁止清理状态。')
+        elif prompt_alert('清除当前任务', '只清除任务状态，不删除笔记、录音、联系人或密钥，确定吗？'):
+            if os.path.isfile(STATE_PATH):
+                os.remove(STATE_PATH)
+    elif action == 'contact_import':
+        _cc_import_clipboard()
+        return 'handoff'
+    elif action == 'check_update_status':
+        print_update_status()
+    if waiting_for_shortcut():
+        return 'handoff'
+    return 'stay'
+
+
+def _card_ui_show():
+    try:
+        import ui
+    except ImportError:
+        return None
+
+    class AgentCardView(ui.View):
+        def __init__(self):
+            super(AgentCardView, self).__init__()
+            self.name = 'PYVoiceAgent · DeepSeek Flash'
+            self.background_color = '#F5F6FA'
+            self.page = 'home'
+            self.search_text = ''
+            self.appearance = _card_appearance_load()
+            self.result = None
+            self._last_dims = (0, 0)
+            self.flex = 'WH'
+
+        def layout(self):
+            dimensions = (int(self.width), int(self.height))
+            if dimensions != self._last_dims and all(dimensions):
+                self._last_dims = dimensions
+                self._render()
+
+        def _label(self, parent, text, x, y, width, height, size=14,
+                   weight=False, color=None, align=ui.ALIGN_LEFT, lines=1):
+            label = ui.Label(frame=(x, y, max(1, width), height))
+            label.text = str(text)
+            label.text_color = color or self.palette['text']
+            label.font = ('HelveticaNeue-Bold' if weight else 'HelveticaNeue', size)
+            label.alignment = align
+            label.number_of_lines = lines
+            label.background_color = 'clear'
+            parent.add_subview(label)
+            return label
+
+        def _button(self, parent, title, x, y, width, height, handler,
+                    emphasis=False, color=None, size=14):
+            b = ui.Button(frame=(x, y, max(1, width), height))
+            b.title = title
+            b.font = ('HelveticaNeue-Bold', size)
+            b.background_color = color or (self.palette['accent'] if emphasis else self.palette['raised'])
+            b.tint_color = self.palette['light'] if emphasis else self.palette['text']
+            b.corner_radius = 13
+            b.action = handler
+            parent.add_subview(b)
+            return b
+
+        def _panel(self, parent, x, y, w, h, alternate=False):
+            surface = ui.View(frame=(x, y, w, h))
+            surface.background_color = self.palette['raised'] if alternate else self.palette['surface']
+            surface.corner_radius = 18
+            surface.flex = 'W'
+            parent.add_subview(surface)
+            return surface
+
+        def _link(self, action, payload=''):
+            def handler(sender):
+                self.result = (action, payload)
+                self.close()
+            return handler
+
+        def _navigate(self, page):
+            def handler(sender):
+                self.page = page
+                self._render()
+            return handler
+
+        def _choose_theme(self, name):
+            def handler(sender):
+                self.appearance['theme'] = name
+                self.appearance['custom_color'] = ''
+                _card_appearance_save(self.appearance)
+                self._render()
+            return handler
+
+        def _choose_mode(self, name):
+            def handler(sender):
+                self.appearance['mode'] = name
+                _card_appearance_save(self.appearance)
+                self._render()
+            return handler
+
+        def _custom_color(self, sender):
+            try:
+                import dialogs
+                raw = dialogs.text_dialog('自定义主题色', self.appearance.get('custom_color') or '#F07828')
+                if raw is None:
+                    return
+                color = _card_hex(raw)
+                if not color:
+                    dialogs.alert('颜色无效', '请输入 #RRGGBB，例如 #E66B28。', '确定', hide_cancel_button=True)
+                    return
+                self.appearance['custom_color'] = color
+                _card_appearance_save(self.appearance)
+                self._render()
+            except Exception as error:
+                print('保存主题色失败：{}'.format(error))
+
+        def _search_changed(self, sender):
+            self.search_text = sender.text or ''
+            # Do not reconstruct a currently editing TextField (keyboard lifecycle).
+
+        def _search_apply(self, sender):
+            field = getattr(self, "search_field", None)
+            if field is not None:
+                self.search_text = field.text or ""
+            self._render()
+
+        def _submit_text(self, sender):
+            text = (self.input_view.text or '').strip()
+            if not text:
+                return
+            self.result = ('input', text)
+            self.close()
+
+        def _render(self):
+            if self.width < 100 or self.height < 200:
+                return
+            for sub in list(self.subviews):
+                self.remove_subview(sub)
+            self.palette = _card_palette(self.appearance)
+            P = self.palette
+            self.background_color = P['background']
+            width = float(self.width)
+            side = 18 if width < 560 else min(46, width * 0.07)
+            content_width = width - side * 2
+            top = 50  # preserve space for iOS notch/status bar on fullscreen
+
+            self._label(self, 'PYVoiceAgent', side, top, content_width - 64, 34,
+                        size=26, weight=True)
+            self._label(self, 'V1.9.0 · DeepSeek Flash', side, top + 33,
+                        content_width, 20, size=12, color=P['muted'])
+            self._button(self, '关闭', width-side-64, top+2, 64, 36, self._link('exit'))
+            y = top + 74
+            if self.page != 'home':
+                self._button(self, '‹ 返回', side, y, 82, 38, self._navigate('home'))
+                self._label(self, {'settings': '设置中心', 'appearance': '外观与主题',
+                     'tools': '工具库', 'advanced': '高级操作', 'history': '执行记录',
+                     'input': '文字任务'}.get(self.page, self.page), side+96,
+                     y, content_width-105, 38, size=21, weight=True)
+                y += 56
+
+            viewport = max(160, self.height-y-24)
+            scroll = ui.ScrollView(frame=(side, y, content_width, viewport))
+            scroll.background_color = P['background']
+            scroll.shows_vertical_scroll_indicator = True
+            scroll.flex = 'WH'
+            self.add_subview(scroll)
+            cursor = 2
