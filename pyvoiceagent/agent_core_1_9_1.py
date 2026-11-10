@@ -4867,7 +4867,7 @@ def _card_ui_show():
 
             self._label(self, 'PYVoiceAgent', side, top, content_width - 64, 34,
                         size=26, weight=True)
-            self._label(self, 'V1.9.0 · DeepSeek Flash', side, top + 33,
+            self._label(self, 'V{} · DeepSeek Flash'.format(VERSION.split('-')[0]), side, top + 33,
                         content_width, 20, size=12, color=P['muted'])
             self._button(self, '关闭', width-side-64, top+2, 64, 36, self._link('exit'))
             y = top + 74
