@@ -1,0 +1,35 @@
+name: PYVoiceAgent V2.1.0 local WebView regression
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v210.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile Pythonista release and bundled WebView module
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_2_1_0.py
+          python -m py_compile pyvoiceagent/webui_v210.py
+      - name: Bridge security and WebView UI simulation (13 checks)
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_webview_v210.py' -v
+      - name: Offline HTML JavaScript page smoke checks
+        run: node pyvoiceagent/tests/test_webview_js_v210.js
+      - name: Prior result/voice/navigation/BU regression
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_result_center_v200.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_manual_voice_v198.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_amap_native_v199.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v196.py' -v
