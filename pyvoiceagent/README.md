@@ -122,3 +122,11 @@
 - 仍是 Pythonista 原生 ui，不需要 iOS IPA/证书；保留 8 套主题及本地持久化设置、手动录音、DeepSeek、BU 日历和 V2.0.1 的返回主页修复。
 - [查看 V2.0.2 设计与验收说明](V202_紧凑卡片首页与真机验收.md)。
 - 已提交模拟屏幕与触控单元测试；**GitHub Actions 仍为 startup_failure，iPhone 真机尚待验收**。
+
+## V2.1.0｜Pythonista 本地 WebView 混合界面
+
+- 改为 **Python + ui.WebView + 内置 HTML/CSS/JavaScript**：首页、任务输入、执行结果、历史档案、主题和设置使用同一设计体系，不访问外部界面网站。
+- 原 Python 执行引擎不变；桥接限制固定动作白名单、随机 nonce 与严格内容转义，WebView 不可用时回退至 V2.0.2 原生 ui。
+- 原固定 `PYVoiceAgent.py` 启动入口与在线更新、手动语音、DeepSeek、BU、苹果日历/备忘录/提醒、八套主题及用户数据全部保留。
+- [V2.1.0 架构与 iPhone 验收说明](V210_本地WebView混合架构与验收.md)。
+- 13 项离线 Python 模拟测试、本地 JavaScript DOM 烟测通过；**不是 iPhone 真机验收**。CI 运行状态需以 GitHub Actions 为准。
