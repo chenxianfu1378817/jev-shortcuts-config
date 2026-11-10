@@ -5749,7 +5749,7 @@ safe to test without Pythonista. Only _result_ui_show imports iOS modules.
 _RESULT_CALENDAR_DATE = re.compile(
     r'^\s*(\d{4})年(\d{1,2})月(\d{1,2})日\s*'
     r'(\d{1,2}:\d{2})\s*(?:[—–~～\-至]\s*)?'
-    r'(\d{1,2}:\d{2})\s*(.*))
+    r'(\d{1,2}:\d{2})\s*(.*)$')
 _RESULT_CALENDAR_COUNT = re.compile(r'查询到\s*(\d+)\s*[条项]日程')
 _RESULT_EVENT_LIMIT = 30
 
@@ -5818,7 +5818,16 @@ def _result_card_model(state):
     status = str(state.get('status') or '')
     events = [e for e in state.get('events', []) if isinstance(e, dict)] if isinstance(state.get('events'), list) else []
     calendar = next((e for e in reversed(events) if e.get('tool') == 'calendar.list'), None)
-    if calendar is not None and calendar.get('status') == 'ok':
+    # Calendar-assisted analysis can contain further work/insights. Do not
+    # replace its final analysis with only the raw event-list preview.
+    if state.get('research_origin') == 'calendar.assist' and status == 'finished':
+        result = _result_safe_text(state.get('final'), 11000) or '日程分析已结束。'
+        return {'kind':'analysis', 'title':'日程分析结果',
+                'subtitle':'已完成日历查询后的分析',
+                'items':[], 'body':result,
+                'notice':'日历内容来自只读快捷指令；操作效果需另行核验。',
+                'copy':result, 'status':status, 'more':0}
+    if calendar is not None and calendar.get('status') == 'ok' and status == 'finished':
         data = _result_parse_calendar(calendar.get('result'))
         count = len(data['rows'])
         declared = data['declared_count']
@@ -5833,10 +5842,15 @@ def _result_card_model(state):
             'items': data['rows'][:_RESULT_EVENT_LIMIT],
             'body': data['raw'] if (data['unparsed'] or declared is not None and declared != count) else '',
             'notice': '来自日历只读快捷指令，尚未独立核验。',
-            'copy': data['raw'], 'status': 'ok',
+            'copy': ('\n\n'.join('{}\n{}'.format(i['title'],i['time'])
+                                  for i in data['rows'])
+                     if data['rows'] and not data['unparsed'] and
+                        (declared is None or declared == count) else data['raw']),
+            'status': 'ok',
             'more': max(0, len(data['rows']) - _RESULT_EVENT_LIMIT),
         }
-    if status in ('needs_review', 'failed', 'paused', 'needs_input', 'replan_pending'):
+    errors = any(e.get('status') in ('failed','needs_review','error') for e in events)
+    if status in ('needs_review', 'failed', 'paused', 'needs_input', 'replan_pending') or errors:
         kind, heading = 'warning', '需要检查任务'
     elif status == 'awaiting_callback':
         kind, heading = 'pending', '等待系统操作返回'
@@ -5904,7 +5918,7 @@ def _result_ui_show(state):
             return widget
 
         def panel(self, host, y, height, fill=None):
-            v = ui.View(frame=(0, y, body_width, height))
+            v = ui.View(frame=(0, y, host.width, height))
             v.background_color = fill or palette['surface']
             v.corner_radius = 16
             host.add_subview(v)
@@ -5956,12 +5970,12 @@ def _result_ui_show(state):
             y = 0
             if model['kind'] == 'calendar' and model['items']:
                 for item in model['items']:
-                    cell = self.panel(scroll, y, 91)
-                    self.label(cell, item['title'], (15, 13, content_w-30, 29),
-                               17, palette['text'], bold=True, lines=1)
-                    self.label(cell, item['time'], (15, 52, content_w-30, 24),
+                    cell = self.panel(scroll, y, 105)
+                    self.label(cell, item['title'], (15, 11, content_w-30, 49),
+                               17, palette['text'], bold=True, lines=2)
+                    self.label(cell, item['time'], (15, 68, content_w-30, 24),
                                14, palette['muted'])
-                    y += 104
+                    y += 117
                 if model['more']:
                     self.label(scroll, '另有 {} 项，请复制查看完整内容'.format(model['more']),
                                (4, y+4, content_w-8, 30), 12, palette['muted'])
@@ -6017,7 +6031,6 @@ def final_report(state, show_dialog=True):
             pass
     if state.get('voice_session'):
         _voice_report(state)
-
 
 if __name__ == "__main__":
     main()
