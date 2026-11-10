@@ -4858,10 +4858,12 @@ def _card_task_snapshot():
 def _card_tool_rows(filter_text=''):
     rows = []
     try:
+        available = available_tool_catalog()
         for key, description in TOOL_CATALOG.items():
-            rows.append((key, str(description)))
+            status = '可选工具（仍可能需授权）' if key in available else '未配置／未验收'
+            rows.append((key, '【{}】{}'.format(status, description)))
         for key, item in local_registry().items():
-            rows.append((str(key), str(item.get('description', '已登记快捷指令'))))
+            rows.append((str(key), '【已登记，需真机核验】'+str(item.get('description', '自定义快捷指令'))))
     except Exception:
         pass
     needle = filter_text.strip().lower()
@@ -4876,7 +4878,8 @@ def _card_nav_items(page):
             ('voice', '语音执行', '一句话交代工作与生活任务', '主要入口'),
             ('input', '文字任务', '输入指令并让 AI 规划执行', ''),
             ('clipboard', '处理剪贴板', '整理复制的公告、文字和资料', ''),
-            ('status', '执行结果', '查看状态、历史及待处理事项', ''),
+            ('status', '执行结果', '查看最近任务与待核验事项', ''),
+            ('archive', '历史档案', '搜索全部报告、BU行情，复制或导出', ''),
             ('update', '检查在线更新', '从 GitHub 校验并获取新版本', ''),
             ('settings_page', '设置与工具', '主题、模型、模块及高级设置', ''),
         ]
@@ -4924,6 +4927,26 @@ def _card_dispatch(action, payload=''):
         else:
             print('剪贴板暂无文字。')
         return 'handoff'
+    if action == 'history_copy':
+        try:
+            import clipboard
+            md = _history_markdown_for_key(payload)
+            clipboard.set(md)
+            print('【历史档案】已复制全文到剪贴板（{} 字）。'.format(len(md)))
+        except (OSError, ValueError, UnicodeError) as ex:
+            print('历史复制失败：'+str(ex)[:170])
+        return 'stay'
+    if action == 'history_share':
+        try:
+            file_path = _history_share_path(payload)
+            print('【历史档案】导出文件：'+file_path)
+            import console
+            if hasattr(console, 'open_in'):
+                console.open_in(file_path)
+                return 'handoff'
+        except (ImportError, OSError, ValueError) as ex:
+            print('共享不可用，可在 Pythonista 文件中找到档案：'+str(ex)[:150])
+        return 'stay'
     if action == 'status':
         state = _card_task_snapshot()
         pretty_status(state)
