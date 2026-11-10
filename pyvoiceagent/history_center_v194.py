@@ -137,6 +137,9 @@ def _history_auto_record(state):
     basename = key.split('/')[1][:-5]
     record_path = os.path.join(folder, basename+'.json')
     markdown_path = os.path.join(folder, basename+'.md')
+    # The shared atomic_json only ensures DATA_DIR, not history/YYYY-MM.
+    # Create this task's month folder before writing either archive file.
+    os.makedirs(folder, exist_ok=True)
     # No raw planner, pending callback token, credential or untrusted code.
     atomic_json(record_path, rec)
     _history_atomic_text(markdown_path, _history_md(rec))
