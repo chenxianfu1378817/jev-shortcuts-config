@@ -1,0 +1,27 @@
+name: PYVoiceAgent V1.9.0 offline release tests
+
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v190.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile released core
+        run: python -m py_compile pyvoiceagent/agent_core_1_9_0.py
+      - name: Run backwards-compatibility and UI data tests
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_release_v190.py' -v
