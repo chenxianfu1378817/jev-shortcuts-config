@@ -4579,7 +4579,7 @@ def _card_ui_show():
             label.font = ('HelveticaNeue-Bold' if weight else 'HelveticaNeue', size)
             label.alignment = align
             label.number_of_lines = lines
-            label.background_color = 'clear'
+            label.background_color = (0, 0, 0, 0)
             parent.add_subview(label)
             return label
 
@@ -4710,7 +4710,7 @@ def _card_ui_show():
                                 size=11, color=P['accent'], align=ui.ALIGN_RIGHT)
                 if action:
                     btn = ui.Button(frame=(0, 0, content_width, height))
-                    btn.background_color = 'clear'
+                    btn.background_color = (0, 0, 0, 0)
                     btn.action = action
                     block.add_subview(btn)
                 cursor += height + 11
@@ -4796,7 +4796,7 @@ def _card_ui_show():
                     self._label(card, name, 48, 14, label_width, 30,
                                 size=13, weight=(self.appearance['theme']==name))
                     b = ui.Button(frame=(0, 0, w, h))
-                    b.background_color = 'clear'
+                    b.background_color = (0, 0, 0, 0)
                     b.action = self._choose_theme(name)
                     card.add_subview(b)
                 cursor += 4*(61+8)+11
@@ -4841,7 +4841,7 @@ def _card_ui_show():
     width, height = ui.get_screen_size()
     root = AgentCardView()
     root.frame = (0, 0, width, height)
-    root.present('fullscreen', hide_title_bar=True)
+    root.present('full_screen', hide_title_bar=True)
     root.wait_modal()
     return root.result or ('exit', '')
 
@@ -4878,6 +4878,7 @@ def show_menu():
             except Exception:
                 return
 # --- End UI extension ---
+
 
 
 if __name__ == "__main__":
