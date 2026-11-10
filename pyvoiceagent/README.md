@@ -129,4 +129,4 @@
 - 原 Python 执行引擎不变；桥接限制固定动作白名单、随机 nonce 与严格内容转义，WebView 不可用时回退至 V2.0.2 原生 ui。
 - 原固定 `PYVoiceAgent.py` 启动入口与在线更新、手动语音、DeepSeek、BU、苹果日历/备忘录/提醒、八套主题及用户数据全部保留。
 - [V2.1.0 架构与 iPhone 验收说明](V210_本地WebView混合架构与验收.md)。
-- 13 项离线 Python 模拟测试、本地 JavaScript DOM 烟测通过；**不是 iPhone 真机验收**。CI 运行状态需以 GitHub Actions 为准。
+- **GitHub Actions 已通过**：V2.1.0 的 58 项 Python 模拟/旧功能回归与 JavaScript 页面烟测均成功；V2.0.1 的 14 项返回主页生命周期测试也通过。**不是 iPhone 真机验收**，WebView 与苹果系统接口仍需手机验证。
