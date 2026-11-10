@@ -1,0 +1,33 @@
+name: PYVoiceAgent v1.9.6 concise BU Calendar
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v196.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile current and previous engine
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_9_6.py
+          python -m py_compile pyvoiceagent/agent_core_1_9_5.py
+          python -m py_compile pyvoiceagent/bu_calendar_module.py
+      - name: New calendar text and callback regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p test_bu_calendar_v196.py -v
+      - name: Previous BU write regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p test_bu_calendar_v195.py -v
+      - name: BU quote regression
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v191.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v192.py -v
