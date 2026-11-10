@@ -207,46 +207,6 @@ def _card_dispatch(action, payload=''):
     return 'stay'
 
 
-    elif action == 'resume':
-        resume_old_task()
-    elif action == 'review':
-        state = _card_task_snapshot()
-        if state.get('pending') and state.get('status') in ('awaiting_callback', 'needs_review', 'writing'):
-            review_pending()
-        else:
-            review_deferred_queue()
-    elif action == 'add_shortcut':
-        add_shortcut_registration()
-    elif action == 'stepwise':
-        text = ask_text('输入复杂任务')
-        if text:
-            start_new(text, force_stepwise=True)
-            return 'handoff'
-    elif action == 'ai_test':
-        test_deepseek_connection()
-    elif action == 'hub_echo':
-        start_bridge_diagnostic('shortcut.hub_echo')
-    elif action == 'notes_test':
-        start_bridge_diagnostic('apple_notes.create')
-    elif action == 'calendar_test':
-        start_bridge_diagnostic('calendar.create')
-    elif action == 'clear_state':
-        state = _card_task_snapshot()
-        if state.get('pending') and state.get('status') in ('awaiting_callback','needs_review','writing'):
-            print('当前有待核验操作，禁止清理状态。')
-        elif prompt_alert('清除当前任务', '只清除任务状态，不删除笔记、录音、联系人或密钥，确定吗？'):
-            if os.path.isfile(STATE_PATH):
-                os.remove(STATE_PATH)
-    elif action == 'contact_import':
-        _cc_import_clipboard()
-        return 'handoff'
-    elif action == 'check_update_status':
-        print_update_status()
-    if waiting_for_shortcut():
-        return 'handoff'
-    return 'stay'
-
-
 def _card_ui_show():
     try:
         import ui
