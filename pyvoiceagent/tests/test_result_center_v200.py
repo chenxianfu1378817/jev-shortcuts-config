@@ -99,6 +99,25 @@ class ResultCenterV200Test(unittest.TestCase):
         self.assertEqual(got['items'],[])
         self.assertIn('伪造时间',got['body'])
 
+    def test_calendar_assist_keeps_final_analysis(self):
+        s=calendar_state('查询到1项日程:\n2026年11月12日 10:3012:00海控芯操作培训')
+        s['research_origin']='calendar.assist'
+        s['final']='培训当天没有发现其他日程冲突。'
+        got=self.ns['_result_card_model'](s)
+        self.assertEqual(got['title'],'日程分析结果')
+        self.assertIn('没有发现',got['body'])
+
+    def test_calendar_copy_is_readable(self):
+        got=self.ns['_result_card_model'](calendar_state(
+            '查询到1项日程:\n2026年11月12日 10:3012:00海控芯操作培训'))
+        self.assertEqual(got['copy'],'海控芯操作培训\n11月12日 · 10:30—12:00')
+
+    def test_failed_event_not_claimed_complete(self):
+        s={'status':'finished','final':'执行已结束','events':[{'tool':'reminder.create',
+           'status':'failed','result':'系统拒绝'}]}
+        got=self.ns['_result_card_model'](s)
+        self.assertEqual(got['title'],'需要检查任务')
+
     def test_general_text_is_not_duplicate(self):
         state={'status':'finished','final':'本地执行总结：文本输出',
                'events':[{'tool':'text.respond','status':'ok','result':'沥青行情详细信息\n金陵 6100'}]}
