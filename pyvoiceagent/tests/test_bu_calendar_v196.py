@@ -119,7 +119,9 @@ class CompactCalendarNoteTests(unittest.TestCase):
     def test_calendar_payload_does_not_embed_marker_in_notes(self):
         self.assertEqual(self.publish()['status'],'awaiting_callback')
         payload=self.payload()
-        self.assertTrue(payload['marker'].startswith('[PYVoiceAgent:'))
+        self.assertEqual(payload['marker'], '')  # Shortcut cannot append internal marker
+        entries=self.mod._bu_calendar_read_ledger()['entries']
+        self.assertTrue(next(iter(entries.values()))['marker'].startswith('[PYVoiceAgent:'))
         self.assertNotIn('[PYVoiceAgent:',payload['notes'])
         self.assertIn('BU2612',payload['notes'])
         self.assertNotIn('行情时间',payload['notes'])
