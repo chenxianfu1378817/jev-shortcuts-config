@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 194,
-  "version": "1.9.4",
-  "path": "agent_core_1_9_4.py",
-  "sha256": "5b2ac9d848a038e8ed27f0d156ac9cfd7af022027614e0591a42bc3f49b8ead9",
-  "size_bytes": 277990,
-  "summary": "统一结果中心：AI任务按ID自动归档独立JSON/Markdown，首页新增历史档案搜索、全文查看、复制与分享，兼容已有BU行情快照；区分系统读回、仅快捷指令回报、待核验等真实执行状态。保留V1.9.3语音、DeepSeek、提醒/日历、BU采集和固定入口。独立模块20项离线测试通过，整合CI及iPhone真机待核验。"
+  "sequence": 195,
+  "version": "1.9.5",
+  "path": "agent_core_1_9_5.py",
+  "sha256": "7fd77d0a4a106369918b85f46b70488723967304407b7143c2e4df3073b943ce",
+  "size_bytes": 277796,
+  "summary": "按用户要求：BU日盘/夜盘每执行一次即新建一次日历请求，不检查当日同场次重复，也不再被本机 PYAgentCalendar 验收标记阻止；直接调用已有快捷指令，iOS日历权限仍须有效。每次独立token、流水、回调状态，保留旧数据和普通AI安全检查。原固定入口和定时URL不变；21项静态兼容核对通过，新15项自动回归测试已提交，CI和真机写入待验收。"
 }
