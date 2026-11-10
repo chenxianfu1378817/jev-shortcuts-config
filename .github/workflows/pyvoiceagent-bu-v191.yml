@@ -21,9 +21,11 @@ jobs:
           python-version: '3.11'
       - name: Compile V1.9.2 core and BU module
         run: |
-          python -m py_compile pyvoiceagent/agent_core_1_9_2.py
+          python -m py_compile pyvoiceagent/agent_core_1_9_3.py
           python -m py_compile pyvoiceagent/bu_snapshot_module.py
       - name: BU initial mocked-feed regression
         run: python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v191.py -v
       - name: BU stale-quote safety regression
         run: python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v192.py -v
+      - name: BU Calendar safe handoff, callback and integration regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p test_bu_calendar_v193.py -v
