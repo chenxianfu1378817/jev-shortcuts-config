@@ -31,7 +31,7 @@
 
 - 本地 Python 3.13：`webui_v210.py` 桥接模块通过语法检查；13 项隔离模拟测试通过（拒绝外部 URL、错误 nonce、任务分派、结果回传、主题持久化、历史检索、复制、无 WebView 回退等）。
 - 本地 Node.js 22：HTML 两段 JavaScript 通过语法解析，模拟 DOM 导航与主题切换通过。
-- GitHub Actions 工作流 `pyvoiceagent-v210.yml` 已加入，但仓库之前多次收到 `startup_failure`；如果同样发生，**不能声称 CI 通过**。
+- GitHub Actions `pyvoiceagent-v210.yml` 在提交 `ddef8191` 上运行成功：正式引擎与模块编译通过、13 项 WebView 桥接测试、JavaScript DOM 烟测，以及 14 项结果、9 项手动语音、10 项高德跳转和 12 项 BU 日历旧功能测试全部通过。[查看运行记录](https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/runs/42927046985)。V2.0.1 返回主页生命周期 14 项测试也独立通过。[查看记录](https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/runs/42927046921)。
 - 当前环境无法执行 iPhone Pythonista/WebView 真机测试，不能保证 iOS 27 下的实际录音、键盘、安全区域、系统回调、内存占用与生命周期已经验收。
 
 ## 手机上如何升级与验收
