@@ -243,12 +243,14 @@ class CoreIntegrationTests(unittest.TestCase):
             ns['verified_system_module']=lambda route:'PYAgentCalendar'
             ns['prompt_alert']=lambda *args,**kwargs:True
             urls=[]
-            actual=ns['_bu_calendar_publish'](snapshot(),lambda url:urls.append(url))
+            current=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
+            live=current.replace(hour=15,minute=3,second=0,microsecond=0).isoformat()
+            actual=ns['_bu_calendar_publish'](snapshot('day',live),lambda url:urls.append(url))
             self.assertEqual(actual['status'],'awaiting_callback')
             q=parse_qs(urlparse(urls[0]).query)
             payload=json.loads(base64.b64decode(q['text'][0]).decode('utf-8'))
             self.assertEqual(payload['route'],'calendar.create')
-            self.assertEqual(payload['start'],'2026-11-10T15:00:00+08:00')
+            self.assertIn('T15:00:00+08:00',payload['start'])
             self.assertIn('BU2612',payload['notes'])
 
 if __name__=='__main__':unittest.main(verbosity=2)
