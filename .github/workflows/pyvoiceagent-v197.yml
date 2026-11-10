@@ -1,0 +1,32 @@
+name: PYVoiceAgent v1.9.7 voice-history-calendar regression
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v197.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile current core and helper modules
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_9_7.py
+          python -m py_compile pyvoiceagent/bu_calendar_module.py
+          python -m py_compile pyvoiceagent/history_center_v194.py
+      - name: Current voice and history regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p test_voice_history_v197.py -v
+      - name: Current concise calendar notes regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p test_bu_calendar_v196.py -v
+      - name: Older BU and callback regressions
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p test_bu_calendar_v195.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v191.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v192.py -v
