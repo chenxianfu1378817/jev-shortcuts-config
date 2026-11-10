@@ -1,0 +1,29 @@
+name: PYVoiceAgent V2.0.2 native dashboard regression
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v202.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile full single-file engine
+        run: python -m py_compile pyvoiceagent/agent_core_2_0_2.py
+      - name: Simulated iPhone screen sizes and dashboard navigation
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_dashboard_v202.py' -v
+      - name: Existing lifecycle result voice map and BU regressions
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_lifecycle_v201.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_result_center_v200.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_manual_voice_v198.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_amap_native_v199.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v196.py' -v
