@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""BU snapshot module for PYVoiceAgent V1.9.1.
+"""BU snapshot module for PYVoiceAgent V1.9.2.
 
 One-shot Sina quotes after night/day sessions. No Playwright, no external libs.
 This module is embedded in the GitHub released core; no new iPhone file needed.
@@ -77,6 +77,24 @@ def _bu_accept_quote_clock(clock, session):
     return False
 
 
+def _bu_clock_future(clock, captured, margin_seconds=120):
+    """Sina NF often omits quote DATE: future wall-clock is suspicious.
+
+    This is deliberately only a *warning* heuristic, not proof the quote is old.
+    For example, 15:00 at a 12:51 Beijing-time test run cannot be today's
+    15:00 trade, but could be a previous session's quote.
+    """
+    try:
+        h, m, sec = int(clock[:2]), int(clock[2:4]), int(clock[4:6])
+        if not 0 <= h < 24 or not 0 <= m < 60 or not 0 <= sec < 60:
+            return True
+        quote_seconds = h * 3600 + m * 60 + sec
+        captured_seconds = captured.hour * 3600 + captured.minute * 60 + captured.second
+        return quote_seconds > captured_seconds + margin_seconds
+    except (TypeError, ValueError, IndexError):
+        return True
+
+
 def _bu_fetch_quotes(codes, fetcher=None):
     from urllib.request import Request, urlopen
     all_rows = {}
@@ -89,7 +107,7 @@ def _bu_fetch_quotes(codes, fetcher=None):
         else:
             request = Request(url, headers={
                 'Referer': 'https://vip.stock.finance.sina.com.cn/',
-                'User-Agent': 'Mozilla/5.0 (iPhone; PYVoiceAgent 1.9.1)',
+                'User-Agent': 'Mozilla/5.0 (iPhone; PYVoiceAgent 1.9.2)',
                 'Accept': '*/*', 'Cache-Control': 'no-cache',
             })
             with urlopen(request, timeout=12) as response:
@@ -118,6 +136,7 @@ def _bu_build_snapshot(session, now=None, fetcher=None):
     codes = _bu_contract_codes(current)
     raw = _bu_fetch_quotes(codes, fetcher)
     rows = []
+    suspected = []
     for symbol in codes:
         quote = raw.get(symbol)
         if not quote:
@@ -129,10 +148,20 @@ def _bu_build_snapshot(session, now=None, fetcher=None):
         quote['price_kind'] = '时点末价参考，不等于交易所官方收盘或结算价'
         quote['verification'] = ('仅核对时分秒；新浪接口不提供完整交易日，'
                                  '节假日及无成交合约需人工复核')
+        # V1.9.2: in an ad-hoc TEST, never mark a quotation whose wall-clock
+        # is later than the collection time as a current effective quote.
+        # Keep the raw record separately rather than erase evidence.
+        if session == 'test' and _bu_clock_future(clock, current):
+            quote['quality'] = 'suspect_previous_session_or_time_unknown'
+            quote['quality_reason'] = '报价时刻晚于本次采集时间，可能沿用上一交易时段报价'
+            suspected.append(quote)
+            continue
+        quote['quality'] = 'clock_only_unverified_date'
         rows.append(quote)
-    if not rows:
-        raise RuntimeError('没有取得符合本时段的 BU 行情；未保存任何收盘数字')
+    if not rows and not suspected:
+        raise RuntimeError('没有取得有效 BU 行情字段；未保存任何收盘数字')
     rows.sort(key=lambda item: item['contract'])
+    suspected.sort(key=lambda item: item['contract'])
     return {
         'version': 1, 'exchange': 'SHFE', 'product': 'BU',
         'session': session, 'session_calendar_date_bj': current.date().isoformat(),
@@ -140,6 +169,9 @@ def _bu_build_snapshot(session, now=None, fetcher=None):
         'data_source': 'https://hq.sinajs.cn/',
         'requested_candidate_count': len(codes),
         'valid_quote_count': len(rows),
+        'suspect_quote_count': len(suspected),
+        'received_quote_count': len(rows) + len(suspected),
+        'suspect_records': suspected,
         'kind': '收盘时点快照' if session != 'test' else '实时测试快照',
         'disclaimer': ('行情源未提供完整交易日日期；只能作为时点参考。'
                        '不能保证所有上市合约均有有效报价；不等于官方结算价。'),
@@ -152,11 +184,17 @@ def _bu_report(snapshot):
     lines = ['BU 沥青期货{}行情快照'.format(label),
              '采集日期（北京时间）：' + snapshot['captured_at_bj'],
              '来源：新浪财经（非官方结算数据）',
-             '有效报价：{} 条'.format(snapshot['valid_quote_count']), '']
+             '时刻未见异常报价：{} 条（日期仍未核验）'.format(snapshot['valid_quote_count']),
+             '时刻可疑报价：{} 条'.format(snapshot.get('suspect_quote_count', 0)), '']
     for row in snapshot['records']:
         lines.append('{}  {:g} 元/吨  行情时间 {}  成交量 {}'.format(
             row['contract'], row['last_price'], row['quote_clock'],
             row['volume'] if row['volume'] is not None else '未知'))
+    if snapshot.get('suspect_records'):
+        lines += ['', '以下报价不计入本次有效参考（保留供人工核对）：']
+        for row in snapshot['suspect_records']:
+            lines.append('{}  {:g} 元/吨  行情时间 {}  [时刻可疑]'.format(
+                row['contract'], row['last_price'], row['quote_clock']))
     lines += ['', snapshot['disclaimer']]
     return '\n'.join(lines)
 
