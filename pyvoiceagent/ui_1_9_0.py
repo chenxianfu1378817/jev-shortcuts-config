@@ -397,3 +397,184 @@ def _card_ui_show():
             scroll.flex = 'WH'
             self.add_subview(scroll)
             cursor = 2
+
+            def desc_block(title, desc, height=96, action=None, badge=''):
+                nonlocal cursor
+                block = self._panel(scroll, 0, cursor, content_width, height)
+                self._label(block, title, 17, 13, content_width-34, 29,
+                            size=17, weight=True)
+                self._label(block, desc, 17, 45, content_width-34,
+                            max(29, height-51), size=12, color=P['muted'], lines=2)
+                if badge:
+                    self._label(block, badge, content_width-78, 14, 60, 24,
+                                size=11, color=P['accent'], align=ui.ALIGN_RIGHT)
+                if action:
+                    btn = ui.Button(frame=(0, 0, content_width, height))
+                    btn.background_color = 'clear'
+                    btn.action = action
+                    block.add_subview(btn)
+                cursor += height + 11
+
+            if self.page == 'home':
+                state = _card_task_snapshot()
+                status = str(state.get('status', '未开始'))
+                block = self._panel(scroll, 0, cursor, content_width, 102, alternate=True)
+                self._label(block, '一句话，执行多个任务', 16, 12,
+                            content_width-32, 32, size=19, weight=True)
+                self._label(block, '语音识别 · AI 规划 · 逐步执行 · 状态核验',
+                            16, 50, content_width-32, 23, size=12, color=P['muted'])
+                self._label(block, '当前任务：' + status[:18], 16, 76,
+                            content_width-32, 20, size=11, color=P['accent'])
+                cursor += 116
+                for key, title, desc, badge in _card_nav_items('home'):
+                    destination = {'input':'input', 'status':'history',
+                                   'settings_page':'settings'}.get(key)
+                    desc_block(title, desc, action=(self._navigate(destination) if destination
+                               else self._link(key)), badge=badge)
+            elif self.page == 'input':
+                desc_block('输入任务', '例如：读取剪贴板里的招标公告，提取截止日期并创建提醒', height=96)
+                block = self._panel(scroll, 0, cursor, content_width, 218)
+                view = ui.TextView(frame=(14, 12, content_width-28, 142))
+                view.text = ''
+                view.font = ('HelveticaNeue', 16)
+                view.background_color = P['raised']
+                view.text_color = P['text']
+                view.corner_radius = 12
+                block.add_subview(view)
+                self.input_view = view
+                self._button(block, '交给 AI 处理', 14, 168, content_width-28,
+                             40, self._submit_text, emphasis=True)
+                cursor += 232
+                desc_block('其他文字输入', '可直接读取剪贴板，或把剪贴板里的联系人资料导入通讯录', height=85)
+                self._button(scroll, '分析剪贴板', 0, cursor, content_width*.48, 45,
+                             self._link('clipboard'))
+                self._button(scroll, '导入联系人', content_width*.52, cursor,
+                             content_width*.48, 45, self._link('contact_import'))
+                cursor += 59
+            elif self.page == 'history':
+                state = _card_task_snapshot()
+                title = str(state.get('goal', '尚无记录'))
+                desc_block('任务状态：'+str(state.get('status', '未开始')),
+                           title[:120], height=106)
+                for event in list(state.get('events') or [])[-12:]:
+                    if isinstance(event, dict):
+                        desc_block(str(event.get('tool', '工具')) + ' · ' +
+                                   str(event.get('status', '未知')),
+                                   str(event.get('result', event.get('message', '')))[:140], height=82)
+                self._button(scroll, '继续暂停任务', 0, cursor, content_width*.48, 46,
+                             self._link('resume'), emphasis=True)
+                self._button(scroll, '核验待处理项', content_width*.52, cursor,
+                             content_width*.48, 46, self._link('review'))
+                cursor += 60
+                self._button(scroll, '详细执行报告', 0, cursor, content_width, 46,
+                             self._link('status'))
+                cursor += 58
+            elif self.page == 'settings':
+                for key, title, desc, badge in _card_nav_items('settings'):
+                    destination = {'appearance_page': 'appearance',
+                                   'tools_page': 'tools',
+                                   'advanced_page': 'advanced'}.get(key)
+                    desc_block(title, desc,
+                               action=(self._navigate(destination) if destination
+                                       else self._link(key)))
+            elif self.page == 'appearance':
+                desc_block('统一主题', '修改后首页、子页面、输入框和卡片即时同步换色', height=84)
+                for i, (name, color) in enumerate(CARD_THEMES.items()):
+                    row = i//2
+                    col = i%2
+                    h = 61
+                    yy = cursor+row*(h+8)
+                    x = col*(content_width*.5)
+                    pad = 4
+                    w = content_width*.5-8
+                    card = self._panel(scroll, x+pad, yy, w, h)
+                    circle = ui.View(frame=(12, 15, 28, 28))
+                    circle.corner_radius = 14
+                    circle.background_color = color
+                    card.add_subview(circle)
+                    label_width = w-55
+                    self._label(card, name, 48, 14, label_width, 30,
+                                size=13, weight=(self.appearance['theme']==name))
+                    b = ui.Button(frame=(0, 0, w, h))
+                    b.background_color = 'clear'
+                    b.action = self._choose_theme(name)
+                    card.add_subview(b)
+                cursor += 4*(61+8)+11
+                desc_block('显示模式', '选择系统同步或手动锁定深浅色', height=78)
+                for i, mode in enumerate(DISPLAY_MODES):
+                    w = (content_width-12)/3
+                    self._button(scroll, mode, i*(w+6), cursor, w, 43,
+                                 self._choose_mode(mode),
+                                 emphasis=(self.appearance['mode']==mode), size=11)
+                cursor += 59
+                self._button(scroll, '自定义主题色 #RRGGBB', 0, cursor,
+                             content_width, 44, self._custom_color)
+                cursor += 55
+                desc_block('当前效果', '颜色选择已保存在本地，程序在线更新不会覆盖。', height=80)
+            elif self.page == 'tools':
+                block = self._panel(scroll, 0, cursor, content_width, 99)
+                field = ui.TextField(frame=(14, 12, content_width-112, 41))
+                field.placeholder = '输入工具名称 / 功能关键词'
+                field.background_color = P['raised']
+                field.text_color = P['text']
+                field.font = ('HelveticaNeue', 13)
+                field.corner_radius = 10
+                field.text = self.search_text
+                field.action = self._search_changed
+                block.add_subview(field)
+                self.search_field = field
+                self._button(block, '搜索', content_width-91, 12, 77, 41,
+                             self._search_apply, emphasis=True)
+                self._label(block, '已启用及已登记的工具（仅白名单允许调用）',
+                            14, 64, content_width-25, 24, size=11, color=P['muted'])
+                cursor += 111
+                for key, desc in _card_tool_rows(self.search_text):
+                    desc_block(key, desc[:130], height=76)
+                self._button(scroll, '登记新快捷指令', 0, cursor,
+                             content_width, 44, self._link('add_shortcut'), emphasis=True)
+                cursor += 54
+            elif self.page == 'advanced':
+                for key, title, desc, badge in _card_nav_items('advanced'):
+                    desc_block(title, desc, height=87, action=self._link(key))
+            scroll.content_size = (content_width, max(viewport+2, cursor+16))
+
+    width, height = ui.get_screen_size()
+    root = AgentCardView()
+    root.frame = (0, 0, width, height)
+    root.present('fullscreen', hide_title_bar=True)
+    root.wait_modal()
+    return root.result or ('exit', '')
+
+
+# Keep the original five-entry menu for environments where the iOS ui module
+# cannot initialize. This never changes callback or fixed-entry semantics.
+_V185_SHOW_MENU = show_menu
+
+
+def show_menu():
+    try:
+        import ui
+    except ImportError:
+        return _V185_SHOW_MENU()
+    while True:
+        try:
+            result = _card_ui_show()
+            if result is None:
+                return _V185_SHOW_MENU()
+            action, payload = result
+            if action == 'exit':
+                return
+            outcome = _card_dispatch(action, payload)
+            if outcome == 'handoff' or waiting_for_shortcut():
+                return
+        except KeyboardInterrupt:
+            print('用户取消。')
+        except Exception as error:
+            print('界面操作失败：{}: {}'.format(type(error).__name__, error))
+            traceback.print_exc()
+            try:
+                import dialogs
+                dialogs.alert('操作未完成', str(error)[:250], '确定', hide_cancel_button=True)
+            except Exception:
+                return
+# --- End UI extension ---
