@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""PYVoiceAgent V1.9.3 - calendar archiving of BU market snapshots.
+"""PYVoiceAgent V1.9.5 - per-trigger calendar archiving of BU market snapshots.
 
 Embedded in the monolithic release engine, no extra file installed on iPhone.
-It deliberately reuses the enrolled PYAgentCalendar Shortcuts bridge.
-A separate idempotency ledger prevents overwriting normal voice task state.
+It directly requests the existing PYAgentCalendar Shortcut for every explicit run.
+A separate per-request journal records attempts without blocking repeated runs or affecting voice state.
 """
 
 BU_CALENDAR_LEDGER_PATH = os.path.join(DATA_DIR, 'bu_futures', 'calendar_ledger.json')
@@ -22,14 +22,14 @@ def _bu_calendar_key(snapshot):
 
 
 def _bu_calendar_read_ledger():
-    # Refuse unreadable or malformed journals: otherwise retries can create duplicate events.
+    # Refuse unreadable journals rather than discard previous execution records.
     import json
     if os.path.exists(BU_CALENDAR_LEDGER_PATH):
         try:
             with open(BU_CALENDAR_LEDGER_PATH, 'r', encoding='utf-8') as stream:
                 data = json.load(stream)
         except (OSError, UnicodeDecodeError, ValueError) as error:
-            raise ValueError('BU 日历同步日志无法读取，已停止创建以防重复：' + str(error)[:120]) from error
+            raise ValueError('BU 日历同步日志无法读取，已停止写入以保护记录：' + str(error)[:120]) from error
     else:
         data = {}
     if not isinstance(data, dict):
@@ -81,7 +81,7 @@ def _bu_calendar_event_fields(snapshot):
 def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
     """Attempt once, record intent durably before handing off to iOS.
 
-    The actual Apple calendar write is performed by the enrolled Shortcut,
+    The actual Apple calendar write is performed by the existing Shortcut,
     never by Pythonista's private calendar store. Callback is a *report*,
     not an independent EventKit readback.
     """
@@ -89,21 +89,17 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
         return {'status': 'skipped', 'message': '测试快照不会自动创建苹果日程'}
     if snapshot.get('session') not in ('day', 'night', 'test'):
         return {'status': 'skipped', 'message': '未知时段，未写日程'}
-    if verified_system_module('calendar.create') != BU_CALENDAR_SHORTCUT:
-        return {'status': 'not_configured',
-                'message': 'BU报价已经本地归档；苹果日历模块 PYAgentCalendar 尚未完成首次验收，未发起写入'}
+    # User-requested policy: run every time, including the same session/day.
+    # Local enrollment flags and previous session entries do not block creation.
+    # iOS Shortcut permissions and the actual calendar writer still apply.
     fields = _bu_calendar_event_fields(snapshot)
     key = fields['key']
     ledger = _bu_calendar_read_ledger()
-    if key in ledger['entries']:
-        prev = ledger['entries'][key]
-        status = prev.get('status', 'unknown') if isinstance(prev, dict) else 'invalid'
-        return {'status': 'duplicate',
-                'message': '本日此时段已有日历操作记录（{}）；为防重不自动创建第二条，请先在苹果日历核验'.format(status)}
     if require_confirmation and not prompt_alert('创建测试日历',
             '将创建一条真实的苹果日历测试事件（可手动删除），是否继续？'):
         return {'status': 'cancelled', 'message': '已取消测试日历写入'}
-    state = {'id': 'bu_' + key.replace('-', '').replace(':', '_'), 'steps': 0}
+    attempt_id = uuid.uuid4().hex
+    state = {'id': 'bu_' + attempt_id[:12], 'steps': 0}
     choice = {'tool': 'calendar.create', 'reason': 'BU行情归档', 'title': fields['title'],
               'text': '', 'notes': fields['notes'], 'datetime': fields['start'],
               'end_datetime': fields['end'], 'shortcut_id': ''}
@@ -111,9 +107,11 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
     marker = '[PYVoiceAgent:{}:{}]'.format(state['id'], state['steps'])
     choice['notes'] = fields['notes'] + '\n\n' + marker
     payload, encoded, token = bridge_payload(state, choice, 'calendar.create', BU_CALENDAR_SHORTCUT)
-    # Persist the exact one-time request BEFORE leaving Pythonista.
-    ledger['entries'][key] = {
-        'key': key, 'status': 'awaiting_callback', 'token': token,
+    # Log every explicit run under a unique ID. Keep old dated entries intact.
+    journal_key = 'attempt_' + attempt_id
+    ledger['entries'][journal_key] = {
+        'key': key, 'attempt_id': attempt_id,
+        'status': 'awaiting_callback', 'token': token,
         'created': datetime.now().timestamp(), 'title': fields['title'],
         'start': fields['start'], 'end': fields['end'], 'marker': payload['marker'],
         'snapshot_captured_at_bj': snapshot['captured_at_bj'],
@@ -130,13 +128,13 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
         launcher(url)
     except Exception as exc:
         ledger = _bu_calendar_read_ledger()
-        entry = ledger['entries'].get(key, {})
+        entry = ledger['entries'].get(journal_key, {})
         if entry.get('token') == token:
             entry['status'] = 'needs_review'
             entry['error'] = '快捷指令跳转异常，可能已经启动：' + str(exc)[:150]
             _bu_calendar_write_ledger(ledger)
         return {'status': 'needs_review', 'message': '系统跳转不确定；请检查苹果日历后再处理：' + str(exc)[:130]}
-    return {'status': 'awaiting_callback', 'message': '已将 BU 报价交给 PYAgentCalendar，等待日历快捷指令回传（不等于写入已核验）'}
+    return {'status': 'awaiting_callback', 'message': '每次执行均已独立请求 PYAgentCalendar 新建日程，等待回传（实际写入未独立核验）'}
 
 
 def _bu_calendar_handle_callback(token, status):
