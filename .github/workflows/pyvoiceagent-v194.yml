@@ -1,0 +1,34 @@
+name: PYVoiceAgent V1.9.4 history release validation
+
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v194.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile old and new cores with history extension
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_9_3.py
+          python -m py_compile pyvoiceagent/agent_core_1_9_4.py
+          python -m py_compile pyvoiceagent/history_center_v194.py
+      - name: Core integration regression tests
+        run: python -m unittest discover -s pyvoiceagent/tests -p test_history_core_v194.py -v
+      - name: Preserve BU quote parser regression
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v191.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_bu_snap_v192.py -v
+      - name: BU Calendar callback regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p test_bu_calendar_v193.py -v
