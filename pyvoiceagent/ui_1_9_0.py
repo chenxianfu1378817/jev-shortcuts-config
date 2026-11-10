@@ -538,9 +538,5 @@ def show_menu():
         except Exception as error:
             print('界面操作失败：{}: {}'.format(type(error).__name__, error))
             traceback.print_exc()
-            try:
-                import dialogs
-                dialogs.alert('操作未完成', str(error)[:250], '确定', hide_cancel_button=True)
-            except Exception:
-                return
+            return _V185_SHOW_MENU()
 # --- End UI extension ---
