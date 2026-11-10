@@ -4561,7 +4561,16 @@ def _bu_calendar_key(snapshot):
 
 
 def _bu_calendar_read_ledger():
-    data = read_json(BU_CALENDAR_LEDGER_PATH, {})
+    # Refuse unreadable or malformed journals: otherwise retries can create duplicate events.
+    import json
+    if os.path.exists(BU_CALENDAR_LEDGER_PATH):
+        try:
+            with open(BU_CALENDAR_LEDGER_PATH, 'r', encoding='utf-8') as stream:
+                data = json.load(stream)
+        except (OSError, UnicodeDecodeError, ValueError) as error:
+            raise ValueError('BU 日历同步日志无法读取，已停止创建以防重复：' + str(error)[:120]) from error
+    else:
+        data = {}
     if not isinstance(data, dict):
         raise ValueError('BU 日历同步状态格式异常，拒绝覆盖')
     entries = data.get('entries', {})
@@ -4723,7 +4732,6 @@ def _bu_capture_and_calendar(mode):
         # The quote JSON/TXT already exists and must never be rolled back.
         print('【BU日历归档】写入未确认；完整行情文件已保存。错误：' + str(err)[:260])
     return snapshot
-
 
 def main():
     global VOICE_SESSION_ACTIVE
