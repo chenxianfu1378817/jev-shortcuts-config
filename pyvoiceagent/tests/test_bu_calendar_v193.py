@@ -170,6 +170,13 @@ class BUCalendarTests(unittest.TestCase):
         with open(path,'w') as f:f.write('[1,2,3]')
         with self.assertRaises(ValueError):self.publish(snapshot())
 
+    def test_malformed_json_ledger_refuses_duplicate(self):
+        path=self.funcs['BU_CALENDAR_LEDGER_PATH']
+        os.makedirs(os.path.dirname(path),exist_ok=True)
+        with open(path,'w') as f:f.write('{invalid json')
+        with self.assertRaises(ValueError):self.publish(snapshot())
+        self.assertFalse(self.urls)
+
     def test_note_too_long_rejected(self):
         self.funcs['_bu_report']=lambda s:'a'*3450
         with self.assertRaises(ValueError):self.publish(snapshot())
