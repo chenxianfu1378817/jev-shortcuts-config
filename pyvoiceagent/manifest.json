@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 198,
-  "version": "1.9.8",
-  "path": "agent_core_1_9_8.py",
-  "sha256": "28022f4912a931cddf574b841732e291dd1285e4b38ced6d5cc46c4948dd78a7",
-  "size_bytes": 279944,
-  "summary": "停止所有语音入口的自动收音：首页、固定快捷指令voice、传统菜单均手动开始并点击“完成”结束，无静音自动终止及26秒限制；AI追问必须先选择语音/文字/稍后，不会自行开麦。保留录音识别后执行、DeepSeek、BU日历、历史归档、回调和GitHub更新。4项独立隔离模拟测试通过、9项GitHub测试用例已提交、真机待验收。"
+  "sequence": 199,
+  "version": "1.9.9",
+  "path": "agent_core_1_9_9.py",
+  "sha256": "f430c206ffc27bab9a405d703a27aadff99eb591e4d32abe97892ffff3d3085d",
+  "size_bytes": 281231,
+  "summary": "修复高德地图导航语音指令打开网页的问题：改用官方iosamap://poi原生App Scheme直接打开高德地图地点搜索，不再走HTTPS及PYAgentAppRouter。新增本地识别“高德导航去/高德地图驾车导航到+地点”，减少DeepSeek调用。仅有地点名称时需要在高德选择正确POI后点击导航，不冒充已开始驾车路线。保留V1.9.8手动录音、BU行情及日历、AI、历史档案和固定入口。6项本地路由模拟测试通过，10项核心回归用例已提交，CI及iPhone真机原生唤起待验收。"
 }
