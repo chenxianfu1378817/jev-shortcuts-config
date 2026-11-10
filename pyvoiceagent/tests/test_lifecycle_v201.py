@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """V2.0.1 lifecycle regression; CPython mocks are NOT iPhone real-device tests."""
 import ast
+import copy
 import hmac
 import sys
 import unittest
@@ -22,7 +23,7 @@ def setup(entry=(), current=None, outcome='handoff'):
     original = Mock(return_value=outcome)
     run = Mock()
     home = Mock()
-    env = dict(get_state=lambda: state, hmac=hmac,
+    env = dict(get_state=lambda: copy.deepcopy(state), hmac=hmac,
                sys=type('FakeSys', (), {'argv': ['PYVoiceAgent.py', *entry]})(),
                _V200_DISPATCH=original, _V200_MAIN=run, show_menu=home)
     exec(SNIPPET, env)
