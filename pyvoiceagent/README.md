@@ -1,37 +1,37 @@
-# PYVoiceAgent V1.4｜以后无需每次下载和改参数
+# PYVoiceAgent — Pythonista iPhone AI 语音智能体
 
-## 这版的核心变化
+**当前正式发布版本：以 [manifest.json](manifest.json) 为准。**
+固定入口依旧是 iCloud Drive / Pythonista 3 / **PYVoiceAgent.py**，不要更名。
+启动器从 GitHub 自动检查并校验 agent_core_*.py；后续开发原则上直接在 GitHub 发布，无须反复下载 ZIP。
 
-- **固定入口不变**：iPhone 的 Pythonista 3 `iCloud/PYVoiceAgent.py` 始终是桌面语音按钮和 `PYAgentHub` 的唯一回调入口。以后只需要维护远程版本，不要求你重新下载脚本。
-- **自动更新**：每隔约 6 小时（仅当你主动打开或运行程序时）检查 GitHub 发布仓库；有比 V1.4 更新的版本才下载并执行。不是锁屏后台持续检查。
-- **自动检验**：HTTPS 下载 + SHA-256、文件长度、语法检查。校验失败继续使用已有版本；不会清空本地任务。
-- **回退**：新版本运行异常会标记为不可继续使用，下次运行自动使用上一版或内置 V1.4。为防止重复执行手机写入，异常当次不自动重跑。
-- **数据与密钥不迁移**：DeepSeek API Key 仍在 Pythonista Keychain；历史任务、注册工具、提醒等存放在原来的 `~/Documents/PYVoiceAgent_Data`。
-- **动态工具目录**：模型看到当前已授权的本地工具信息，无须每一个任务重复填写参数。全新 iOS 受限系统动作仍需要先配置对应的 App Intents/快捷指令动作，无法绕过 iOS 权限。
+## V1.9.0 — 按统一 Python 开发规范改造的界面
 
-## 只需这最后一次替换
+- 以 **V1.8.5** 为基线升级，不删除旧工具：自动语音录制、静音收尾、语音追问、DeepSeek Flash、任务规划、提醒事项、通讯录、日历、备忘录、网页摘要、地图及已登记的快捷指令。
+- 新增 Pythonista 原生 **统一卡片界面**：首页、文字输入、任务结果、工具搜索、设置、系统模块和高级故障排查一致设计；程序仍提供原文字菜单作为失败保护。
+- 「外观与主题」：活力橙、科技蓝、翡翠绿、典雅紫、中国红、玫瑰粉、深海青、石墨黑；支持浅色、深色、跟随系统及自定义 #RRGGBB。颜色统一由主题管理，变更立即生效。
+- 主题设定独立存放在 ~/Documents/PYVoiceAgent_Data/appearance.json，更新不会覆盖。默认活力橙，显示模式跟随系统。
+- 原 PYVoiceAgent.py、PYAgentHub 和所有回调 URL 继续使用同一个地址；保留系统模块授权、安全核验、待处理任务、历史/用户数据及 Keychain。
+- 更新文件和工具清单继续通过 pyvoiceagent/manifest.json 分发。提供独立的界面源码 ui_1_9_0.py 便于以后维护；正式更新包是打包好的 agent_core_1_9_0.py，手机无须安装额外 Python 模块。
 
-1. 把旧 `PYVoiceAgent.py` 备份到手机其他目录（建议文件名 `PYVoiceAgent_V13_Backup.py`）。
-2. 从本安装包复制**新版同名** `PYVoiceAgent.py` 到 `iCloud Drive/Pythonista 3/` 根目录并覆盖旧版。
-3. 打开 Pythonista 运行，同一菜单下会显示 `V1.4`。第 `16` 项是查看和立即检查更新。
-4. **无需修改**桌面按钮、现有 `PYAgentHub` 的 URL、`PYBridgeEcho`、DeepSeek Key、已登记的工具信息。
-5. 后续在 ChatGPT 里让我更新这个程序时，我会更新下方发布仓库版本及 manifest；你只需下一次打开桌面语音按钮，程序就会自动拉取更新，无需手动添加文件。
+## 手机更新流程
 
-## 更新来源
+1. 直接使用你已有的桌面语音入口，或在 Pythonista 打开固定脚本 PYVoiceAgent.py。
+2. 如果程序自动更新间隔未到，可在首页点 **「检查在线更新」**。检查通过后退出重新运行，让新版引擎生效。
+3. 首次进入新首页，通过 **「设置与工具 → 外观与主题」** 选择颜色/显示模式。
+4. 如果提示有待核验的跨 App 操作，先在苹果 App 中核对后再处理，不能为了更新直接删除任务状态。
 
-- 发布仓库：`https://github.com/chenxianfu1378817/jev-shortcuts-config/tree/main/pyvoiceagent`
-- 自动更新清单：`https://raw.githubusercontent.com/chenxianfu1378817/jev-shortcuts-config/main/pyvoiceagent/manifest.json`
-- 发布仓库里**只放公开的程序代码和哈希清单**，不存 API 密钥、私人录音、笔记内容或真实任务数据。
+## 安全与限制
 
-## 首版能力仍保留
+- GitHub 仅发布程序、清单、测试和说明；**不上传 DeepSeek API Key、录音、联系人、真实任务或个人配置**。
+- 下载后会检查版本、长度、SHA-256 与编译语法；本地保留历史引擎，失败时不自动重复系统写入。
+- SHA 与程序清单同仓库，并非独立签名；保护依赖 GitHub 仓库权限和更新源安全。
+- iOS 部分第三方功能仍需首次导入快捷指令或用户授权，不能以 Python 自动绕过系统限制。
+- **真机需验收**：未在你的 iPhone 上实测新界面；离线代码/模拟测试不等于真机测试。
 
-语音输入、听写纠错、DeepSeek Flash 逐步规划、剪贴板读取、Pythonista 本地笔记、提醒事项创建和核验、苹果备忘录和日历的 `PYAgentHub` 入口、快捷指令工具白名单、失败暂停、人工核验、防重复与任务记录。
+## 开发与回归
 
-### 限制（请注意）
+- 主题配置、八主题、三模式、工具筛选、页面布局和故障降级离线测试；
+- [V1.9.0 回归测试](tests/test_release_v190.py) 和 [CI 工作流](https://github.com/chenxianfu1378817/jev-shortcuts-config/actions/workflows/pyvoiceagent-v190.yml)；
+- [独立界面源码](ui_1_9_0.py)、[正式单文件引擎](agent_core_1_9_0.py)。
 
-1. `PYAgentHub` 第 13～15 项测试仍要在 iPhone 上真机验证；此版不声称未经验证的手机写入已经成功。
-2. **更新源要可信**。SHA-256 对比由同一个公开 GitHub 仓库提供的清单，不构成独立的加密签名。仓库被恶意篡改时，这种方式不能保证安全。建议只允许仓库所有者写入，不公开凭证。新版执行前不会再次弹窗确认代码更新；如果不接受自动更新的安全权衡，可在启动器中关闭自动更新逻辑。
-3. 如果 GitHub 在当前网络不可达，内置版本会继续工作，但**收不到**更新。切换到可以连接 GitHub 的网络后再运行第 16 项检查。
-4. 新增 Pythonista 本地能力/联网接口可通过代码更新自动扩展；新增 iOS 不提供的系统动作或需要新权限的第三方 App 仍需一次性配置，AI 不会擅自操作。
-5. 处于跨 App 待核验操作时暂停更新，不允许切换版本掩盖执行结果。
-6. 如果新版本在运行中异常，当次不自动回放以避免重复创建提醒、备忘或日历。
+> 提醒：自动更新只会在主动打开/运行程序时执行；不保证锁屏后台持续检查。
