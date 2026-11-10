@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 201,
-  "version": "2.0.1",
-  "path": "agent_core_2_0_1.py",
-  "sha256": "198804f9b83ba750a91a16e1118bd8482a4fa423ac5ab71527e44325e7c399fa",
-  "size_bytes": 297579,
-  "summary": "修复语音、文字及剪贴板任务执行后回到 Pythonista 控制台；结果卡片关闭后恢复助手首页。固定入口与匹配的快捷指令回调也恢复首页；等待新回调及原生地图/App 跳转不抢焦点。保留全部旧功能、本地数据与八主题。GitHub Actions 目前 startup_failure，iPhone 真机待验收。"
+  "sequence": 202,
+  "version": "2.0.2",
+  "path": "agent_core_2_0_2.py",
+  "sha256": "40c6a9512b28a6316f0f6cb2964fa522418c4f1316a024fb9a634537872c6ccd",
+  "size_bytes": 302530,
+  "summary": "紧凑型原生卡片首页：状态中文化、主题色语音主入口、四张双列常用卡片、检查更新与设置辅助区、固定底部「首页/结果/档案/设置」导航及适配滚动。保留 V2.0.1 返回首页修复、原手动语音、DeepSeek、BU、日历、历史和全部本地配置。已新增模拟检查脚本，但 GitHub Actions startup_failure 未执行，iPhone 真机待验收。"
 }
