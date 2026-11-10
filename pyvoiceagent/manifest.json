@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 191,
-  "version": "1.9.1",
-  "path": "agent_core_1_9_1.py",
-  "sha256": "a3202bfa592f2f39e064e6e46b9da2d16f62601abebfe421e34fe1d9c85a630d",
-  "size_bytes": 248547,
-  "summary": "新增 BU 沥青期货夜盘和日盘一键时点采集：iPhone 快捷指令定时打开 PYVoiceAgent.py?argv=bu_close&argv=night/day，直接读取新浪财经各合约报价并归档本地 JSON/TXT；保留 V1.9.0 原有全部功能。11项离线模拟测试通过，真机行情及自动化待验收。"
+  "sequence": 192,
+  "version": "1.9.2",
+  "path": "agent_core_1_9_2.py",
+  "sha256": "822a5d396c1fbd825597075f02ca5856563348c0aa4042c3c07ef57bc7f4bef6",
+  "size_bytes": 250630,
+  "summary": "BU行情质量修复：测试模式对行情时间晚于采集时刻的报价单独标注为时刻可疑，保留原始记录但不计入时刻未见异常的报价；夜盘、日盘采集、保存目录、原语音和卡片功能均保持兼容。新增6项针对性离线回归，原11项通过；真机数据日期仍需核验。"
 }
