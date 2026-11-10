@@ -156,13 +156,20 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
     # Keep tracking only in payload.marker and the local journal, not in notes.
     # The existing Shortcut can keep using its separate marker field if needed.
     payload, encoded, token = bridge_payload(state, choice, 'calendar.create', BU_CALENDAR_SHORTCUT)
+    # Keep the internal marker in our private ledger, but send an empty marker
+    # to the existing Shortcut: some Shortcut variants append it to the event
+    # notes. Only the token is needed to match the callback.
+    internal_marker = payload.get('marker', '')
+    payload['marker'] = ''
+    encoded = base64.b64encode(json.dumps(
+        payload, ensure_ascii=False, separators=(',', ':')).encode('utf-8')).decode('ascii')
     # Log every explicit run under a unique ID. Keep old dated entries intact.
     journal_key = 'attempt_' + attempt_id
     ledger['entries'][journal_key] = {
         'key': key, 'attempt_id': attempt_id,
         'status': 'awaiting_callback', 'token': token,
         'created': datetime.now().timestamp(), 'title': fields['title'],
-        'start': fields['start'], 'end': fields['end'], 'marker': payload['marker'],
+        'start': fields['start'], 'end': fields['end'], 'marker': internal_marker,
         'snapshot_captured_at_bj': snapshot['captured_at_bj'],
         'note': '苹果日历操作结果可能未核验；新一次用户发起的执行会另建日程',
     }
