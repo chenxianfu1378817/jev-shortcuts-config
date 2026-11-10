@@ -44,10 +44,27 @@ class LifecycleV201(unittest.TestCase):
     def test_native_map_handoff_keeps_other_app_foreground(self):
         for tool in ('app.navigate', 'maps.search'):
             with self.subTest(tool=tool):
-                env, *_ = setup(current={'status':'finished', 'events':[
-                    {'tool':tool,'status':'ok'}]})
-                self.assertFalse(env['_card_should_show_home']())
+                state={'id':'old', 'status':'finished', 'events':[
+                    {'tool':'text.respond','status':'ok'}]}
+                env, _, old, _, _ = setup(current=state)
+                def open_native_app(*args):
+                    state.update(id='new',status='finished',
+                        events=[{'tool':tool,'status':'ok'}])
+                    return 'handoff'
+                old.side_effect = open_native_app
                 self.assertEqual(env['_card_dispatch']('input'), 'handoff')
+
+    def test_cancelling_recording_after_previous_map_returns_home(self):
+        state={'id':'old', 'status':'finished','events':[
+            {'tool':'maps.search','status':'ok'}]}
+        env, _, original, _, _ = setup(current=state)
+        self.assertEqual(env['_card_dispatch']('voice'), 'stay')
+        original.assert_called_once()
+        self.assertEqual(env['_card_should_show_home'](),False)
+        env2, _, _, run, home = setup(('voice',),current=state)
+        env2['main']()
+        run.assert_called_once()
+        home.assert_called_once()
 
     def test_no_home_for_explicit_update_or_export(self):
         for action in ('update', 'history_share', 'contact_import'):
