@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "app": "myassistant-pythonista",
-  "version": "1.2.4",
-  "sequence": 124,
-  "release_note": "高德地图搜索崩溃隔离修复：UIKit 页面创建、关闭与搜索结果渲染统一在主线程；网络请求使用单独线程。输入时暂停自动联想，点击搜索后显示分页地址结果；保留原 Keychain、六段运价、业务数据和历史记录。62项离线测试通过，真机稳定性仍需确认。",
+  "version": "1.2.5",
+  "sequence": 125,
+  "release_note": "新增 iOS App Build93「导出全部记录」Markdown 导入：工作记录与AI每日总结、汽运费摘要、投标历史摘要。先预览再确认、SHA256去重、导入前SQLite备份、原始日期保留、事务回滚；既有JSON完整备份迁移入口保留并补齐迁移模块。投标摘要不视为完整草稿。旧业务数据不覆盖。",
   "files": [
     {
       "path": "myassistant_core/store.py",
-      "size": 9975,
-      "sha256": "78de317bbaff540d8251c4a2c2caef24f56d005a8250dd6a6c9b2b0a14f9c9ec"
+      "size": 12939,
+      "sha256": "8585dde040df99fd25a3c59c08bfa0c035c674d800cfc8f83b3291686a5e16b3"
     },
     {
       "path": "myassistant_core/calc.py",
@@ -27,8 +27,8 @@
     },
     {
       "path": "myassistant_core/mobile.py",
-      "size": 36526,
-      "sha256": "b8f49a234c5d31c80926cf1e2a9b7e97e1bc208b987a3e4f4f2852f7d3972bd9"
+      "size": 38142,
+      "sha256": "dccda8a2378c2f94ff8971fa3e65e1ffdac21af735eaad358aaa20d9209b505f"
     },
     {
       "path": "myassistant_core/ui_style.py",
@@ -52,8 +52,8 @@
     },
     {
       "path": "myassistant_core/release_info.py",
-      "size": 451,
-      "sha256": "e26450da07a0b71604ee155bf0bae3d4aed1764d2f037c9a6e74b9a9bc6d7174"
+      "size": 468,
+      "sha256": "9507bf131fab322e6bf5a3593d0d631353a6013b603f9dea5cca59cf344d15eb"
     },
     {
       "path": "myassistant_core/amap_service.py",
@@ -64,6 +64,16 @@
       "path": "myassistant_core/amap_ui.py",
       "size": 11469,
       "sha256": "8c5dad9517e5c66582d43e059e68fc3be4c0386fbacfefd316ae247ead801e68"
+    },
+    {
+      "path": "myassistant_core/ios_markdown.py",
+      "size": 14343,
+      "sha256": "4ad5ac483d2f8a72ea1326fedb1c16512a9b5967061e611856f31e38125b9314"
+    },
+    {
+      "path": "myassistant_core/migrate.py",
+      "size": 6319,
+      "sha256": "8ebfb973875201b98f53ef9bbe8dca7606117ca6127dd217c4dcdb756fa64420"
     }
   ]
 }
