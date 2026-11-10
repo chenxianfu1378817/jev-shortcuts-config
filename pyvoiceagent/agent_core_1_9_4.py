@@ -5236,6 +5236,65 @@ def _card_ui_show():
                 self._button(scroll, '详细执行报告', 0, cursor, content_width, 46,
                              self._link('status'))
                 cursor += 58
+            elif self.page == 'archive':
+                block = self._panel(scroll, 0, cursor, content_width, 96)
+                field = ui.TextField(frame=(13, 12, content_width-110, 42))
+                field.placeholder = '搜索标题、报价、客户或执行内容'
+                field.font = ('HelveticaNeue', 13)
+                field.background_color = P['raised']
+                field.text_color = P['text']
+                field.corner_radius = 11
+                field.text = self.search_text
+                block.add_subview(field)
+                self.search_field = field
+                self._button(block, '搜索', content_width-86, 12, 72, 42,
+                             self._search_apply, emphasis=True)
+                self._label(block, '仅搜索本机档案；AI 文字和 BU 行情都能检索',
+                            13, 62, content_width-24, 22, size=11, color=P['muted'])
+                cursor += 109
+                records = _history_search(self.search_text, 75)
+                if not records:
+                    desc_block('没有匹配记录', '新任务执行后自动保存；旧版仅补存最近一个任务。', height=90)
+                else:
+                    for item in records:
+                        desc = '{} · {}\n{}'.format(
+                            item.get('created','')[:16], item.get('status',''),
+                            item.get('quality',''))
+                        desc_block(item.get('title') or '未命名任务', desc,
+                                   height=92, action=self._open_archive(item['key']))
+                self._label(scroll, '档案只存于手机，升级不会上传到 GitHub',
+                            0, cursor, content_width, 27, size=11, color=P['muted'])
+                cursor += 36
+            elif self.page == 'archive_detail':
+                key = self.selected_archive_key
+                try:
+                    record = _history_read(key)
+                except (ValueError, OSError, UnicodeError) as ex:
+                    desc_block('无法打开档案', str(ex)[:130], height=100)
+                else:
+                    desc_block(record.get('goal','任务详情')[:90],
+                               '状态：{}  |  {}'.format(record.get('status','未知'),
+                                                   record.get('created','')[:19]),
+                               height=106)
+                    self._label(scroll, '完整结果与执行凭据', 5, cursor,
+                                content_width-10, 26, size=16, weight=True)
+                    cursor += 31
+                    text_content = _history_md(record)
+                    viewer_height = max(320, min(510, viewport-240))
+                    content_panel = self._panel(scroll, 0, cursor, content_width, viewer_height)
+                    viewer = ui.TextView(frame=(9, 9, content_width-18, viewer_height-18))
+                    viewer.text = text_content
+                    viewer.editable = False
+                    viewer.font = ('HelveticaNeue', 13)
+                    viewer.background_color = P['surface']
+                    viewer.text_color = P['text']
+                    content_panel.add_subview(viewer)
+                    cursor += viewer_height+13
+                    self._button(scroll, '复制全文', 0, cursor, content_width*.48, 45,
+                                 self._link('history_copy', key), emphasis=True)
+                    self._button(scroll, '分享／导出', content_width*.52, cursor,
+                                 content_width*.48, 45, self._link('history_share', key))
+                    cursor += 65
             elif self.page == 'settings':
                 for key, title, desc, badge in _card_nav_items('settings'):
                     destination = {'appearance_page': 'appearance',
