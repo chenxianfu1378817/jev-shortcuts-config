@@ -5017,6 +5017,7 @@ def _card_ui_show():
             self.name = 'PYVoiceAgent · DeepSeek Flash'
             self.background_color = '#F5F6FA'
             self.page = 'home'
+            self.selected_archive_key = ''
             self.search_text = ''
             self.appearance = _card_appearance_load()
             self.result = None
@@ -5070,6 +5071,17 @@ def _card_ui_show():
         def _navigate(self, page):
             def handler(sender):
                 self.page = page
+                self._render()
+            return handler
+
+        def _back_page(self, sender):
+            self.page = 'archive' if self.page == 'archive_detail' else 'home'
+            self._render()
+
+        def _open_archive(self, key):
+            def handler(sender):
+                self.selected_archive_key = key
+                self.page = 'archive_detail'
                 self._render()
             return handler
 
@@ -5137,9 +5149,10 @@ def _card_ui_show():
             self._button(self, '关闭', width-side-64, top+2, 64, 36, self._link('exit'))
             y = top + 74
             if self.page != 'home':
-                self._button(self, '‹ 返回', side, y, 82, 38, self._navigate('home'))
+                self._button(self, '‹ 返回', side, y, 82, 38, self._back_page)
                 self._label(self, {'settings': '设置中心', 'appearance': '外观与主题',
                      'tools': '工具库', 'advanced': '高级操作', 'history': '执行记录',
+                     'archive':'历史档案', 'archive_detail':'档案详情',
                      'input': '文字任务'}.get(self.page, self.page), side+96,
                      y, content_width-105, 38, size=21, weight=True)
                 y += 56
@@ -5182,7 +5195,7 @@ def _card_ui_show():
                 cursor += 116
                 for key, title, desc, badge in _card_nav_items('home'):
                     destination = {'input':'input', 'status':'history',
-                                   'settings_page':'settings'}.get(key)
+                                   'archive':'archive', 'settings_page':'settings'}.get(key)
                     desc_block(title, desc, action=(self._navigate(destination) if destination
                                else self._link(key)), badge=badge)
             elif self.page == 'input':
