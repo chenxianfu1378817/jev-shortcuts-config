@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""PYVoiceAgent V1.9.5 - per-trigger calendar archiving of BU market snapshots.
+"""PYVoiceAgent V1.9.6 - concise BU quote calendar notes.
 
 Embedded in the monolithic release engine, no extra file installed on iPhone.
 It directly requests the existing PYAgentCalendar Shortcut for every explicit run.
@@ -45,6 +45,56 @@ def _bu_calendar_write_ledger(ledger):
     atomic_json(BU_CALENDAR_LEDGER_PATH, ledger)
 
 
+def _bu_calendar_compact_notes(snapshot):
+    """Keep full source records in TXT/JSON, only prices in the Apple Calendar."""
+    from datetime import datetime, timezone, timedelta
+    captured = datetime.fromisoformat(snapshot['captured_at_bj'])
+    if captured.tzinfo is None:
+        raise ValueError('BU 采集日期没有时区')
+    cn = captured.astimezone(timezone(timedelta(hours=8)))
+    session = snapshot.get('session')
+    # Test mode follows the local trading period at the moment of collection.
+    night = session == 'night' or (session == 'test' and 21 <= cn.hour <= 23)
+    day = session == 'day' or (session == 'test' and 9 <= cn.hour < 21)
+    lines = []
+    marked = False
+    seen = set()
+    for group, suspect in ((snapshot.get('records') or [], False),
+                           (snapshot.get('suspect_records') or [], True)):
+        for row in group:
+            contract = str(row.get('contract', '')).strip().upper()
+            price = row.get('last_price')
+            if not re.fullmatch(r'BU\d{4}', contract):
+                continue
+            try:
+                price = float(price)
+            except (ValueError, TypeError):
+                continue
+            if not (0 < price < 100000):
+                continue
+            if contract in seen:
+                continue
+            seen.add(contract)
+            clock = str(row.get('quote_clock', '')).zfill(6)
+            out_of_period = False
+            if not re.fullmatch(r'\d{6}', clock):
+                out_of_period = True
+            elif night:
+                out_of_period = not ('210000' <= clock <= '230000')
+            elif day:
+                out_of_period = not (
+                    ('090000' <= clock <= '113000') or
+                    ('133000' <= clock <= '150000'))
+            flag = suspect or out_of_period
+            lines.append('{}  {:g}{}'.format(contract, price, ' *' if flag else ''))
+            marked = marked or flag
+    if not lines:
+        raise ValueError('BU 报价为空，无法生成日历备注')
+    notes = ['单位：元/吨'] + lines
+    notes.append('注：{}日期未核验，非结算价。'.format('*为非本时段或可疑报价；' if marked else ''))
+    return '\n'.join(notes)
+
+
 def _bu_calendar_event_fields(snapshot):
     """Create a Beijing-calendar-day event; local Calendar UI may change day in other TZs."""
     from datetime import datetime, timezone, timedelta
@@ -70,7 +120,7 @@ def _bu_calendar_event_fields(snapshot):
         duration = 5
     end = start + timedelta(minutes=duration)
     # Shortcut module expects ISO8601 w/ offset; no timezone field to configure.
-    content = _bu_report(snapshot)
+    content = _bu_calendar_compact_notes(snapshot)
     if len(content) > BU_CALENDAR_MAX_NOTE:
         # Never silently lose full quotes: leave result only in local TXT/JSON.
         raise ValueError('BU 报价过长，未自动写日历；完整报告仍已本地归档')
@@ -103,9 +153,8 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
     choice = {'tool': 'calendar.create', 'reason': 'BU行情归档', 'title': fields['title'],
               'text': '', 'notes': fields['notes'], 'datetime': fields['start'],
               'end_datetime': fields['end'], 'shortcut_id': ''}
-    # Marker is part of the note as well, to help user check duplicates.
-    marker = '[PYVoiceAgent:{}:{}]'.format(state['id'], state['steps'])
-    choice['notes'] = fields['notes'] + '\n\n' + marker
+    # Keep tracking only in payload.marker and the local journal, not in notes.
+    # The existing Shortcut can keep using its separate marker field if needed.
     payload, encoded, token = bridge_payload(state, choice, 'calendar.create', BU_CALENDAR_SHORTCUT)
     # Log every explicit run under a unique ID. Keep old dated entries intact.
     journal_key = 'attempt_' + attempt_id
