@@ -1,0 +1,27 @@
+name: PYVoiceAgent V1.9.9 native Amap URL routing
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v199.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile candidate core
+        run: python -m py_compile pyvoiceagent/agent_core_1_9_9.py
+      - name: Verify native Amap routing and no web fallback
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_amap_native_v199.py' -v
+      - name: Preserve voice/history and BU calendar behavior
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_manual_voice_v198.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_voice_history_v197.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v196.py' -v
