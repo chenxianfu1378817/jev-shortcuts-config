@@ -212,4 +212,43 @@ class CoreIntegrationTests(unittest.TestCase):
         for name in ('def input_voice(', 'def bridge_callback(', 'def show_menu():', 'def _card_ui_show('):
             self.assertIn(name, source)
 
+    def test_integrated_main_routes_preserved(self):
+        core=Path(__file__).resolve().parents[1] / 'agent_core_1_9_3.py'
+        if not core.exists(): self.skipTest('Integrated file not present locally')
+        ns={'__name__':'pyvoiceagent_ci'}
+        exec(compile(core.read_text(encoding='utf-8'),str(core),'exec'),ns)
+        import sys
+        original_argv=sys.argv
+        calls=[]
+        ns['_bu_capture_and_calendar']=lambda mode:calls.append(('BU',mode))
+        ns['_bu_calendar_handle_callback']=lambda token, status: False
+        ns['bridge_callback']=lambda *args:calls.append(('LEGACY',args))
+        try:
+            sys.argv=['PYVoiceAgent.py','bu_close','day']
+            ns['main']()
+            sys.argv=['PYVoiceAgent.py','bridge_callback','abc','ok','']
+            ns['main']()
+        finally:
+            sys.argv=original_argv
+        self.assertEqual(calls,[('BU','day'),('LEGACY',('abc','ok',''))])
+
+    def test_integrated_real_payload_format(self):
+        core=Path(__file__).resolve().parents[1] / 'agent_core_1_9_3.py'
+        if not core.exists(): self.skipTest('Integrated file not present locally')
+        ns={'__name__':'pyvoiceagent_ci'}
+        exec(compile(core.read_text(encoding='utf-8'),str(core),'exec'),ns)
+        with tempfile.TemporaryDirectory() as d:
+            ns['BU_CALENDAR_LEDGER_PATH']=os.path.join(d,'calendar_ledger.json')
+            ns['DATA_DIR']=d
+            ns['verified_system_module']=lambda route:'PYAgentCalendar'
+            ns['prompt_alert']=lambda *args,**kwargs:True
+            urls=[]
+            actual=ns['_bu_calendar_publish'](snapshot(),lambda url:urls.append(url))
+            self.assertEqual(actual['status'],'awaiting_callback')
+            q=parse_qs(urlparse(urls[0]).query)
+            payload=json.loads(base64.b64decode(q['text'][0]).decode('utf-8'))
+            self.assertEqual(payload['route'],'calendar.create')
+            self.assertEqual(payload['start'],'2026-11-10T15:00:00+08:00')
+            self.assertIn('BU2612',payload['notes'])
+
 if __name__=='__main__':unittest.main(verbosity=2)
