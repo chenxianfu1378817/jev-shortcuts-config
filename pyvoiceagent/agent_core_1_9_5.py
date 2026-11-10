@@ -4654,7 +4654,7 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
         'created': datetime.now().timestamp(), 'title': fields['title'],
         'start': fields['start'], 'end': fields['end'], 'marker': payload['marker'],
         'snapshot_captured_at_bj': snapshot['captured_at_bj'],
-        'note': '苹果日历操作可能已执行；无回调时不可盲目重试',
+        'note': '苹果日历操作结果可能未核验；新一次用户发起的执行会另建日程',
     }
     _bu_calendar_write_ledger(ledger)
     from urllib.parse import urlencode
