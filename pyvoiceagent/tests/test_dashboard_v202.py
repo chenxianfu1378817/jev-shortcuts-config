@@ -25,6 +25,14 @@ class NativeWidget:
         self.closed=False
         self.background_color=None
         NativeWidget.all.append(self)
+    @property
+    def frame(self):
+        return self._frame
+    @frame.setter
+    def frame(self,value):
+        self._frame=value
+        self.width=value[2]
+        self.height=value[3]
     def add_subview(self,view):
         self.subviews.append(view)
     def remove_subview(self,view):
