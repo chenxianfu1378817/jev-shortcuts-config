@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 196,
-  "version": "1.9.6",
-  "path": "agent_core_1_9_6.py",
-  "sha256": "7d310bd2882f345c9a6be29461b6ef45481a7c89d79b1643ec7cd95bdef75fea",
-  "size_bytes": 279987,
-  "summary": "精简BU期货苹果日历备注，仅保留合约与元/吨价格，时段外或可疑报价加*，末尾简短提示非官方结算和日期未核验；不再主动把内部追踪标记写进备注。原始TXT/JSON、快捷指令URL、日夜盘每次执行新建日程、语音/AI/结果中心/在线更新均保留。本地10项格式测试通过，12项新版回归用例已提交，真机新版待验收。"
+  "sequence": 197,
+  "version": "1.9.7",
+  "path": "agent_core_1_9_7.py",
+  "sha256": "b66500c12464f47c9bd64e818bf0a415136f9905f79e380aa4c6c7532d18ae27",
+  "size_bytes": 280737,
+  "summary": "修复iPhone自动录音 Recorder.record(duration=...) 不兼容，改为位置参数；修复历史归档按月建目录前写入JSON失败；精简BU日历备注仅保留合约与价格及一行数据提示，内部标记不进入快捷指令备注；保留BU原始TXT/JSON、每次日夜盘执行均新建日程、语音DeepSeek工具库、固定入口与升级机制。已通过5项针对性本地测试、源代码兼容静态核对；CI运行与iPhone真机新版待验收。"
 }
