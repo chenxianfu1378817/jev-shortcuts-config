@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 197,
-  "version": "1.9.7",
-  "path": "agent_core_1_9_7.py",
-  "sha256": "b66500c12464f47c9bd64e818bf0a415136f9905f79e380aa4c6c7532d18ae27",
-  "size_bytes": 280737,
-  "summary": "修复iPhone自动录音 Recorder.record(duration=...) 不兼容，改为位置参数；修复历史归档按月建目录前写入JSON失败；精简BU日历备注仅保留合约与价格及一行数据提示，内部标记不进入快捷指令备注；保留BU原始TXT/JSON、每次日夜盘执行均新建日程、语音DeepSeek工具库、固定入口与升级机制。已通过5项针对性本地测试、源代码兼容静态核对；CI运行与iPhone真机新版待验收。"
+  "sequence": 198,
+  "version": "1.9.8",
+  "path": "agent_core_1_9_8.py",
+  "sha256": "28022f4912a931cddf574b841732e291dd1285e4b38ced6d5cc46c4948dd78a7",
+  "size_bytes": 279944,
+  "summary": "停止所有语音入口的自动收音：首页、固定快捷指令voice、传统菜单均手动开始并点击“完成”结束，无静音自动终止及26秒限制；AI追问必须先选择语音/文字/稍后，不会自行开麦。保留录音识别后执行、DeepSeek、BU日历、历史归档、回调和GitHub更新。4项独立隔离模拟测试通过、9项GitHub测试用例已提交、真机待验收。"
 }
