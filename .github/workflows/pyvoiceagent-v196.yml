@@ -4,6 +4,10 @@ on:
     paths:
       - 'pyvoiceagent/**'
       - '.github/workflows/pyvoiceagent-v196.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v196.yml'
   workflow_dispatch:
 
 permissions:
