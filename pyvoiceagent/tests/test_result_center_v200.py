@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parents[1]
 SRC = (BASE / 'result_center_v200.py').read_text('utf-8')
 
 
