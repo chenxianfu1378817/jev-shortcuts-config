@@ -291,20 +291,16 @@ def _card_ui_show():
             return handler
 
         def _custom_color(self, sender):
-            try:
-                import dialogs
-                raw = dialogs.text_dialog('自定义主题色', self.appearance.get('custom_color') or '#F07828')
-                if raw is None:
-                    return
-                color = _card_hex(raw)
-                if not color:
-                    dialogs.alert('颜色无效', '请输入 #RRGGBB，例如 #E66B28。', '确定', hide_cancel_button=True)
-                    return
-                self.appearance['custom_color'] = color
-                _card_appearance_save(self.appearance)
-                self._render()
-            except Exception as error:
-                print('保存主题色失败：{}'.format(error))
+            field = getattr(self, 'custom_color_field', None)
+            raw = (field.text or '') if field is not None else ''
+            color = _card_hex(raw)
+            if not color:
+                if field is not None:
+                    field.text = '#RRGGBB'
+                return
+            self.appearance['custom_color'] = color
+            _card_appearance_save(self.appearance)
+            self._render()
 
         def _search_changed(self, sender):
             self.search_text = sender.text or ''
@@ -467,9 +463,19 @@ def _card_ui_show():
                                  self._choose_mode(mode),
                                  emphasis=(self.appearance['mode']==mode), size=11)
                 cursor += 59
-                self._button(scroll, '自定义主题色 #RRGGBB', 0, cursor,
-                             content_width, 44, self._custom_color)
-                cursor += 55
+                color_card = self._panel(scroll, 0, cursor, content_width, 66)
+                color_field = ui.TextField(frame=(12, 10, content_width-123, 44))
+                color_field.placeholder = '#RRGGBB'
+                color_field.text = self.appearance.get('custom_color') or ''
+                color_field.font = ('HelveticaNeue', 14)
+                color_field.text_color = P['text']
+                color_field.background_color = P['raised']
+                color_field.corner_radius = 10
+                color_card.add_subview(color_field)
+                self.custom_color_field = color_field
+                self._button(color_card, '保存颜色', content_width-103, 10, 91, 44,
+                             self._custom_color, emphasis=True, size=12)
+                cursor += 77
                 desc_block('当前效果', '颜色选择已保存在本地，程序在线更新不会覆盖。', height=80)
             elif self.page == 'tools':
                 block = self._panel(scroll, 0, cursor, content_width, 99)
