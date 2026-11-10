@@ -1,0 +1,35 @@
+name: PYVoiceAgent v1.9.5 BU Calendar repeat-write regression
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v195.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile newest and prior release
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_1_9_4.py
+          python -m py_compile pyvoiceagent/agent_core_1_9_5.py
+          python -m py_compile pyvoiceagent/bu_calendar_module.py
+      - name: New repeated BU calendar actions
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v195.py' -v
+      - name: Historical BU calendar behavior
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v193.py' -v
+      - name: Existing BU feed regressions
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_snap_v191.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_snap_v192.py' -v
+      - name: Historical core and archive regressions
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_history_core_v194.py' -v
