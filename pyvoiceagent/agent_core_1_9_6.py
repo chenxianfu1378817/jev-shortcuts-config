@@ -1316,7 +1316,9 @@ def _voice_record_auto(path, recorder=None):
     seen = 0
     status = 'no_speech'
     try:
-        recorder.record(duration=VOICE_LISTEN_LIMIT)
+        # Pythonista Recorder.record accepts an optional positional duration,
+        # but some installed builds reject the duration= keyword.
+        recorder.record(VOICE_LISTEN_LIMIT)
         while time.monotonic() - start < VOICE_LISTEN_LIMIT:
             if not recorder.recording:
                 break
@@ -4695,13 +4697,20 @@ def _bu_calendar_publish(snapshot, launcher=None, require_confirmation=False):
     # Keep tracking only in payload.marker and the local journal, not in notes.
     # The existing Shortcut can keep using its separate marker field if needed.
     payload, encoded, token = bridge_payload(state, choice, 'calendar.create', BU_CALENDAR_SHORTCUT)
+    # Keep the internal marker in our private ledger, but send an empty marker
+    # to the existing Shortcut: some Shortcut variants append it to the event
+    # notes. Only the token is needed to match the callback.
+    internal_marker = payload.get('marker', '')
+    payload['marker'] = ''
+    encoded = base64.b64encode(json.dumps(
+        payload, ensure_ascii=False, separators=(',', ':')).encode('utf-8')).decode('ascii')
     # Log every explicit run under a unique ID. Keep old dated entries intact.
     journal_key = 'attempt_' + attempt_id
     ledger['entries'][journal_key] = {
         'key': key, 'attempt_id': attempt_id,
         'status': 'awaiting_callback', 'token': token,
         'created': datetime.now().timestamp(), 'title': fields['title'],
-        'start': fields['start'], 'end': fields['end'], 'marker': payload['marker'],
+        'start': fields['start'], 'end': fields['end'], 'marker': internal_marker,
         'snapshot_captured_at_bj': snapshot['captured_at_bj'],
         'note': '苹果日历操作结果可能未核验；新一次用户发起的执行会另建日程',
     }
@@ -4779,6 +4788,7 @@ def _bu_capture_and_calendar(mode):
         # The quote JSON/TXT already exists and must never be rolled back.
         print('【BU日历归档】写入未确认；完整行情文件已保存。错误：' + str(err)[:260])
     return snapshot
+
 
 def main():
     global VOICE_SESSION_ACTIVE
@@ -5601,6 +5611,9 @@ def _history_auto_record(state):
     basename = key.split('/')[1][:-5]
     record_path = os.path.join(folder, basename+'.json')
     markdown_path = os.path.join(folder, basename+'.md')
+    # The shared atomic_json only ensures DATA_DIR, not history/YYYY-MM.
+    # Create this task's month folder before writing either archive file.
+    os.makedirs(folder, exist_ok=True)
     # No raw planner, pending callback token, credential or untrusted code.
     atomic_json(record_path, rec)
     _history_atomic_text(markdown_path, _history_md(rec))
@@ -5726,6 +5739,7 @@ def main():
     except (OSError, ValueError, TypeError, UnicodeError) as error:
         print('【历史归档】旧任务迁移未完成：'+str(error)[:150])
     return _V193_MAIN()
+
 
 if __name__ == "__main__":
     main()
