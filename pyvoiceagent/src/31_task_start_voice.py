@@ -87,10 +87,10 @@ def input_voice(hands_free=False, prompt=None):
     Empty/cancelled dictation never submits a task.
     """
     import dialogs
-    title = '系统听写或文字输入'
+    title = '系统键盘麦克风听写'
     try:
-        hint = str(prompt or '请点 iPhone 键盘上的麦克风进行听写，完成后点确定')[:250]
-        result = dialogs.text_dialog(title, hint)
+        # Keep the editor empty: the hint must never become an executed task.
+        result = dialogs.text_dialog(title, '')
     except (KeyboardInterrupt, Exception) as exc:
         print('系统听写输入已取消或不可用：' + type(exc).__name__)
         return None
