@@ -6750,6 +6750,9 @@ class _ChatShell:
             else:
                 self.submit(text)
         elif action == 'voice_start':
+            with self.lock:
+                if self.closed or self.recorder is not None or self.recognizing:
+                    return
             self.ui.delay(self.begin_record, 0.08)
         elif action == 'voice_stop':
             with self.lock:
