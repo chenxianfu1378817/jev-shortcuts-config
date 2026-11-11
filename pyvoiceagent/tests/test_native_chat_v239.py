@@ -171,8 +171,7 @@ class NativeChatTests(unittest.TestCase):
             self.assertTrue(root.theme.hidden)
             root.keyboard_frame_did_change((0, 760, 390, 0))
             self.assertFalse(root.theme.hidden)
-        with patch.dict(sys.modules, {'ui': fake_ui}), \\
-             patch.object(FakeView, 'wait_modal', check_modal):
+        with patch.dict(sys.modules, {'ui': fake_ui}), patch.object(FakeView, 'wait_modal', check_modal):
             self.assertTrue(self.shell.show())
 
     def test_all_eight_palette_choices_remain_available(self):
