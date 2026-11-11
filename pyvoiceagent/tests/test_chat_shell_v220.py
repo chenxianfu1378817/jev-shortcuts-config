@@ -214,6 +214,21 @@ class ChatV220Test(unittest.TestCase):
         self.assertTrue(any('没有启动新操作' in e.get('message',{}).get('text','')
                             for e in self.events if e.get('type')=='message'))
 
+    def test_cancel_record_disposes_audio_without_sending_task(self):
+        path=Path(self.folder.name)/'cancel.m4a'
+        path.write_bytes(b'safe fake recorder content')
+        record=Mock()
+        self.shell.recorder=record
+        self.shell.record_file=str(path)
+        self.shell._handle_action('voice_cancel','')
+        record.stop.assert_called_once()
+        self.assertFalse(path.exists())
+        self.assertIsNone(self.shell.recorder)
+        self.assertTrue(any('已取消' in e.get('text','') for e in self.events
+                            if e.get('type')=='notice'))
+        self.ns['start_new'].assert_not_called()
+        self.assertIn('id="cancelrecord"',self.ns['CHAT_HTML'])
+
     def test_recognition_disables_concurrent_text(self):
         self.shell.recognizing=True
         self.shell.submit('误触重新执行')
