@@ -82,6 +82,8 @@ class ToolsV225(unittest.TestCase):
                       _card_palette=lambda *args:{},
                       get_theme=lambda:None)
         exec(compile(ADDON.read_text('utf-8'),str(ADDON),'exec'),self.env)
+        self.env['public_registry']=lambda:[{'id':key,'description':val['description']}
+            for key,val in self.env['local_registry']().items()]
 
     def tearDown(self):
         self._sys.stop()
