@@ -1,3 +1,52 @@
+# PYVoiceAgent V3.0.0 · iPhone 在线升级与可用版本
+
+> **手机可安装候选（iPhone 真机尚未验收）。** V3.0.0 接入原来固定的 `PYVoiceAgent.py` GitHub 更新器，版本序号 300。现在不再仅是 Mac 命令行测试。本文下方的「Alpha 0.1.0 非手机版」描述只适用于先前第一阶段历史记录。
+
+## 在 iPhone 直接安装（无需 ZIP 或 IPA）
+
+1. 使用 Pythonista 3 中现有的 `PYVoiceAgent.py`；保持原桌面入口、图标和快捷指令路径。
+2. 正常启动时固定启动器依据 GitHub `pyvoiceagent/manifest.json` 检查更新（版本 3.0.0 / 序号 300）；下载并 SHA-256 校验单个 `agent_core_3_0_0.py`。如果手机启动器未自动检查，请通过现有更新功能触发，不要复制替换旧版数据文件。
+3. 完成后**退出再运行一次固定入口**。启动器会在 `~/Documents/PYVoiceAgent_V3_Runtime/releases/` 安装不可变的、经过二次摘要校验的独立 Python 包，不要求手工逐项下载。
+4. 启动后出现「PYVoiceAgent V3 · 稳定入口」原生系统菜单，可直接使用文字、剪贴板、系统键盘听写、DeepSeek AI、历史、工具库、设置与在线更新。
+5. 日后 V3 更新仍从设置的「检查在线更新」完成，并通过原 `PYVoiceAgent.py` 重启生效。
+
+## 正式进入手机的功能和使用条件
+
+| 功能 | V3.0.0 状态 |
+|---|---|
+| 文字输入、剪贴板任务及系统键盘语音听写 | 已实现；不再使用容易崩溃的持续 WebView 录音界面 |
+| 本地基本指令（你好、帮助、历史、设置等） | 已实现 |
+| DeepSeek 文字问答 | 已实现；需已有 Pythonista Keychain 凭据或在 V3 设置中配置；**每条新问题明确同意才联网** |
+| 快捷指令工具库 | 已实现；支持手动登记及**由用户确认后导入 V2 的 launch 模式工具**；旧 bridge 模式不自动迁移 |
+| 快捷指令调用 | 已实现用户明确授权后的 `shortcuts://run-shortcut` 官方 URL 交接；**不声称运行成功、不自动重试，结果须人工核验** |
+| V3 历史、旧 V2 历史只读预览 | 已实现；旧历史不自动导入或覆盖 |
+| 设置、八套主题、浅色/深色/跟随系统 | 设置可持久保存；当前使用 iOS 标准系统弹窗，**尚未实现八主题同步渲染的卡片 UI**，为稳定性暂作让步 |
+| SQLite 本地数据库、独立备份 | 已实现，存于 `~/Documents/PYVoiceAgent_V3_Data/` |
+| 手机内在线更新与版本回退备份 | 已实现，对发布 manifest、文件大小、SHA-256、Python 语法校验，旧引擎保留为 `engine/previous.py` |
+| V2 日历、提醒、联系人及 BU 行情复杂自动执行 | **尚未全部迁入 V3**；可以通过现有已登记的直达型快捷指令显式交接，旧式带回调的工具需要后续适配 |
+
+## 重要限制与故障保护
+
+- **手机真实稳定性未验证**：Mac/CI 的 Python 3.9/3.11 自动测试无法证明在用户 iPhone 上不会闪退。
+- **不会自动执行旧版未完成任务或回调**。收到旧 `bridge_callback` 入口会提示核验，以免重复创建日历、提醒事项。
+- **Keychain** 优先读 V3 专属凭据，没配置时只读取已有 V2 Keychain，不会把密钥写入数据库。即使有密钥，AI 请求仍逐次征求同意。
+- iPhone 菜单首版用 Pythonista 成熟 `dialogs` 与 `console`，不创建持续运行的 WebView 或录音线程；这不是最终的卡片对话版面。
+- **升级不得覆盖** `~/Documents/PYVoiceAgent_Data/` 里的历史、用户设置、API Key 或自定义快捷指令配置。旧更新器只能更新它自己的 `engine/current.py` 和 `update_meta.json`。
+- 首次更新后如果没有启动 V3，检查本机 `PYVoiceAgent_Data/update_meta.json` 的安装序号是否为 300，且关闭 Pythonista 重新启动；不要删除个人数据文件夹。
+- 手机端若仍崩溃，应提供 iOS 设置内经过脱敏的 .ips 日志，先定位之后再修改原生 UI；不要使用真实日历写入重复测试。
+
+## 开发构建
+
+```bash
+python pyvoiceagent_v3/tools/build_mobile_release.py --write
+python pyvoiceagent_v3/tools/build_mobile_release.py
+python -m unittest discover -s pyvoiceagent_v3/tests -v
+```
+
+生成正式更新文件 `pyvoiceagent/agent_core_3_0_0.py` 与 `pyvoiceagent/manifest.json`，后者包含字节数与 SHA-256。所有 V3 源码仍以真正的 Python 模块存在，并通过可重复的 ZIP 归档嵌入单文件，不需要在手机上手工 pip 安装。
+
+---
+
 # PYVoiceAgent V3 · 独立引擎（Alpha 0.1.0）
 
 > **开发阶段 / 非手机版正式发布。** 这个目录与现有 V2.3.9 严格分离，**不会修改** `pyvoiceagent/manifest.json`、固定入口 `PYVoiceAgent.py`，也不会读取或覆盖旧 `PYVoiceAgent_Data` 中的记录、设置、API Key、提醒或快捷指令。通过电脑自动化测试 **不代表** 已在 iPhone Pythonista 真机验收。
