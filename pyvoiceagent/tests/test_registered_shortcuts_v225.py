@@ -79,6 +79,7 @@ class ToolsV225(unittest.TestCase):
                       _ChatShell=ShellStub,_chat_threading=__import__('threading'),
                       _REG_PREV_SHOW=None,execute_planned_actions=Mock(),
                       prompt_alert=lambda *args:True,
+                      add_shortcut_registration=lambda:False,_CHAT_ACTIVE=None,
                       _card_palette=lambda *args:{},
                       get_theme=lambda:None)
         exec(compile(ADDON.read_text('utf-8'),str(ADDON),'exec'),self.env)
