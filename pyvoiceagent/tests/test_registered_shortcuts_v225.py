@@ -61,7 +61,7 @@ class ToolsV225(unittest.TestCase):
         self.fake_shortcuts=types.SimpleNamespace(open_url=fake_shortcut)
         self._sys=patch.dict(sys.modules,{'shortcuts':self.fake_shortcuts})
         self._sys.start()
-        self.env=dict(__name__:'tested_shortcuts',os=os,re=re,json=json,
+        self.env=dict(__name__='tested_shortcuts',os=os,re=re,json=json,
                       hashlib=hashlib,datetime=datetime,timezone=timezone,urlencode=urlencode,
                       REGISTRY_PATH=self.path,DEFAULT_LIBRARY={'echo':{'name':'reserved'}},
                       BRIDGE_SHORTCUT='PYAgentHub',LEGACY_BRIDGE='PYAgentBridge',
