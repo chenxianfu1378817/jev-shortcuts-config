@@ -5,6 +5,7 @@ _REG_PREVIOUS_RUN = run_tool
 _REG_PREVIOUS_APPLY = _apply_one_shot_plan
 _REG_PREVIOUS_PARSE = parse_action_plan
 _REG_PREVIOUS_SUBMIT = _ChatShell.submit
+_REG_PREVIOUS_ADD = add_shortcut_registration
 ONE_SHOT_TOOLS += ('shortcut.run',)
 
 def local_registry():
@@ -302,3 +303,12 @@ def _reg_action(shell,action,text):
         return
     return _REG_OLD_ACTION(shell,action,text)
 _ChatShell._handle_action=_reg_action
+
+def add_shortcut_registration():
+    # The former prompt path wrote only enabled entries and could erase disabled
+    # user tools. Always use the new local manager when WebView is available.
+    shell=_CHAT_ACTIVE
+    if shell is not None and not shell.closed:
+        shell.post({'type':'notice','text':'请在设置中的「我的快捷指令工具库」添加或编辑。'})
+        return False
+    return _REG_PREVIOUS_ADD()
