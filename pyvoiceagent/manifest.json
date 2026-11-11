@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 226,
-  "version": "2.2.6",
-  "path": "agent_core_2_2_6.py",
-  "sha256": "0ba9972f65b519c96c36dafc07e2a796ab10cc1e89ea4e2972e295742a56deb3",
-  "size_bytes": 346560,
-  "summary": "本地 Agent 快捷指令工具库正式兼容版：WebView 增加安全退出按钮和快捷指令登记/编辑/启停/删除、别名及参数模式；优先匹配本地白名单，AI 仅可选择已登记启用的工具；普通 iOS Shortcuts 启动与回传型 token 校验分离。新增旧任务保护：暂停、待补充、等待回调/待核验时绝不覆盖旧任务，执行前再次检查。保留 V2.2.4 语音、日历、提醒、地图、历史和主题。完整文件小于旧版350000字节上限，CPython/Node模拟回归通过；iPhone 真机尚待验收。"
+  "sequence": 227,
+  "version": "2.2.7",
+  "path": "agent_core_2_2_7.py",
+  "sha256": "a996641b7eb01a46a7e25c5a8cd612acd4ba4f1df4f7a3b22d4acd61334599f9",
+  "size_bytes": 346830,
+  "summary": "修复输入文字、发送和软键盘收起后 Pythonista 本地 WebView 整页横向向右偏移/左侧空白：取消 fixed left:50% + translateX(-50%) 居中变换，改为屏幕左边缘全宽固定容器；禁用页面及聊天记录的横向滚动，键盘收起后还原横向滚动坐标，发送后延迟二次刷新布局。保留 V2.2.6 的退出、本地快捷指令工具库、语音、DeepSeek、日历/提醒/地图及多主题和历史数据。旧版 350000 字节在线更新安全校验不变；GitHub 自动模拟回归通过，iPhone 真机尚待验证。"
 }
