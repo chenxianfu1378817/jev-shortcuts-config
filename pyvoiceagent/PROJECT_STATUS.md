@@ -4,6 +4,20 @@
 >
 > 最近核对：**2026-11-11**；状态来源：GitHub `main` 正式更新清单、V2.3.4 源码及 V2.3.5 发布变更。在线发布状态以 main 的 manifest 为准。
 
+## V2.3.8 文本发送崩溃 / 中文输入法与 WebView 接口改造（真机待验收）
+
+用户提供 V2.3.6 iPhone 截图：手工输入后按发送可能直接退出 Pythonista，粘贴进去后发送偶尔正常。截图版本仍是 V2.3.6；V2.3.7 的原生录音关闭并没有解决文本发送问题。查看源码可确认，之前 JavaScript 发送时立即清空并 blur 中文输入框，同时通过 `window.location.href=pyagent-chat://...` 进入 WebView 委托，并在主线程直接调用 `outer._handle_action('send',text)`。这一时序冲突及可能的主线程重入是**代码确凿的风险点**，但没有原始完整 .ips 不能当作最终根因。
+
+V2.3.8 修改：
+- 发送先保留原文字，等待组合中文输入完成，避免同一按钮内强制 blur/键盘重排；
+- 导航回调完成 nonce、白名单、长度检查后只排队；Python 启动独立接收线程才给网页发确认；网页收到确认后才清空原文字，超时或拒绝保留草稿。
+- 对同一内容短时间重复提交、忙碌的旧任务设置防重复保护，不自动重试系统写入。
+- WebView 新增「原生输入」备用入口，使用 Pythonista 原生 `dialogs.text_dialog` 后提交，同步保留所有工具/主题/本地历史。
+- 新增 `send_last_stage.json` 仅保存阶段、版本、时间；不记输入内容和密钥。
+- 被停用的实验性原生 Recorder 服务仍保留在开发目录研究，但从手机构建包排除，25 个 GitHub 开发模块中 24 个进入正式程序。
+
+CI 构建验证 V2.3.8 / sequence=238；打包文件 345999 字节、SHA-256 `5076fb19fd513dd130401ba77c714401df9d1a4f5bbb0cb84cb1cfbfb74e5436`；现行回归覆盖延迟收件、确认、输入框保留、中文拼音、重复、原生备用和用户数据安全。**仍未进行 iPhone 真机验收**；如果发送后直接退出，优先分辨是网页自定义 URL 导航阶段、Python 接收阶段还是具体 DeepSeek/工具阶段，不应未经定位再盲目重构。
+
 ## V2.3.7 原生录音闪退后的系统键盘听写回退（真机待验收）
 
 用户已确认：V2.3.6 点击语音后直接退出 Pythonista。此前 V2.3.4、V2.3.5、V2.3.6 分别尝试过主线程延迟、后台停止、后台线程独占原生录音对象，但未通过同一 iPhone 实机验证。由于原生 C/Objective-C 层崩溃不一定被 Python try/except 捕捉，本次不再激活 Pythonista 原生录音。
@@ -75,11 +89,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.3.7**（以 main 的 manifest 为准） |
-| 更新序号 | `237` |
-| 发布文件 | `pyvoiceagent/agent_core_2_3_7.py` |
-| 发布 SHA-256 | `45d48543358d6bb3bd37bf04089c092fb5f83207604b627702d9e6a4e8132bf1` |
-| 发布大小 | `346644` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.8**（以 main 的 manifest 为准） |
+| 更新序号 | `238` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_8.py` |
+| 发布 SHA-256 | `5076fb19fd513dd130401ba77c714401df9d1a4f5bbb0cb84cb1cfbfb74e5436` |
+| 发布大小 | `345999` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
