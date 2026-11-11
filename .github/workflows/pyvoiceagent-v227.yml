@@ -1,0 +1,38 @@
+name: PYVoiceAgent V2.2.7 iOS horizontal keyboard layout regression
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v227.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  input-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile new engine and verify old 350KB update cap
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_2_2_7.py
+          test $(wc -c < pyvoiceagent/agent_core_2_2_7.py) -le 350000
+      - name: iPhone text submit layout shift simulated viewport regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_horizontal_keyboard_v227.py' -v
+      - name: Registered Shortcuts, exit, old task protection and all previous regressions
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_shortcut_guard_v226.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_registered_shortcuts_v225.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_keyboard_v224.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_audio_stop_v223.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_shell_v220.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_shell_v221.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_release_compat_v222.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_manual_voice_v198.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_lifecycle_v201.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_result_center_v200.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_amap_native_v199.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v196.py' -v
