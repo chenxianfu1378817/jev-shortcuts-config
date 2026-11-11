@@ -198,6 +198,22 @@ class MobileReleaseTests(unittest.TestCase):
             self.assertEqual(Path(old_marker).read_text(encoding='utf-8'),
                              'keep v2 data')
 
+    def test_runtime_tamper_blocks_execution_without_rewriting_user_files(self):
+        engine,_ = builder.make_release()
+        namespace={'__name__':'v3_embedded_test'}
+        exec(compile(engine,'v3_embedded_test.py','exec'),namespace)
+        with tempfile.TemporaryDirectory() as root:
+            with patch.object(namespace['os'].path,'expanduser',
+                side_effect=lambda path: os.path.join(root, path[2:])
+                if path.startswith('~/') else (root if path=='~' else path)):
+                location=namespace['_install']()
+                app=os.path.join(location,'pyvoiceagent_v3','mobile.py')
+                with open(app,'ab') as stream:
+                    stream.write(b'\n# tampered\n')
+                with self.assertRaisesRegex(RuntimeError,'hash mismatch'):
+                    namespace['_install']()
+                self.assertTrue(os.path.isfile(app))
+
     def test_embedded_package_bad_hash_is_rejected(self):
         engine,_=builder.make_release()
         namespace={'__name__':'v3_embedded_test'}
