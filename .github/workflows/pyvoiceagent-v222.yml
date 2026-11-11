@@ -1,0 +1,33 @@
+name: PYVoiceAgent V2.2.2 updater compatibility and safe-area regression
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v222.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile Pythonista full engine
+        run: python -m py_compile pyvoiceagent/agent_core_2_2_2.py
+      - name: Verify V2.1.0 updater compatibility, layout and native fallback
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_release_compat_v222.py' -v
+      - name: Persistent chat, permissions, manual voice and JavaScript syntax
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_shell_v220.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_shell_v221.py' -v
+      - name: Prior iPhone feature compatibility in simulation
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_manual_voice_v198.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_lifecycle_v201.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_result_center_v200.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_amap_native_v199.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v196.py' -v
