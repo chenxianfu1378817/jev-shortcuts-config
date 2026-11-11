@@ -4,6 +4,14 @@
 >
 > 最近核对：**2026-11-11**；状态来源：GitHub `main` 正式更新清单、V2.3.4 源码及 V2.3.5 发布变更。在线发布状态以 main 的 manifest 为准。
 
+## V2.3.7 原生录音闪退后的系统键盘听写回退（真机待验收）
+
+用户已确认：V2.3.6 点击语音后直接退出 Pythonista。此前 V2.3.4、V2.3.5、V2.3.6 分别尝试过主线程延迟、后台停止、后台线程独占原生录音对象，但未通过同一 iPhone 实机验证。由于原生 C/Objective-C 层崩溃不一定被 Python try/except 捕捉，本次不再激活 Pythonista 原生录音。
+
+V2.3.7 对全部用户可达语音入口采用 iOS 系统键盘听写：聊天页的麦克风按钮仅聚焦输入框，用户再点键盘麦克风口述、结束、检查文字，点发送由原 AI Agent 执行；桌面语音入口、传统菜单和多轮追问用 dialogs.text_dialog 输入。旧音频模块留作离线研究，不通过 UI 调用；无法断言原生音频真正修复。
+
+GitHub Actions 已通过新语音回退和现有数据/快捷指令/发布清单检查，仍须手机验证键盘、焦点、发送和跨 App 行为。
+
 ## V2.3.6 全功能模块化源码 / 独立音频会话（真机待验收）
 
 用户确认：V2.3.5 再次按麦克风结束录音时仍然闪退，因此不继续叠加录音处理回调，改为可分模块维护的设计。已把基于 V2.3.5 的**所有功能**按 25 个源码单元拆开，模块清单见 [MODULAR_ARCHITECTURE_V236.md](MODULAR_ARCHITECTURE_V236.md)。现阶段是开发源码模块化，最终仍由构建器组合成旧启动器可安装的单引擎，以避免改变本地数据或反复下载安装；实际新隔离的运行时模块为音频会话，其他业务模块仍沿用原共享调用接口。
@@ -67,11 +75,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.3.6**（以 main 的 manifest 为准） |
-| 更新序号 | `236` |
-| 发布文件 | `pyvoiceagent/agent_core_2_3_6.py` |
-| 发布 SHA-256 | `9c8ce83f1d957db94ff2059cb9844bd63172be1137ca62914094b27a3e444598` |
-| 发布大小 | `348310` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.7**（以 main 的 manifest 为准） |
+| 更新序号 | `237` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_7.py` |
+| 发布 SHA-256 | `45d48543358d6bb3bd37bf04089c092fb5f83207604b627702d9e6a4e8132bf1` |
+| 发布大小 | `346644` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
