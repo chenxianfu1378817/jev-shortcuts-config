@@ -227,6 +227,7 @@ def _settings(agent):
             '显示模式 · '+current['mode'],
             'DeepSeek API Key',
             '检查在线更新',
+            '回退到升级前版本',
             '数据备份（V3 独立数据库）',
             '运行诊断与版本',
             '返回'))
@@ -251,7 +252,16 @@ def _settings(agent):
             _alert('在线更新', report['message'])
             if report.get('updated'):
                 _alert('更新成功', '请退出 V3，然后从原来的 PYVoiceAgent.py 入口重新打开。')
-                return
+                return True
+        elif selected == '回退到升级前版本':
+            if _confirm('版本回退',
+                        '将尝试恢复升级前经过 SHA-256 校验的引擎。'
+                        'V3 个人数据仍然保留，不会自动重装当前版本。', '确认回退'):
+                from .mobile_update import rollback_to_previous
+                result = rollback_to_previous()
+                _alert('回退结果', result['message'])
+                if result.get('rolled_back'):
+                    return True
         elif selected == '数据备份（V3 独立数据库）':
             destination = os.path.join(data_directory(), 'backups',
                  'v3_'+datetime.datetime.now().strftime('%Y%m%d_%H%M%S')+'.sqlite3')
@@ -328,7 +338,8 @@ def run(argv=None):
             elif item == '快捷指令工具库':
                 _tools(agent)
             elif item == '设置':
-                _settings(agent)
+                if _settings(agent):
+                    return 0
             elif item.startswith('系统听写'):
                 _send(agent, _text('请用系统键盘麦克风听写'))
         except KeyboardInterrupt:
