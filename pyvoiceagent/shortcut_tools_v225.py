@@ -294,9 +294,11 @@ def _reg_action(shell,action,text):
         if shell.busy and shell.answer_event is None:
             shell.post({'type':'notice','text':'任务正在执行，暂不能退出；等待结果后再退出'})
             return
-        shell.close()
-        if shell.holder:
-            shell.holder.close()
+        def close_after_navigation():
+            shell.close()
+            if shell.holder:
+                shell.holder.close()
+        shell.ui.delay(close_after_navigation,0.08)
         return
     return _REG_OLD_ACTION(shell,action,text)
 _ChatShell._handle_action=_reg_action
