@@ -48,6 +48,11 @@ def _download(filename, cap, opener=urlopen):
     return payload
 
 
+def _file_bytes(path):
+    with open(path, 'rb') as stream:
+        return stream.read()
+
+
 def _load_meta():
     try:
         with open(META, 'rb') as f:
@@ -64,11 +69,11 @@ def check_for_update(downloader=None):
     original_meta = None
     changed_engine = False
     try:
-        original_meta = open(META, 'rb').read() if os.path.isfile(META) else None
+        original_meta = _file_bytes(META) if os.path.isfile(META) else None
         meta = _load_meta()
         if not meta.get('sha256') and os.path.isfile(CURRENT):
             raise ValueError('现有引擎缺少已记录的 SHA-256，拒绝覆盖')
-        current = open(CURRENT, 'rb').read() if os.path.isfile(CURRENT) else None
+        current = _file_bytes(CURRENT) if os.path.isfile(CURRENT) else None
         if current is not None and hashlib.sha256(current).hexdigest()!=meta['sha256']:
             raise ValueError('当前引擎校验失败，原版本已保留')
         state_file = os.path.join(LEGACY,'current_task.json')
