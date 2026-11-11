@@ -51,7 +51,8 @@ class MobileApplicationTests(unittest.TestCase):
                                                           return_value=True):
             mobile._send(self.agent, '分析最新道路沥青价格')
         llm.answer.assert_called_once()
-        self.assertEqual(self.agent.history.list(limit=1)[0]['status'],'completed')
+        self.assertEqual(sorted(x['status'] for x in self.agent.history.list(limit=3)),
+                         ['cancelled','completed'])
 
     def test_shortcut_is_never_invoked_without_confirmation(self):
         self.agent.shortcuts.register('go_pay','Test Payment', ['打开付款码'])
