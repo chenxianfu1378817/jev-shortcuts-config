@@ -85,7 +85,9 @@ class ChatSendTests(unittest.TestCase):
         self.shell._handle_action.assert_called_once_with('theme', '活力橙')
 
     def test_js_avoids_keyboard_blur_and_ime_send_race(self):
-        source = (ROOT / 'src' / '43_chat.py').read_text(encoding='utf-8')
+        # Historical V2.3.8 JS contract must inspect its archived release,
+        # not the V2.3.9 native-only development source.
+        source = (ROOT / 'agent_core_2_3_8.py').read_text(encoding='utf-8')
         block = source.split('function send(){', 1)[1].split('function themeButtons()', 1)[0]
         self.assertNotIn("el('entry').blur()", block)
         self.assertNotIn("el('entry').value=''", block)
