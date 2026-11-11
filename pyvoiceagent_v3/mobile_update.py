@@ -110,6 +110,7 @@ def check_for_update(downloader=None):
         previous_engine = current
         if current is not None:
             _atomic(PREVIOUS, current)
+            meta['previous_sha256'] = hashlib.sha256(current).hexdigest()
         _atomic(CURRENT, data)
         changed_engine = True
         meta.update({'sha256':digest,'installed_seq':seq,'installed_version':version,
