@@ -78,7 +78,7 @@ def build(sequence, write=False):
         'path': filename,
         'sha256': hashlib.sha256(data).hexdigest(),
         'size_bytes': len(data),
-        'summary': '修复 WebView 导航回调中直接执行文字任务、中文输入法收键盘与发送的时序冲突；异步排队、确认回执、防重复并保留未确认草稿。保留系统听写、全部工具和模块化源码。iPhone 真机待验收。',
+        'summary': '全功能模块化引擎切换到 Pythonista 原生卡片对话，移除 WebView 运行时依赖；新增无副作用发送测试、原生文字输入及独立任务线程，保留主题、历史、快捷指令与用户数据。iPhone 真机待验收。',
     }
     target = ROOT / filename
     if write:
