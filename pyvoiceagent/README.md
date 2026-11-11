@@ -1,5 +1,7 @@
 # PYVoiceAgent — Pythonista iPhone AI 语音智能体
 
+**跨会话开发接续入口：先阅读 [PROJECT_STATUS.md](PROJECT_STATUS.md)，再核对 [manifest.json](manifest.json) 中当前正式版本。** 本文件记录未完成的 iPhone 真机验收事项、数据保护边界与下一步开发顺序。
+
 **当前正式发布版本：以 [manifest.json](manifest.json) 为准。**
 固定入口依旧是 iCloud Drive / Pythonista 3 / **PYVoiceAgent.py**，不要更名。
 启动器从 GitHub 自动检查并校验 agent_core_*.py；后续开发原则上直接在 GitHub 发布，无须反复下载 ZIP。
