@@ -110,7 +110,7 @@ footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding
 <script>
 (function(){
 'use strict';
-var B=window.PYCHAT_BOOT||{}, messages=B.messages||[], busy=false, waiting=false, recording=false, tab='chat', accents={'活力橙':'#F07828','科技蓝':'#3979E8','翡翠绿':'#159F7B','典雅紫':'#8A62D8','中国红':'#D6434B','玫瑰粉':'#D66D96','深海青':'#168E9A','石墨黑':'#444B59'};
+var B=window.PYCHAT_BOOT||{}, messages=B.messages||[], busy=false, waiting=false, recording=false, sending=false, sentText='', composing=false, tab='chat', accents={'活力橙':'#F07828','科技蓝':'#3979E8','翡翠绿':'#159F7B','典雅紫':'#8A62D8','中国红':'#D6434B','玫瑰粉':'#D66D96','深海青':'#168E9A','石墨黑':'#444B59'};
 function el(id){return document.getElementById(id)}
 function node(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e}
 function bridge(action,payload){if(typeof payload==='undefined')payload='';var u='pyagent-chat://dispatch?nonce='+encodeURIComponent(B.nonce)+'&action='+encodeURIComponent(action)+'&payload='+encodeURIComponent(String(payload));window.location.href=u}
@@ -124,16 +124,16 @@ function bubble(msg){var row=node('div','bubble-row '+(msg.role==='user'?'user':
 function addMessage(m){messages.push(m);bubble(m);scrollBottom()}
 function approval(question,choices){var wrap=node('div','result-card');wrap.appendChild(node('div','title','需要你确认'));wrap.appendChild(node('div','body',question));var row=node('div','quick');choices.forEach(function(item){var b=node('button','pill',item.label);b.onclick=function(){row.replaceChildren();row.appendChild(node('span','sub','已选择：'+item.label));bridge('approve',item.value)};row.appendChild(b)});wrap.appendChild(row);el('chatview').appendChild(wrap);scrollBottom()}
 function card(r){var wrap=node('div','result-card');wrap.appendChild(node('div','title',r.title||'执行结果'));if(r.subtitle)wrap.appendChild(node('div','sub',r.subtitle));if(Array.isArray(r.items)){r.items.forEach(function(i){var x=node('div','body',(i.title||'')+'\n'+(i.time||''));x.style.marginTop='10px';wrap.appendChild(x)})}if(r.body)wrap.appendChild(node('div','body',r.body));if(r.notice)wrap.appendChild(node('div','note',r.notice));var copy=node('button','action secondary','复制结果');copy.onclick=function(){bridge('copy',r.copy||r.body||'')};wrap.appendChild(copy);el('chatview').appendChild(wrap);scrollBottom()}
-function setBusy(v,w){busy=!!v;waiting=!!w;el('status').textContent=waiting?'等待你补充':busy?'正在处理':'准备就绪';el('send').disabled=busy&&!waiting;el('hint').textContent=recording?'正在录音 · 再点麦克风结束':waiting?'输入回答或点击麦克风回答；不会自动收音':busy?'正在处理任务，请勿重复提交':'手动录音 · 点击开始，再点击结束'}
+function setBusy(v,w){busy=!!v;waiting=!!w;el('status').textContent=waiting?'等待你补充':busy?'正在处理':'准备就绪';el('send').disabled=sending||(busy&&!waiting);el('hint').textContent=recording?'正在录音 · 再点麦克风结束':waiting?'输入回答或点击麦克风回答；不会自动收音':busy?'正在处理任务，请勿重复提交':'手动录音 · 点击开始，再点击结束'}
 function enter(t){if(t!=='chat')el('entry').blur();tab=t;var screens={chat:'chatview',history:'historyview',settings:'settingsview'};Object.keys(screens).forEach(function(k){el(screens[k]).classList.toggle('active',k===t)});document.querySelectorAll('[data-tab]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===t)});el('footer').hidden=t!=='chat';if(t==='history')bridge('history','');if(t==='chat')scrollBottom()}
-function send(){var v=el('entry').value.trim();if(!v)return;if(busy&&!waiting){toast('正在执行上一项任务');return}el('entry').value='';growEntry();el('entry').blur();fitKeyboard();setTimeout(fitKeyboard,350);setBusy(true,false);bridge('send',v)}
+function send(){var v=el('entry').value.trim();if(!v||sending)return;if(composing)return toast('请先确认拼音候选文字');if(busy&&!waiting)return toast('正在执行上一项任务');sending=true;sentText=v;setBusy(busy,waiting);setTimeout(function(){if(sending){bridge('send',v)}},60);setTimeout(function(){if(sending){sending=false;sentText='';setBusy(busy,waiting);toast('发送未确认，文字已保留，可再次发送')}},4500)}
 function themeButtons(){var x=el('colors');Object.keys(accents).forEach(function(k){var b=node('button','color-choice');var dot=node('span','dot');dot.style.background=accents[k];b.appendChild(dot);b.appendChild(node('span','',k));b.onclick=function(){bridge('theme',k)};x.appendChild(b)})}
 function paintHistory(items){var p=el('historyresults');p.replaceChildren();if(!items||!items.length){p.appendChild(node('div','sub','没有匹配的记录'));return}items.forEach(function(it){var b=node('button','archive-btn',(it.title||'未命名任务')+'\n'+(it.created||'').slice(0,16));b.onclick=function(){bridge('detail',it.key||'')};p.appendChild(b)})}
-window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='tools'){var root=el('toolslist');root.hidden=false;root.replaceChildren();(m.items||[]).forEach(function(x){root.appendChild(node('div','sub',(x[0]||'')+' · '+(x[1]||'')))})}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')});var p=node('div','quick');var cp=node('button','pill','复制全文');cp.onclick=function(){bridge('history_copy',m.key||'')};var share=node('button','pill','分享／导出');share.onclick=function(){bridge('history_share',m.key||'')};p.appendChild(cp);p.appendChild(share);el('chatview').appendChild(p);scrollBottom()}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
+window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='send_ack'){if(m.ok&&el('entry').value.trim()===sentText){el('entry').value='';growEntry()}sending=false;sentText='';setBusy(busy,waiting);if(!m.ok)toast('未接收本次发送，文字已保留')}else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='tools'){var root=el('toolslist');root.hidden=false;root.replaceChildren();(m.items||[]).forEach(function(x){root.appendChild(node('div','sub',(x[0]||'')+' · '+(x[1]||'')))})}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')});var p=node('div','quick');var cp=node('button','pill','复制全文');cp.onclick=function(){bridge('history_copy',m.key||'')};var share=node('button','pill','分享／导出');share.onclick=function(){bridge('history_share',m.key||'')};p.appendChild(cp);p.appendChild(share);el('chatview').appendChild(p);scrollBottom()}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
 el('send').onclick=send;el('dismiss').onclick=function(){el('entry').blur();fitKeyboard()};
 el('entry').addEventListener('focus',function(){fitKeyboard();setTimeout(fitKeyboard,250)});
 el('entry').addEventListener('blur',function(){setTimeout(fitKeyboard,280)});
-el('entry').addEventListener('input',growEntry);
+el('entry').addEventListener('input',growEntry);el('entry').addEventListener('compositionstart',function(){composing=true});el('entry').addEventListener('compositionend',function(){composing=false;growEntry()});
 el('entry').onkeydown=function(e){if(e.key==='Enter'&&!e.isComposing&&(e.ctrlKey||e.metaKey)){e.preventDefault();send()}};
 if(window.visualViewport){window.visualViewport.addEventListener('resize',fitKeyboard);window.visualViewport.addEventListener('scroll',fitKeyboard)}
 window.addEventListener('resize',fitKeyboard);
@@ -207,6 +207,9 @@ class _ChatShell:
         self.registry_requested = False
         self.updating = False
         self.food_context = False
+        self._send_pending = False
+        self._last_send_text = ''
+        self._last_send_at = 0.0
         self.last_report_id = ''
         self.messages = _chat_transcript_load()
 
@@ -494,6 +497,62 @@ class _ChatShell:
         else:
             _chat_threading.Thread(target=work,daemon=True).start()
 
+    def _receive_bridge(self, action, text):
+        """Never execute task logic in WebView navigation delegate.
+
+        The native delegate must synchronously return to UIKit. Hand off text
+        processing after the navigation decision has returned; keep the draft
+        in JavaScript until the request is acknowledged.
+        """
+        if self.closed:
+            return
+        if action != 'send':
+            self._ui_later('bridge_' + action,
+                           lambda: self._handle_action(action, text), 0.02)
+            return
+        if not text.strip() or len(text) > 2000:
+            self.post({'type':'send_ack','ok':False})
+            return
+        with self.lock:
+            now = _chat_time.monotonic()
+            if (self._send_pending or (self.busy and self.answer_event is None)
+                    or (self._last_send_text == text
+                        and now - self._last_send_at < 3)):
+                self.post({'type':'send_ack','ok':False})
+                return
+            self._send_pending = True
+            self._last_send_text = text
+            self._last_send_at = now
+        def start_worker():
+            def run():
+                try:
+                    self._send_trace('processing')
+                    self.submit(text)
+                    self._send_trace('dispatched')
+                except Exception as exc:
+                    self._callback_error('send_dispatch', exc)
+                    self.post({'type':'notice','text':'发送过程中出现错误，未确认任务是否已执行，请先查看历史'})
+                finally:
+                    with self.lock:
+                        self._send_pending = False
+            try:
+                _chat_threading.Thread(target=run, daemon=True,
+                                       name='PYVA-ChatSend').start()
+            except Exception as exc:
+                with self.lock:
+                    self._send_pending = False
+                self._callback_error('send_thread', exc)
+                self.post({'type':'notice','text':'未能启动发送任务，请检查应用状态'})
+        self._ui_later('bridge_send_schedule', start_worker, 0.03)
+        self.post({'type':'send_ack','ok':True})
+
+    def _send_trace(self, stage):
+        try:
+            atomic_json(os.path.join(DATA_DIR, 'send_last_stage.json'),
+                        {'version':VERSION.split('-')[0], 'stage':stage, 'at':now_iso()})
+        except Exception:
+            pass
+
     def _handle_action(self, action, text):
         if action == 'ready':
             self.ready = True
@@ -683,9 +742,9 @@ class _ChatShell:
                 if len(text)>11000:
                     return False
                 try:
-                    outer._handle_action(action,text)
+                    outer._receive_bridge(action, text)
                 except Exception as exc:
-                    outer.post({'type':'notice','text':'操作未完成：'+str(exc)[:110]})
+                    outer._callback_error('webview_delegate', exc)
                 return False
 
             def webview_did_fail_load(self, view, error_code, message):
