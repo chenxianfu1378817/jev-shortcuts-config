@@ -4,6 +4,10 @@
 >
 > 最近核对：**2026-11-11**；状态来源：GitHub `main` 的正式更新清单、V2.2.3–V2.2.7 更新说明及相应源码。在线发布状态以 main 的 manifest 为准。
 
+## V2.3.4 手动停止录音
+
+用户反馈第二次点击麦克风时退出。停止录音及等待后识别原先都在主线程延迟回调中执行；现移到独立工作线程，保留手动开始与停止。取消、关闭和重复点击时会丢弃相应识别结果。模拟测试覆盖停止到识别、取消和关闭。对应设备报告未导出，真机稳定性待复验。
+
 ## V2.3.3 工具库返回助手
 
 V2.3.2 打开工具库时先关闭聊天窗口，原生列表切换时可能露出 Pythonista 控制台。V2.3.3 保留聊天窗口，在 Pythonista 后台脚本线程展示原生工具库。关闭工具库后回到同一个助手窗口。手机日志未发现对应的新 Pythonista 崩溃，原生展示仍待真机复验。
@@ -49,11 +53,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.3.3**（以 main 的 manifest 为准） |
-| 更新序号 | `233` |
-| 发布文件 | `pyvoiceagent/agent_core_2_3_3.py` |
-| 发布 SHA-256 | `b3dd5d8bd1ec92ea2b7a8e7a078e4e02cd0219c3ebe596b46fac4cc758207257` |
-| 发布大小 | `344433` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.4**（以 main 的 manifest 为准） |
+| 更新序号 | `234` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_4.py` |
+| 发布 SHA-256 | `1329b1881e89159db2ccf3353035b5b5a6a6915b69992c91e7db24e9349ea864` |
+| 发布大小 | `345820` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
