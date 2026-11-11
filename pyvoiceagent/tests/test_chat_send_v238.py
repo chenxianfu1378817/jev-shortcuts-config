@@ -97,8 +97,34 @@ class ChatSendTests(unittest.TestCase):
         self.assertIn("compositionstart", source)
         self.assertIn("compositionend", source)
         self.assertIn("outer._receive_bridge(action, text)", source)
+        self.assertIn("bridge('native_input','')", source)
         delegate = source.split("class Bridge:", 1)[1].split("web.delegate = Bridge()", 1)[0]
         self.assertNotIn("outer._handle_action(action,text)", delegate)
+
+    def test_native_text_button_uses_no_webview_message_payload(self):
+        import sys
+        dialogs = Mock()
+        dialogs.text_dialog.return_value = '显示支付宝付款码'
+        with patch.dict(sys.modules, {'dialogs': dialogs}), \\
+             patch.object(core._chat_threading, 'Thread') as thread:
+            thread.side_effect = lambda **kw: type(
+                'FakeThread', (), {'start': lambda self: kw['target']()})()
+            self.shell._receive_bridge = Mock()
+            self.shell._handle_action('native_input', '')
+        dialogs.text_dialog.assert_called_once_with('原生文字输入', '')
+        self.shell._receive_bridge.assert_called_once_with('send', '显示支付宝付款码')
+
+    def test_native_cancel_never_dispatches(self):
+        import sys
+        dialogs = Mock()
+        dialogs.text_dialog.return_value = None
+        with patch.dict(sys.modules, {'dialogs': dialogs}), \\
+             patch.object(core._chat_threading, 'Thread') as thread:
+            thread.side_effect = lambda **kw: type(
+                'FakeThread', (), {'start': lambda self: kw['target']()})()
+            self.shell._receive_bridge = Mock()
+            self.shell._handle_action('native_input', '')
+        self.shell._receive_bridge.assert_not_called()
 
     def test_send_trace_never_captures_user_text(self):
         from tempfile import TemporaryDirectory
