@@ -5378,7 +5378,7 @@ button,input,textarea{font:inherit}button{border:0;cursor:pointer;color:inherit}
 .tabs{display:flex;gap:8px;margin-top:14px}
 .tabs button{flex:1;background:transparent;border-radius:12px;color:var(--muted);font-size:13px;padding:10px 0}
 .tabs button.active{background:var(--surface);color:var(--text);font-weight:700}
-.screen{flex:1;min-height:0;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 24px}
+.screen{flex:1;min-height:0;display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 16px 24px}
 .screen.active{display:block}
 #chatview{padding-bottom:4px}
 .bubble-row{display:flex;margin:0 0 13px;align-items:flex-start}
