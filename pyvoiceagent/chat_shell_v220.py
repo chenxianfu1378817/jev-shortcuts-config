@@ -13,6 +13,13 @@ _CHAT_ACTIVE = None
 _CHAT_ORIGINAL_MENU = show_menu
 _CHAT_ORIGINAL_FINAL = final_report
 _CHAT_ORIGINAL_ASK = _ask_clarification
+_CHAT_ORIGINAL_PROMPT = prompt_alert
+_CHAT_ORIGINAL_AUTHORIZE = _voice_authorize_ai
+_CHAT_ORIGINAL_MAIN = main
+_CHAT_IN_TASK = _chat_threading.local()
+_CHAT_CALLBACK_RESULT = None
+_CHAT_BOOTSTRAP_VOICE = False
+_CHAT_BOOTSTRAP_TEXT = ''
 _CHAT_APP_SCHEMES = {
     'meituan': 'imeituan://',
     'meituan_waimai': 'meituanwaimai://',
@@ -88,13 +95,14 @@ function applyPalette(p){var map={accent:'--accent',background:'--bg',surface:'-
 function scrollBottom(){var a=el('chatview');setTimeout(function(){a.scrollTop=a.scrollHeight},25)}
 function bubble(msg){var row=node('div','bubble-row '+(msg.role==='user'?'user':'assistant'));var inner=node('div','bubble');if(msg.role!=='user')row.appendChild(node('div','meta',msg.role==='system'?'系统提示':'助手'));inner.textContent=msg.text||'';row.appendChild(inner);el('chatview').appendChild(row);return row}
 function addMessage(m){messages.push(m);bubble(m);scrollBottom()}
+function approval(question,choices){var wrap=node('div','result-card');wrap.appendChild(node('div','title','需要你确认'));wrap.appendChild(node('div','body',question));var row=node('div','quick');choices.forEach(function(item){var b=node('button','pill',item.label);b.onclick=function(){row.replaceChildren();row.appendChild(node('span','sub','已选择：'+item.label));bridge('approve',item.value)};row.appendChild(b)});wrap.appendChild(row);el('chatview').appendChild(wrap);scrollBottom()}
 function card(r){var wrap=node('div','result-card');wrap.appendChild(node('div','title',r.title||'执行结果'));if(r.subtitle)wrap.appendChild(node('div','sub',r.subtitle));if(Array.isArray(r.items)){r.items.forEach(function(i){var x=node('div','body',(i.title||'')+'\n'+(i.time||''));x.style.marginTop='10px';wrap.appendChild(x)})}if(r.body)wrap.appendChild(node('div','body',r.body));if(r.notice)wrap.appendChild(node('div','note',r.notice));var copy=node('button','action secondary','复制结果');copy.onclick=function(){bridge('copy',r.copy||r.body||'')};wrap.appendChild(copy);el('chatview').appendChild(wrap);scrollBottom()}
 function setBusy(v,w){busy=!!v;waiting=!!w;el('status').textContent=waiting?'等待你补充':busy?'正在处理':'准备就绪';el('send').disabled=busy&&!waiting;el('hint').textContent=recording?'正在录音 · 再点麦克风结束':waiting?'输入回答或点击麦克风回答；不会自动收音':busy?'正在处理任务，请勿重复提交':'手动录音 · 点击开始，再点击结束'}
 function enter(t){tab=t;var screens={chat:'chatview',history:'historyview',settings:'settingsview'};Object.keys(screens).forEach(function(k){el(screens[k]).classList.toggle('active',k===t)});document.querySelectorAll('[data-tab]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===t)});el('footer').hidden=t!=='chat';if(t==='history')bridge('history','');if(t==='chat')scrollBottom()}
 function send(){var v=el('entry').value.trim();if(!v)return; if(busy&&!waiting){toast('正在执行上一项任务');return}el('entry').value='';addMessage({role:'user',text:v});setBusy(true,false);bridge('send',v)}
 function themeButtons(){var x=el('colors');Object.keys(accents).forEach(function(k){var b=node('button','color-choice');var dot=node('span','dot');dot.style.background=accents[k];b.appendChild(dot);b.appendChild(node('span','',k));b.onclick=function(){bridge('theme',k)};x.appendChild(b)})}
 function paintHistory(items){var p=el('historyresults');p.replaceChildren();if(!items||!items.length){p.appendChild(node('div','sub','没有匹配的记录'));return}items.forEach(function(it){var b=node('button','archive-btn',(it.title||'未命名任务')+'\n'+(it.created||'').slice(0,16));b.onclick=function(){bridge('detail',it.key||'')};p.appendChild(b)})}
-window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')})}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
+window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')})}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
 el('send').onclick=send;el('entry').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
 el('mic').onclick=function(){if(recording)bridge('voice_stop','');else bridge('voice_start','')};
 document.querySelectorAll('[data-tab]').forEach(function(b){b.onclick=function(){enter(b.getAttribute('data-tab'))}});
@@ -104,7 +112,7 @@ el('savecolor').onclick=function(){bridge('color',el('customcolor').value.trim()
 el('checkupdate').onclick=function(){bridge('update','')};
 applyPalette(B.palette||{});el('version').textContent='V'+(B.version||'2.2.0')+' · 本地 WebView';
 messages.forEach(bubble);themeButtons();if(!messages.length){addMessage({role:'assistant',text:'你好，可以直接说任务，也可以输入文字。我会在这里继续追问并显示执行结果。'})}
-setBusy(false,false);scrollBottom();bridge('ready','');
+setBusy(false,false);scrollBottom();if(B.initial_result)card(B.initial_result);bridge('ready','');
 })();
 </script></body></html>"""
 
@@ -146,6 +154,8 @@ class _ChatShell:
         self.waiting = False
         self.answer_event = None
         self.answer = None
+        self.approval_event = None
+        self.approval_choice = 0
         self.recorder = None
         self.record_file = None
         self.closed = False
@@ -197,6 +207,8 @@ class _ChatShell:
             self.answer = None
             if self.answer_event is not None:
                 self.answer_event.set()
+            if self.approval_event is not None:
+                self.approval_event.set()
             recorder = self.recorder
             self.recorder = None
             path = self.record_file
@@ -233,6 +245,27 @@ class _ChatShell:
         self.status(True, False)
         return ans
 
+    def approve(self, question, choices=None):
+        """Secure explicit user approval inside the current WebView."""
+        if choices is None:
+            choices = [('确认','1'),('取消','0')]
+        event = _chat_threading.Event()
+        with self.lock:
+            if self.closed:
+                return 0
+            self.approval_event = event
+            self.approval_choice = 0
+        self.post({'type':'approval','question':str(question)[:650],
+                   'choices':[{'label':str(label),'value':str(value)}
+                              for label,value in choices]})
+        event.wait()
+        with self.lock:
+            result = self.approval_choice
+            if self.approval_event is event:
+                self.approval_event = None
+            self.approval_choice = 0
+        return result
+
     def submit(self, value, from_voice=False):
         text = str(value or '').strip()[:2000]
         if not text:
@@ -243,7 +276,7 @@ class _ChatShell:
                 return
             if self.answer_event is not None:
                 self.message('user', text)
-                self.answer = text
+                self.answer = None if text in ('稍后继续','暂停任务','取消任务') else text
                 self.answer_event.set()
                 return
             if self.busy:
@@ -283,6 +316,7 @@ class _ChatShell:
     def _worker(self, value, from_voice):
         global VOICE_SESSION_ACTIVE
         try:
+            _CHAT_IN_TASK.active = True
             VOICE_SESSION_ACTIVE = bool(from_voice)
             outcome = start_new(value)
             state = get_state()
@@ -302,6 +336,7 @@ class _ChatShell:
         except Exception as exc:
             self.message('assistant', '执行未完成：'+type(exc).__name__+': '+str(exc)[:180])
         finally:
+            _CHAT_IN_TASK.active = False
             self.status(False, False)
 
     def report(self, state):
@@ -370,6 +405,21 @@ class _ChatShell:
     def _handle_action(self, action, text):
         if action == 'ready':
             self.ready = True
+            global _CHAT_BOOTSTRAP_VOICE, _CHAT_BOOTSTRAP_TEXT
+            if _CHAT_BOOTSTRAP_VOICE:
+                _CHAT_BOOTSTRAP_VOICE = False
+                self.ui.delay(self.begin_record, 0.3)
+            if _CHAT_BOOTSTRAP_TEXT:
+                text = _CHAT_BOOTSTRAP_TEXT
+                _CHAT_BOOTSTRAP_TEXT = ''
+                self.ui.delay(lambda: self.submit(text), 0.4)
+        elif action == 'approve':
+            if self.approval_event is None:
+                return
+            choice = int(text) if text in ('0','1','2') else 0
+            with self.lock:
+                self.approval_choice = choice
+                self.approval_event.set()
         elif action == 'send':
             if not text.strip() or len(text) > 2000:
                 self.post({'type':'notice','text':'请输入不超过2000字的任务'})
@@ -430,8 +480,11 @@ class _ChatShell:
         if not hasattr(ui, 'WebView'):
             raise RuntimeError('Pythonista 缺少本地 WebView')
         self.ui = ui
+        global _CHAT_CALLBACK_RESULT
         boot = {'nonce':self.nonce,'version':VERSION.split('-')[0],
-                'palette':_card_palette(_card_appearance_load()),'messages':self.messages}
+                'palette':_card_palette(_card_appearance_load()),'messages':self.messages,
+                'initial_result':_CHAT_CALLBACK_RESULT}
+        _CHAT_CALLBACK_RESULT = None
         doc = CHAT_HTML.replace('/*CHAT_BOOT*/',
                   'window.PYCHAT_BOOT='+_webui_safe_json(boot)+';')
         width, height = ui.get_screen_size()
@@ -463,7 +516,7 @@ class _ChatShell:
                 if values['nonce'][0]!=outer.nonce or outer.closed:
                     return False
                 action, text = values['action'][0], values['payload'][0]
-                if action not in ('ready','send','voice_start','voice_stop','voice_cancel',
+                if action not in ('ready','send','approve','voice_start','voice_stop','voice_cancel',
                                   'history','detail','copy','theme','mode','color','update','exit'):
                     return False
                 if len(text)>11000:
@@ -509,11 +562,42 @@ def _ask_clarification(question):
     return _CHAT_ORIGINAL_ASK(question)
 
 
-def final_report(state, show_dialog=True):
+def prompt_alert(title, message, ok='确认', cancel='取消'):
+    current = _CHAT_ACTIVE
+    if current is not None and not current.closed and getattr(_CHAT_IN_TASK,'active',False):
+        return current.approve(str(title)+'：\n'+str(message)[:500],
+                               [(ok,'1'),(cancel,'0')]) == 1
+    return _CHAT_ORIGINAL_PROMPT(title,message,ok=ok,cancel=cancel)
+
+
+def _voice_authorize_ai(state):
     current = _CHAT_ACTIVE
     if current is not None and not current.closed:
-        if show_dialog:
+        flags = read_json(VOICE_PRIVACY_PATH,{})
+        if isinstance(flags,dict) and flags.get('voice_text_auto_share') is True:
+            return True
+        choice = current.approve('是否允许将本次任务文字发送给 DeepSeek？\n'
+            '不包含未经许可的剪贴板、通讯录或日历内容。',
+            [('仅本次允许','1'),('今后自动允许','2'),('取消','0')])
+        if choice == 2:
+            atomic_json(VOICE_PRIVACY_PATH,{
+                'voice_text_auto_share':True,'approved_at':now_iso()})
+        return choice in (1,2)
+    return _CHAT_ORIGINAL_AUTHORIZE(state)
+
+
+def final_report(state, show_dialog=True):
+    global _CHAT_CALLBACK_RESULT
+    current = _CHAT_ACTIVE
+    if current is not None:
+        if not current.closed and show_dialog:
             current.report(state)
+        return
+    if getattr(_CHAT_IN_TASK,'active',False):
+        return  # The WebView was closed while work was in flight: no console/modal.
+    if len(sys.argv)>1 and sys.argv[1] in ('bridge_callback','callback'):
+        if show_dialog:
+            _CHAT_CALLBACK_RESULT = _result_card_model(state)
         return
     return _CHAT_ORIGINAL_FINAL(state,show_dialog=show_dialog)
 
@@ -521,7 +605,7 @@ def final_report(state, show_dialog=True):
 def show_menu():
     global _CHAT_ACTIVE
     if _CHAT_ACTIVE is not None and not _CHAT_ACTIVE.closed:
-        return  # Another callback must not nest duplicate modal chat windows.
+        return
     shell = _ChatShell()
     _CHAT_ACTIVE = shell
     try:
@@ -534,3 +618,16 @@ def show_menu():
         shell.close()
         if _CHAT_ACTIVE is shell:
             _CHAT_ACTIVE = None
+
+
+def main():
+    global _CHAT_BOOTSTRAP_VOICE, _CHAT_BOOTSTRAP_TEXT
+    entry = sys.argv[1] if len(sys.argv)>1 else ''
+    # Desktop voice/text shortcuts now start the persistent conversation.
+    if entry == 'voice':
+        _CHAT_BOOTSTRAP_VOICE = True
+        return show_menu()
+    if entry == 'text' and len(sys.argv)>2:
+        _CHAT_BOOTSTRAP_TEXT = str(sys.argv[2])[:2000]
+        return show_menu()
+    return _CHAT_ORIGINAL_MAIN()
