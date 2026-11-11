@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """V2.2.0 persistent WebView chat, pure intent and lifecycle regression (not iPhone testing)."""
 import ast
+import shutil
+import subprocess
 import json
 import os
 import re
@@ -190,6 +192,46 @@ class ChatV220Test(unittest.TestCase):
         self.assertIn("parsed.scheme!='pyagent-chat'",PATCH.read_text('utf-8'))
         self.assertIn("values['nonce'][0]!=outer.nonce",PATCH.read_text('utf-8'))
         self.assertNotIn('eval(',html)
+
+    def test_embedded_javascript_has_valid_syntax(self):
+        if not shutil.which('node'):
+            self.skipTest('Node.js unavailable in this environment')
+        html=self.ns['CHAT_HTML']
+        scripts=re.findall(r'<script[^>]*>(.*?)</script>',html,re.S)
+        self.assertGreaterEqual(len(scripts),2)
+        with tempfile.TemporaryDirectory() as td:
+            file=Path(td)/'chat.js'
+            file.write_text(scripts[-1],encoding='utf-8')
+            result=subprocess.run(['node','--check',str(file)],
+                                  capture_output=True,text=True,timeout=15)
+        self.assertEqual(result.returncode,0,result.stderr)
+
+    def test_old_completed_state_not_reissued_as_new_result(self):
+        self.ns['start_new'].return_value=None
+        self.ns['get_state']=lambda:{'id':'prev','status':'finished','events':[]}
+        self.shell._worker('没有对应工具的操作',False)
+        self.assertFalse(any(e.get('type')=='result' for e in self.events))
+        self.assertTrue(any('没有启动新操作' in e.get('message',{}).get('text','')
+                            for e in self.events if e.get('type')=='message'))
+
+    def test_recognition_disables_concurrent_text(self):
+        self.shell.recognizing=True
+        self.shell.submit('误触重新执行')
+        self.assertTrue(any(e.get('type')=='notice' for e in self.events))
+        self.ns['start_new'].assert_not_called()
+
+    def test_fallback_clears_failed_session_before_old_menu(self):
+        env=self.ns
+        class BrokenShell:
+            closed=False
+            def show(self): raise RuntimeError('WebView unavailable')
+            def close(self): self.closed=True
+        shell=BrokenShell()
+        env['_ChatShell']=lambda:shell
+        env['show_menu']()
+        self.assertTrue(shell.closed)
+        self.assertIsNone(env['_CHAT_ACTIVE'])
+        env['_CHAT_ORIGINAL_MENU'].assert_called_once()
 
     def test_closing_screen_releases_pending_question_and_permission(self):
         answers=[]
