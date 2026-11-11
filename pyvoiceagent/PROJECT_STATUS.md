@@ -2,11 +2,11 @@
 
 > **用途**：这是跨 ChatGPT 对话窗口的项目接续入口。每次接手前先读取本文件、`manifest.json` 和对应源码；本文件记录已核实的发布状态、仍需真机验收的问题和下一阶段计划，避免丢失历史或从旧版重做。
 >
-> 最近核对：**2026-11-11**；状态来源：GitHub `main` 的正式更新清单、V2.2.3–V2.2.7 更新说明及相应源码。在线发布状态以 main 的 manifest 为准。
+> 最近核对：**2026-11-11**；状态来源：GitHub `main` 正式更新清单、V2.3.4 源码及 V2.3.5 发布变更。在线发布状态以 main 的 manifest 为准。
 
-## V2.3.5 回调异常候选（未发布）
+## V2.3.5 回调异常与工具库持久化修复（真机待验收）
 
-11 月 11 日 16:40:28 的 Pythonista 真机报告显示，主线程在执行延迟回调后进入异常打印及事后调试器。调试器通过 PyFrame_FastToLocalsWithError 读取局部变量时发生 SIGSEGV；报告未给出最初的 Python 异常或回调名。V2.3.5 候选保护聊天窗口中的延迟回调，跳过窗口关闭后的动作，将阶段、异常类型和 Python 行号留在本机 callback_last_error.json，排除任务正文、异常参数及凭据。保留 V2.3.4 工作线程。正式清单仍是 V2.3.4，候选待同机验证。
+11 月 11 日 16:40:28 的 Pythonista 真机报告显示，主线程在执行延迟回调后进入异常打印及事后调试器。调试器通过 PyFrame_FastToLocalsWithError 读取局部变量时发生 SIGSEGV；报告未给出最初的 Python 异常或回调名。V2.3.5 在 V2.3.4 上为聊天延迟回调和原生快捷指令管理线程建立异常边界；窗口关闭后的延迟动作不再执行，阶段、异常类型和 Python 行号记在本机 callback_last_error.json（不记录正文和密钥）。另修正 atomic_json 固定 .tmp 文件名引起的并发写入竞争，工具库读改写受可重入锁保护；任务状态文件损坏、暂停、执行中或待回调/待核验时拒绝变更快捷指令。保留 V2.3.4 的独立录音工作线程、所有原功能、固定入口和 350000 字节更新上限。Python/CI 回归已通过，**iPhone 退出或闪退问题尚需同机复验，不得宣称已经彻底解决**。
 
 ## V2.3.4 手动停止录音
 
@@ -57,11 +57,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.3.4**（以 main 的 manifest 为准） |
-| 更新序号 | `234` |
-| 发布文件 | `pyvoiceagent/agent_core_2_3_4.py` |
-| 发布 SHA-256 | `1329b1881e89159db2ccf3353035b5b5a6a6915b69992c91e7db24e9349ea864` |
-| 发布大小 | `345820` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.5**（以 main 的 manifest 为准） |
+| 更新序号 | `235` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_5.py` |
+| 发布 SHA-256 | `1f48e0c4c5344aa52a6569db06597c8e8d8c93a7d8ef6582b45bc6b37814012f` |
+| 发布大小 | `348665` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
@@ -94,7 +94,7 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 ## 4. 关键文件速查
 
 - `manifest.json`：唯一正式更新清单，包含 `version / sequence / path / sha256 / size_bytes`。
-- `agent_core_2_2_7.py`：当前发布主引擎；今后按清单更新，不能固定编辑本文件名。
+- `agent_core_2_3_5.py`：当前发布主引擎；今后按清单更新，不能固定编辑本文件名。
 - `README.md`：功能概览、各版本发布记录及使用说明。
 - `V223_录音停止闪退修复与验收.md`、`V224_键盘输入与对话区适配.md`、`V225_退出与本地快捷指令工具库.md`、`V226_本地快捷指令正式兼容与数据保护.md`、`V227_输入法导致页面横向偏移修复.md`：最近故障与验收基准。
 - `tests/test_audio_stop_v223.py`、`tests/test_keyboard_v224.py`、`tests/test_registered_shortcuts_v225.py`、`tests/test_shortcut_guard_v226.py`、`tests/test_horizontal_keyboard_v227.py`：关键回归用例；旧工具对应其他 tests 不可删除。
