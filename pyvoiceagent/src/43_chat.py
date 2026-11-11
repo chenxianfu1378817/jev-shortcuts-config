@@ -199,6 +199,7 @@ class _ChatShell:
         self.pending_audio = None
         self.audio_stop_cancel = None
         self.recognizing = False
+        self._voice_session = None
         self._voice_stage = ''
         self.closed = False
         self.ready = False
@@ -270,6 +271,11 @@ class _ChatShell:
     def close(self):
         with self.lock:
             self.closed = True
+            session = self._voice_session
+            self._voice_session = None
+            self.recorder = None
+            self.record_file = self.pending_audio = None
+            self.recognizing = False
             if self.audio_stop_cancel is not None:
                 self.audio_stop_cancel.set()
             self.answer = None
@@ -278,20 +284,9 @@ class _ChatShell:
             if self.approval_event is not None:
                 self.approval_choice = 0
                 self.approval_event.set()
-            recorder = self.recorder
-            self.recorder = None
-            path = self.record_file or self.pending_audio
-            self.record_file = self.pending_audio = None
-        if recorder is not None:
-            try:
-                recorder.stop()
-            except Exception:
-                pass
-        if path:
-            try:
-                os.remove(path)
-            except OSError:
-                pass
+        # Never call a native sound.Recorder method from the UI thread.
+        if session is not None:
+            session.cancel()
 
     def ask(self, question):
         """Runs in the worker; no native dialogs or automatic recording."""
@@ -431,6 +426,37 @@ class _ChatShell:
         except Exception:
             pass
 
+    def _voice_progress(self, phase):
+        if self.closed:
+            return
+        if phase == 'recording':
+            self.post({'type':'recording','active':True})
+        elif phase == 'stopped':
+            with self.lock:
+                self.recorder = None
+                self.recognizing = True
+            self.post({'type':'recording','active':False})
+            self.post({'type':'busy','busy':True,'waiting':False})
+        elif phase == 'idle':
+            self.post({'type':'recording','active':False})
+
+    def _voice_result(self, spoken):
+        if not self.closed and self._voice_session is not None:
+            self.submit(spoken, from_voice=True)
+
+    def _voice_error(self, error_type):
+        if not self.closed:
+            self.message('assistant', '语音录制或识别失败（'+str(error_type)[:45]+'），未执行新任务。可以改用文字输入。')
+
+    def _voice_done(self):
+        with self.lock:
+            self.recorder = None
+            self.recognizing = False
+            self.audio_stop_cancel = None
+            self._voice_session = None
+        if not self.closed and not self.busy:
+            self.post({'type':'busy','busy':False,'waiting':False})
+
     def begin_record(self):
         with self.lock:
             if self.closed or self.recorder is not None or self.recognizing:
@@ -438,132 +464,41 @@ class _ChatShell:
             if self.busy and self.answer_event is None:
                 self.post({'type':'notice','text':'当前任务正在处理'})
                 return
+            self.recorder = True  # UI-only activity marker; not a native recorder.
+            session = _VoiceSession(DATA_DIR, self._voice_trace, self._voice_progress,
+                                    self._voice_result, self._voice_error, self._voice_done)
+            self._voice_session = session
+            self.audio_stop_cancel = session.cancel_event
         try:
-            import sound
-            ensure_dirs()
-            path = os.path.join(DATA_DIR, 'chat_voice_'+uuid.uuid4().hex[:12]+'.m4a')
-            self._voice_trace('recorder_start')
-            rec = sound.Recorder(path)
-            rec.record()
-            self._voice_trace('recording')
+            session.start()
+        except Exception as exc:
             with self.lock:
-                self.recorder = rec
-                self.record_file = path
-            self.post({'type':'recording','active':True})
-        except Exception as exc:
-            self.message('assistant', '无法开始手动录音：'+str(exc)[:150])
+                self.recorder = None
+                self._voice_session = None
+                self.audio_stop_cancel = None
+            self._callback_error('voice_start_worker', exc)
+            self.post({'type':'notice','text':'无法启动录音，请使用文字输入'})
 
-    def stop_record(self, cancelled):
-        """Stop and recognize on the audio worker, outside WebView callbacks."""
+    def stop_record(self, cancelled=None):
         with self.lock:
-            if self.closed or cancelled.is_set():
+            session = self._voice_session
+            if self.closed or session is None or self.recognizing:
                 return
-            rec, path = self.recorder, self.record_file
-            self.recorder = None
-            self.record_file = None
-            if rec is None:
+            self.recognizing = True  # Fast duplicate-tap guard.
+        if not session.stop():
+            with self.lock:
                 self.recognizing = False
-                return
-            self.recognizing = True
-        self._voice_trace('stop_enter')
-        error = None
-        try:
-            rec.stop()
-        except Exception as exc:
-            error = exc
-        finally:
-            rec = None  # Release AVAudioRecorder before speech recognition.
-        self.post({'type':'recording','active':False})
-        if error is not None:
-            self._voice_trace('stop_failed')
-            self.recognizing = False
-            if path:
-                try:
-                    os.remove(path)
-                except OSError:
-                    pass
-            self.message('assistant','停止录音失败：'+str(error)[:130]+'。没有执行任务。')
-            self.post({'type':'busy','busy':False,'waiting':False})
-            return
-        with self.lock:
-            if self.closed or cancelled.is_set():
-                if path and os.path.isfile(path):
-                    try:
-                        os.remove(path)
-                    except OSError:
-                        pass
-                return
-            self.pending_audio = path
-        self._voice_trace('audio_stopped')
-        self.post({'type':'busy','busy':True,'waiting':False})
-        if not cancelled.wait(0.7):
-            self._transcribe_pending(path, cancelled)
 
     def cancel_record(self):
-        """Discard user-cancelled audio; never run recognition or a task."""
         with self.lock:
-            if self.audio_stop_cancel is not None:
-                self.audio_stop_cancel.set()
-            rec, path = self.recorder, self.record_file or self.pending_audio
-            if rec is not None or path is not None or self.audio_stop_cancel is None:
-                self.recognizing = False
+            session = self._voice_session
+            if self.closed or session is None:
+                return
+            self.recognizing = True
             self.recorder = None
-            self.record_file = self.pending_audio = None
-        if rec is not None:
-            try:
-                rec.stop()
-            except Exception:
-                pass
-        if path:
-            try:
-                os.remove(path)
-            except OSError:
-                pass
-        self._voice_trace('cancelled')
+        session.cancel()
         self.post({'type':'recording','active':False})
-        if not self.busy:
-            self.post({'type':'busy','busy':False,'waiting':False})
         self.post({'type':'notice','text':'本次录音已取消，没有执行任务'})
-
-    def _transcribe_pending(self, path, cancelled):
-        with self.lock:
-            if self.closed or cancelled.is_set() or not path or self.pending_audio != path:
-                return
-            self.pending_audio = None
-        self._transcribe(path, cancelled)
-
-    def _transcribe(self, path, cancelled):
-        try:
-            if self.closed or cancelled.is_set():
-                return
-            self._voice_trace('recognizing')
-            import speech
-            if not path or not os.path.isfile(path) or os.path.getsize(path) < 100:
-                raise ValueError('录音过短或无有效内容')
-            langs = speech.get_recognition_languages()
-            lang = next((x for x in langs
-                         if x.lower().replace('_','-') in ('zh-cn','zh-hans-cn')), None)
-            results = speech.recognize(path, lang) if lang else speech.recognize(path)
-            if self.closed or cancelled.is_set():
-                return
-            spoken = str(results[0][0]).strip() if results and results[0] else ''
-            if not spoken:
-                raise ValueError('没有识别到有效语音')
-            self._voice_trace('recognized')
-            self.submit(spoken, from_voice=True)
-        except Exception as exc:
-            if not self.closed and not cancelled.is_set():
-                self.message('assistant', '语音识别未完成：'+str(exc)[:140]+'。也可以直接输入文字。')
-        finally:
-            self.recognizing = False
-            self._voice_trace('idle')
-            if not self.busy:
-                self.post({'type':'busy','busy':False,'waiting':False})
-            if path:
-                try:
-                    os.remove(path)
-                except OSError:
-                    pass
 
     def _legacy_action(self, action):
         """Keep prior tools reachable; system setup can use native permission dialogs."""
@@ -611,31 +546,7 @@ class _ChatShell:
                     return
             self._ui_later('voice_start', self.begin_record, 0.08)
         elif action == 'voice_stop':
-            with self.lock:
-                if self.closed or self.recognizing or self.recorder is None:
-                    return
-                self.recognizing = True  # De-duplicate double taps immediately.
-                cancelled = self.audio_stop_cancel = _chat_threading.Event()
-            def stop_audio():
-                try:
-                    if not cancelled.wait(0.08):
-                        self.stop_record(cancelled)
-                except Exception as exc:
-                    self._callback_error('audio_stop_worker', exc)
-                    self.post({'type':'notice','text':'停止录音未完成，未提交语音任务'})
-                    self.post({'type':'busy','busy':False,'waiting':False})
-                finally:
-                    with self.lock:
-                        if self.audio_stop_cancel is cancelled:
-                            self.audio_stop_cancel = None
-                            self.recognizing = False
-            try:
-                _chat_threading.Thread(target=stop_audio, daemon=True, name='PYVA-AudioStop').start()
-            except RuntimeError:
-                with self.lock:
-                    self.recognizing = False
-                    self.audio_stop_cancel = None
-                raise
+            self.stop_record()
         elif action == 'voice_cancel':
             self._ui_later('voice_cancel', self.cancel_record, 0.08)
         elif action == 'registry':
