@@ -3,7 +3,7 @@
   "sequence": 239,
   "version": "2.3.9",
   "path": "agent_core_2_3_9.py",
-  "sha256": "5ea81156b9aca124a1006854586ed95a993748dd8f6e2bc9036a4890be5af810",
-  "size_bytes": 341361,
+  "sha256": "bea8c3d94ecd828e78b259d5ec09fcd94f2760a3c7263ac3936616244ae16915",
+  "size_bytes": 341614,
   "summary": "全功能模块化引擎切换到 Pythonista 原生卡片对话，移除 WebView 运行时依赖；新增无副作用发送测试、原生文字输入及独立任务线程，保留主题、历史、快捷指令与用户数据。iPhone 真机待验收。"
 }
