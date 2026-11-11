@@ -9,6 +9,7 @@ import hashlib
 import binascii
 import traceback
 import time
+import tempfile
 from datetime import datetime, timedelta
 from urllib.parse import urlencode, urlsplit, unquote_to_bytes
 from urllib.request import Request, urlopen, build_opener, HTTPRedirectHandler
@@ -545,10 +546,19 @@ def ensure_dirs():
     os.makedirs(NOTES_DIR, exist_ok=True)
 def atomic_json(path, obj):
     ensure_dirs()
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(obj, f, indent=2, ensure_ascii=False)
-    os.replace(tmp, path)
+    parent = os.path.dirname(os.path.abspath(path))
+    os.makedirs(parent, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix='.' + os.path.basename(path) + '.',
+                                suffix='.tmp', dir=parent)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(obj, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, path)
+    finally:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
 def read_json(path, default=None):
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -6333,44 +6343,72 @@ def _reg_raw_for_write():
     return raw
 
 
+_REGISTRY_WRITE_LOCK = _chat_threading.RLock()
+
+
+def _reg_write_guard():
+    # An unreadable task is not an empty task. Do not risk overwriting it.
+    state = get_state()
+    try:
+        with open(STATE_PATH, encoding='utf-8') as source:
+            persisted = json.load(source)
+    except FileNotFoundError:
+        persisted = None
+    except (OSError, ValueError, UnicodeError):
+        raise ValueError('当前任务文件无法读取，已停止工具库修改以保护旧任务')
+    if persisted is not None:
+        state = persisted
+    if not isinstance(state, dict):
+        raise ValueError('当前任务状态无效，工具库未修改')
+    if state.get('pending') or state.get('status') in (
+            'awaiting_callback', 'needs_review', 'running',
+            'writing', 'paused', 'needs_input', 'replan_pending'):
+        raise ValueError('存在未完成或待核验任务，暂不可修改工具库')
+
+
 def _reg_save(data, new_only=False):
-    if not isinstance(data,dict):
+    with _REGISTRY_WRITE_LOCK:
+        return _reg_save_locked(data, new_only)
+
+
+def _reg_save_locked(data, new_only=False):
+    if not isinstance(data, dict):
         raise ValueError('登记格式错误')
-    ident=str(data.get('id','')).strip()
-    candidate=_reg_validate(data)
-    raw=_reg_raw_for_write()
-    reg=_reg_all(raw)
-    if get_state().get('status')=='awaiting_callback':
-        raise ValueError('存在待回调任务，暂不可修改工具库')
+    ident = str(data.get('id', '')).strip()
+    candidate = _reg_validate(data)
+    _reg_write_guard()
+    raw = _reg_raw_for_write()
+    reg = _reg_all(raw)
     if new_only and ident in raw:
         raise ValueError('工具 ID 已存在，请从工具列表选择编辑')
     if ident in raw and ident not in reg:
         raise ValueError('此 ID 已存在异常记录，原记录已保留')
-    if ident not in raw and len(raw)>=MAX_SHORTCUTS:
+    if ident not in raw and len(raw) >= MAX_SHORTCUTS:
         raise ValueError('最多登记 {} 个快捷指令'.format(MAX_SHORTCUTS))
-    for key,other in reg.items():
-        if key==ident: continue
+    for key, other in reg.items():
+        if key == ident:
+            continue
         if (other['enabled'] and candidate['enabled'] and
             set(x.casefold() for x in other['aliases']) &
             set(x.casefold() for x in candidate['aliases'])):
             raise ValueError('触发语句与已启用的其他工具重复')
-    raw[ident]=dict(raw.get(ident, {}), **candidate)
-    atomic_json(REGISTRY_PATH,raw)
+    raw[ident] = dict(raw.get(ident, {}), **candidate)
+    atomic_json(REGISTRY_PATH, raw)
     return ident
 
-def _reg_change(ident,enabled=None,delete=False):
-    raw=_reg_raw_for_write()
-    reg=_reg_all(raw)
-    if ident not in reg:
-        raise ValueError('工具未登记')
-    if get_state().get('status')=='awaiting_callback':
-        raise ValueError('等待快捷指令回传期间不能修改工具库')
-    if delete:
-        del raw[ident]
-    else:
-        _reg_save(dict(reg[ident], id=ident, enabled=bool(enabled)))
-        return
-    atomic_json(REGISTRY_PATH,raw)
+
+def _reg_change(ident, enabled=None, delete=False):
+    with _REGISTRY_WRITE_LOCK:
+        _reg_write_guard()
+        raw = _reg_raw_for_write()
+        reg = _reg_all(raw)
+        if ident not in reg:
+            raise ValueError('工具未登记')
+        if delete:
+            del raw[ident]
+            atomic_json(REGISTRY_PATH, raw)
+        else:
+            _reg_save_locked(dict(reg[ident], id=ident, enabled=bool(enabled)))
 
 def _reg_match(goal):
     if not isinstance(goal,str) or len(goal)>650 or not goal.strip():
