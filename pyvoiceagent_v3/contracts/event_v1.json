@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PYVoiceAgent V3 Task Result",
+  "type": "object",
+  "required": ["task_id", "status", "message", "fresh", "confirmation_required"],
+  "properties": {
+    "task_id": {"type": "string"},
+    "status": {"enum": ["queued", "running", "waiting_consent", "waiting_confirmation", "handoff_ready", "needs_review", "completed", "failed", "cancelled"]},
+    "message": {"type": "string"},
+    "fresh": {"type": "boolean"},
+    "confirmation_required": {"type": "boolean"},
+    "action": {"type": ["object", "null"]}
+  }
+}

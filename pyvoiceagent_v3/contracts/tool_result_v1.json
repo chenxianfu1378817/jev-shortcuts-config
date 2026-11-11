@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PYVoiceAgent V3 Permissioned Shortcut Handoff",
+  "type": "object",
+  "required": ["kind", "tool_id", "shortcut_name", "requires_user_action", "executed"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": {"const": "ios_shortcut_handoff"},
+    "tool_id": {"type": "string"},
+    "shortcut_name": {"type": "string"},
+    "input_text": {"type": "string"},
+    "requires_user_action": {"const": true},
+    "executed": {"const": false}
+  }
+}
