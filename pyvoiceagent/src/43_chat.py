@@ -538,13 +538,14 @@ class _ChatShell:
             try:
                 _chat_threading.Thread(target=run, daemon=True,
                                        name='PYVA-ChatSend').start()
+                self.post({'type':'send_ack','ok':True})
             except Exception as exc:
                 with self.lock:
                     self._send_pending = False
                 self._callback_error('send_thread', exc)
+                self.post({'type':'send_ack','ok':False})
                 self.post({'type':'notice','text':'未能启动发送任务，请检查应用状态'})
         self._ui_later('bridge_send_schedule', start_worker, 0.03)
-        self.post({'type':'send_ack','ok':True})
 
     def _send_trace(self, stage):
         try:
