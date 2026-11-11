@@ -156,6 +156,15 @@ class ToolsV225(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.env['_reg_change']('work',delete=True)
 
+    def test_legacy_registration_button_does_not_erase_disabled_entries(self):
+        self.save()
+        self.env['_reg_change']('work',enabled=False)
+        shell=ShellStub()
+        self.env['_CHAT_ACTIVE']=shell
+        self.assertFalse(self.env['add_shortcut_registration']())
+        self.assertEqual(len(self.env['_reg_items']()),1)
+        self.assertFalse(self.env['_reg_items']()[0]['enabled'])
+
     def test_local_exact_and_suffix_first_avoids_ai(self):
         self.save()
         hit=self.env['_reg_match']('打开工作台')
