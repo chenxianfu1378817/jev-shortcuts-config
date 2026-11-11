@@ -6,7 +6,7 @@
 
 ## V2.3.2 原生工具库候选
 
-V2.3.1 真机反馈「编辑」闪退，详见 [闪退审计与实机验收范围](AUDIT_V231.md)。候选将登记、编辑、启停、传参和删除集中到 Pythonista 原生工具库，移除网页表单及持续轮询。候选尚待同机复验，正式清单维持 V2.3.1。
+V2.3.1 真机反馈「编辑」闪退，详见 [闪退审计与实机验收范围](AUDIT_V231.md)。候选将登记、编辑、启停、传参和删除集中到 Pythonista 原生工具库，移除网页表单及持续轮询。V2.3.2 纳入原在线更新渠道，尚待同机复验。
 
 ## V2.3.1 登记保存及回执
 
@@ -45,11 +45,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.3.1**（以 main 的 manifest 为准） |
-| 更新序号 | `231` |
-| 发布文件 | `pyvoiceagent/agent_core_2_3_1.py` |
-| 发布 SHA-256 | `a009710884b08bbb3534b08d9009f095a0401d58db1c8b02d3a70751f1cdfa88` |
-| 发布大小 | `348385` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.2**（以 main 的 manifest 为准） |
+| 更新序号 | `232` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_2.py` |
+| 发布 SHA-256 | `54f057b78328465a08d00198f6baa118fb2833dfcd9e3ed19f9436a0c1ccca2a` |
+| 发布大小 | `344152` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
