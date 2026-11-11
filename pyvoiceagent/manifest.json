@@ -3,7 +3,7 @@
   "sequence": 238,
   "version": "2.3.8",
   "path": "agent_core_2_3_8.py",
-  "sha256": "c4f341d968812a74663e6ab71d05d7e9627ca1d5448e35375cc30da1a1dede0e",
-  "size_bytes": 349903,
+  "sha256": "5076fb19fd513dd130401ba77c714401df9d1a4f5bbb0cb84cb1cfbfb74e5436",
+  "size_bytes": 345999,
   "summary": "修复 WebView 导航回调中直接执行文字任务、中文输入法收键盘与发送的时序冲突；异步排队、确认回执、防重复并保留未确认草稿。保留系统听写、全部工具和模块化源码。iPhone 真机待验收。"
 }

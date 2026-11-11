@@ -4144,135 +4144,6 @@ CARD_THEMES = {
 }
 DISPLAY_MODES = ('跟随系统', '浅色模式', '深色模式')
 _CARD_DEFAULTS = {'theme': '活力橙', 'mode': '跟随系统', 'custom_color': ''}
-"""Audio-session domain service. Owns every native Recorder call on ONE worker.
-
-Bundled into the legacy single-file Pythonista release for compatibility.
-No UI, AI, task database, or shortcuts dependency.
-"""
-import threading as _voice_threading
-import os as _voice_os
-import uuid as _voice_uuid
-class _VoiceSession:
-    def __init__(self, folder, stage, progress, on_text, on_error, on_done):
-        self.folder = folder
-        self.stage = stage
-        self.progress = progress
-        self.on_text = on_text
-        self.on_error = on_error
-        self.on_done = on_done
-        self.stop_event = _voice_threading.Event()
-        self.cancel_event = _voice_threading.Event()
-        self._lock = _voice_threading.RLock()
-        self._state = 'idle'
-        self.thread = None
-    def start(self):
-        with self._lock:
-            if self._state != 'idle':
-                return False
-            self._state = 'starting'
-            self.thread = _voice_threading.Thread(target=self._run, daemon=True,
-                                                   name='PYVA-AudioOwner')
-            try:
-                self.thread.start()
-            except Exception:
-                self._state = 'idle'
-                raise
-        return True
-    def stop(self):
-        with self._lock:
-            if self._state not in ('starting', 'recording'):
-                return False
-            self._state = 'stopping'
-            self.stop_event.set()
-        return True
-    def cancel(self):
-        with self._lock:
-            if self._state == 'idle':
-                return False
-            self._state = 'cancelling'
-            self.cancel_event.set()
-            self.stop_event.set()
-        return True
-    def _safe_progress(self, value):
-        try:
-            self.progress(value)
-        except Exception:
-            pass
-    def _safe_stage(self, value):
-        try:
-            self.stage(value)
-        except Exception:
-            pass
-    def _run(self):
-        recorder = None
-        path = None
-        try:
-            if self.cancel_event.is_set():
-                return
-            import sound
-            _voice_os.makedirs(self.folder, exist_ok=True)
-            path = _voice_os.path.join(self.folder,
-                       'chat_voice_'+_voice_uuid.uuid4().hex[:12]+'.m4a')
-            self._safe_stage('recorder_start')
-            recorder = sound.Recorder(path)
-            recorder.record()
-            with self._lock:
-                if self._state == 'starting':
-                    self._state = 'recording'
-            if not self.cancel_event.is_set():
-                self._safe_stage('recording')
-                self._safe_progress('recording')
-            self.stop_event.wait()
-            self._safe_stage('stop_enter')
-            closing = recorder
-            recorder = None
-            closing.stop()
-            del closing
-            self._safe_stage('audio_stopped')
-            self._safe_progress('stopped')
-            if self.cancel_event.wait(0.7):
-                return
-            if not path or not _voice_os.path.isfile(path) or _voice_os.path.getsize(path)<100:
-                raise ValueError('empty_recording')
-            self._safe_stage('recognizing')
-            import speech
-            languages = speech.get_recognition_languages()
-            lang = next((v for v in languages
-                         if v.lower().replace('_','-') in ('zh-cn','zh-hans-cn')), None)
-            results = speech.recognize(path,lang) if lang else speech.recognize(path)
-            if self.cancel_event.is_set():
-                return
-            phrase = str(results[0][0]).strip() if results and results[0] else ''
-            if not phrase:
-                raise ValueError('empty_transcript')
-            self._safe_stage('recognized')
-            self.on_text(phrase)
-        except Exception as exc:
-            if not self.cancel_event.is_set():
-                try:
-                    self.on_error(type(exc).__name__)
-                except Exception:
-                    pass
-        finally:
-            if recorder is not None:
-                try:
-                    recorder.stop()
-                except Exception:
-                    pass
-                recorder = None
-            if path:
-                try:
-                    _voice_os.remove(path)
-                except OSError:
-                    pass
-            with self._lock:
-                self._state = 'idle'
-            self._safe_stage('idle')
-            self._safe_progress('idle')
-            try:
-                self.on_done()
-            except Exception:
-                pass
 def _card_hex(value):
     if not isinstance(value, str):
         return ''
@@ -5569,7 +5440,7 @@ footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding
 </div><div class="section-title">程序管理</div>
 <button class="action secondary" id="checkupdate">检查在线更新</button>
 <div class="sub">固定入口不变。写入确认、防重复、密钥及本地记录由原有 Python 模块管理。</div></section>
-<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" enterkeyhint="enter" placeholder="输入任务或继续刚才的对话"></textarea><button id="dismiss" class="round" aria-label="收起键盘" hidden>⌄</button><button id="mic" class="round mic" aria-label="使用系统键盘听写">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风按钮打开输入框，再点系统键盘上的麦克风听写</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
+<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button><button id="nativequick">原生输入</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" enterkeyhint="enter" placeholder="输入任务或继续刚才的对话"></textarea><button id="dismiss" class="round" aria-label="收起键盘" hidden>⌄</button><button id="mic" class="round mic" aria-label="使用系统键盘听写">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风按钮打开输入框，再点系统键盘上的麦克风听写</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
 <script>
 (function(){
 'use strict';
@@ -5607,7 +5478,7 @@ document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(
 el('savecolor').onclick=function(){bridge('color',el('customcolor').value.trim())};
 el('checkupdate').onclick=function(){bridge('update','')};
 el('clipboardquick').onclick=function(){if(busy&&!waiting)return toast('请先完成当前任务');el('entry').value='帮我整理剪贴板里的文字';send()};
-el('latestquick').onclick=function(){bridge('latest','')};
+el('latestquick').onclick=function(){bridge('latest','')};el('nativequick').onclick=function(){bridge('native_input','')};
 el('showtools').onclick=function(){bridge('tools','')};
 el('reg-open').onclick=function(){bridge('registry','')};
 document.querySelectorAll('[data-legacy]').forEach(function(b){b.onclick=function(){bridge('legacy',b.getAttribute('data-legacy'))}});
@@ -6006,6 +5877,17 @@ class _ChatShell:
                 self.post({'type':'notice','text':'请输入不超过2000字的任务'})
             else:
                 self.submit(text)
+        elif action == 'native_input':
+            def ask_native():
+                try:
+                    import dialogs
+                    value = dialogs.text_dialog('原生文字输入', '')
+                    if isinstance(value, str) and value.strip() and not self.closed:
+                        self._receive_bridge('send', value.strip()[:2000])
+                except (KeyboardInterrupt, Exception) as exc:
+                    self._callback_error('native_text_dialog', exc)
+            _chat_threading.Thread(target=ask_native,daemon=True,
+                                   name='PYVA-NativeText').start()
         elif action == 'voice_start':
             self.begin_record()
         elif action == 'voice_stop':
@@ -6165,7 +6047,7 @@ class _ChatShell:
                 action, text = values['action'][0], values['payload'][0]
                 if action not in ('ready','send','approve','voice_start','voice_stop','voice_cancel',
                                   'history','detail','copy','history_copy','history_share','latest',
-                                  'theme','mode','color','update','tools','legacy','registry'):
+                                  'theme','mode','color','update','tools','legacy','registry','native_input'):
                     return False
                 if len(text)>11000:
                     return False
