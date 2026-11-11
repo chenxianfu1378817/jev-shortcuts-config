@@ -4,6 +4,10 @@
 >
 > 最近核对：**2026-11-11**；状态来源：GitHub `main` 的正式更新清单、V2.2.3–V2.2.7 更新说明及相应源码。在线发布状态以 main 的 manifest 为准。
 
+## V2.3.0 恢复原生关闭
+
+用户在 V2.2.9 上确认退出依然无响应。此前测试只覆盖 JavaScript 发出请求，原生窗口是否收到请求及旧忙碌条件是否拦截未能从手机确认。V2.3.0 显示 Pythonista 原生标题栏和系统关闭按钮，移除网页退出和忙碌拦截。窗口关闭后沿用模态返回清理，取消等待中的审批，不改写当前任务。已经交给系统的快捷指令仍可能继续执行。新增测试模拟原生窗口返回及退出清理，iPhone 尚待复验。
+
 ## V2.2.9 真机反馈与修复
 
 iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebView 的 JavaScript 确认框，登记依赖文档锚点跳转。V2.2.9 直接发出退出请求，登记直接滚动到表单并刷新工具库。已用 Node 执行生成页面的两个点击处理函数并校验发出的请求；仍待 iPhone 验证原生关闭与表单滚动。
@@ -33,11 +37,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.2.9**（以 main 的 manifest 为准） |
-| 更新序号 | `229` |
-| 发布文件 | `pyvoiceagent/agent_core_2_2_9.py` |
-| 发布 SHA-256 | `91c689fd1c863f381afedd909fc6722d1ad7a82154009e5fc2ab286359bba4c2` |
-| 发布大小 | `347884` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.0**（以 main 的 manifest 为准） |
+| 更新序号 | `230` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_0.py` |
+| 发布 SHA-256 | `26f3b5686a4798d1cbd23c64987d75334e9e74fdfb3181ec5e4e2446e47f45e2` |
+| 发布大小 | `346973` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
