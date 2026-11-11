@@ -126,3 +126,64 @@ def check_for_update(downloader=None):
                 pass
         return {'updated':False,
                 'message':'更新未完成；旧引擎已尽量保留。原因：'+type(exc).__name__}
+
+
+def rollback_to_previous():
+    """Explicit user request; preserve V3 DB and quarantine broken upgrade."""
+    current_data = previous_data = None
+    saved_meta = None
+    changed = False
+    try:
+        saved_meta = _file_bytes(META)
+        meta = _load_meta()
+        current_data = _file_bytes(CURRENT)
+        previous_data = _file_bytes(PREVIOUS)
+        current_digest = hashlib.sha256(current_data).hexdigest()
+        previous_digest = hashlib.sha256(previous_data).hexdigest()
+        if current_digest != meta.get('sha256'):
+            raise ValueError('Current engine checksum mismatch')
+        if previous_digest != meta.get('previous_sha256'):
+            raise ValueError('Previous engine checksum mismatch')
+        if previous_digest == current_digest:
+            raise ValueError('Previous engine is identical to current version')
+        import ast
+        tree=ast.parse(previous_data.decode('utf-8'))
+        versions=[
+            node.value.value for node in tree.body
+            if isinstance(node,ast.Assign)
+            and any(isinstance(t,ast.Name) and t.id=='VERSION'
+                    for t in node.targets)
+            and isinstance(node.value,ast.Constant)
+            and isinstance(node.value.value,str)
+        ]
+        if len(versions)!=1:
+            raise ValueError('Previous release has no verifiable version')
+        match=re.match(r'^(\d+)\.(\d+)\.(\d+)', versions[0])
+        if not match:
+            raise ValueError('Unknown version format')
+        # V2 updates use explicit three-digit sequence 2.3.9 -> 239.
+        major,minor,patch=(int(x) for x in match.groups())
+        previous_sequence=major*100+minor*10+patch
+        if previous_sequence>=int(meta.get('installed_seq',0)):
+            raise ValueError('Previous version is not older')
+        compile(previous_data,'previous.py','exec')
+        _atomic(CURRENT, previous_data)
+        changed=True
+        meta.update({'installed_seq':previous_sequence,
+                     'installed_version':match.group(0),
+                     'sha256':previous_digest,
+                     'broken_version':str(meta.get('installed_version','')),
+                     'last_result':'已回退 '+match.group(0)})
+        _atomic(META,json.dumps(meta,ensure_ascii=False,indent=2).encode('utf-8'))
+        return {'rolled_back':True,
+                'message':'已恢复旧引擎 '+match.group(0)+'。退出并重新启动原入口；V3 个人数据库已保留。'}
+    except Exception as exc:
+        if changed and current_data is not None:
+            try:
+                _atomic(CURRENT,current_data)
+                if saved_meta is not None:
+                    _atomic(META,saved_meta)
+            except OSError:
+                pass
+        return {'rolled_back':False,
+                'message':'无法安全回退（'+type(exc).__name__+'），原始文件已尽量保持不变。'}
