@@ -1,0 +1,31 @@
+name: PYVoiceAgent V2.2.0 persistent conversation regression
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v220.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  conversation-and-legacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile new chat and full embedded Pythonista engine
+        run: |
+          python -m py_compile pyvoiceagent/chat_shell_v220.py
+          python -m py_compile pyvoiceagent/agent_core_2_2_0.py
+      - name: New continuous conversation, local routing and consent regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_shell_v220.py' -v
+      - name: Existing V2.1 WebView and result, manual voice, callback and map regressions
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_lifecycle_v201.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_result_center_v200.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_manual_voice_v198.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_amap_native_v199.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v196.py' -v
