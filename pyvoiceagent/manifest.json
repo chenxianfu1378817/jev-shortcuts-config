@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 222,
-  "version": "2.2.2",
-  "path": "agent_core_2_2_2.py",
-  "sha256": "a7fba79d7c6bd6d2299c8717b0cdabdf94b9c2e369a2cbcceeddc9cc57d64dea",
-  "size_bytes": 346626,
-  "summary": "修复 V2.1.0 在线更新安全上限（350000 字节）导致 V2.2.1 清单被拒：移除被持续对话界面取代的旧版重复 WebView 资源，新引擎小于旧上限而保持 SHA256 完整性校验。修复 iPhone 状态栏遮挡，顶部「对话/历史/设置」导航独立固定，底部语音/输入区域留足安全间距。保持 V2.2.1 持续聊天、语音、AI 追问、旧任务引擎、所有数据及原生 ui 回退。GitHub 模拟回归通过，iPhone 真机待验收。"
+  "sequence": 223,
+  "version": "2.2.3",
+  "path": "agent_core_2_2_3.py",
+  "sha256": "90e337f14191bb0f1c6cca9c7f6a38c3f4bb0d25f5a41df1b8797aeda06198d6",
+  "size_bytes": 348469,
+  "summary": "针对 iPhone 在持续 WebView 对话界面手动停止录音后闪退的风险：麦克风操作延迟到 WebView 导航回调退出后执行；原生 Recorder 停止并释放、等待音频文件完成写入后再调用 speech.recognize；识别操作不再立即创建 daemon 线程。增加连续点击防重复、停止异常保护、取消录音不执行及只存阶段的本地诊断。保留 V2.2.2 其余功能、主题和历史。低于 V2.1.0 350KB 更新限制；模拟回归通过，iPhone 真机待验收。"
 }
