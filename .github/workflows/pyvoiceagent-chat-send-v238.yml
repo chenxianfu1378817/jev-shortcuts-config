@@ -1,0 +1,50 @@
+name: PYVoiceAgent V2.3.8 safe text send bridge
+on:
+  push:
+    branches:
+      - fix/pyvoiceagent-v238-chat-send-bridge
+    paths:
+      - 'pyvoiceagent/src/**'
+      - 'pyvoiceagent/tools/build_modular.py'
+      - 'pyvoiceagent/tests/test_chat_send_v238.py'
+      - '.github/workflows/pyvoiceagent-chat-send-v238.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build V2.3.8 from all feature source modules
+        run: python pyvoiceagent/tools/build_modular.py --sequence 238 --write
+      - name: Verify repeatability, SHA-256 and legacy updater size
+        run: python pyvoiceagent/tools/build_modular.py --sequence 238
+      - name: Validate native-WebView bridge, IME send, dedup and no draft loss
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_send_v238.py' -v
+      - name: Full active architecture and key regression gates
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_modular_build_v236.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_safe_dictation_v237.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_storage_safety_v235.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_active_registry_contract.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_active_release_contract.py' -v
+      - name: Commit candidate artifact only on feature branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/pyvoiceagent-v238-chat-send-bridge'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyvoiceagent/agent_core_2_3_8.py pyvoiceagent/manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "build(pyvoiceagent): V2.3.8 verified chat send release"
+            git push origin HEAD:fix/pyvoiceagent-v238-chat-send-bridge
+          fi
