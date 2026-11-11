@@ -75,7 +75,7 @@ def build(sequence, write=False):
         'path': filename,
         'sha256': hashlib.sha256(data).hexdigest(),
         'size_bytes': len(data),
-        'summary': '全功能模块化源码；禁用有真机崩溃报告的 Pythonista 原生录音入口，改用 iOS 系统键盘听写。保留文字、AI、工具、用户数据与在线更新，待 iPhone 验收。',
+        'summary': '修复 WebView 导航回调中直接执行文字任务、中文输入法收键盘与发送的时序冲突；异步排队、确认回执、防重复并保留未确认草稿。保留系统听写、全部工具和模块化源码。iPhone 真机待验收。',
     }
     target = ROOT / filename
     if write:
