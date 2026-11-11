@@ -201,7 +201,7 @@ def _reg_invoke(shell,goal,match):
         try:
             if shell.closed: return
             old=get_state()
-            if old.get('status') in ('awaiting_callback','needs_review','running','writing','paused','needs_input','replan_pending'):
+            if old.get('status') in ('awaiting_callback','needs_review','running','writing'):
                 shell.message('assistant','仍有待回传或待核验任务，请先处理以免重复调用。')
                 return
             try:
@@ -223,10 +223,6 @@ def _reg_invoke(shell,goal,match):
             if shell.closed: return
             def on_ui():
                 if shell.closed: return
-                if get_state().get('status') in ('awaiting_callback','needs_review','running','writing','paused','needs_input','replan_pending'):
-                    shell.message('assistant','旧任务仍在等待或暂停中，本次未覆盖；请先处理旧任务。')
-                    shell.status(False,False)
-                    return
                 state={'id':uuid.uuid4().hex[:12],'goal':goal,'created':now_iso(),
                        'status':'ready','events':[],'steps':0,'pending':None,
                        'final':'','error':'','routing_engine':'local_registry',
