@@ -81,7 +81,24 @@ footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding
 </header>
 <section class="screen active" id="chatview" aria-label="对话记录"></section>
 <section class="screen" id="historyview" aria-label="历史档案"><div class="section-title">本机历史档案</div><input class="field" id="historyquery" placeholder="搜索任务或 BU 行情"><button class="action" id="historysearch">搜索</button><div id="historyresults"></div></section>
-<section class="screen" id="settingsview" aria-label="设置"><div class="section-title">外观与主题</div><div class="card"><div class="sub">更换主题将作用于全部对话界面。设置保存在手机本地。</div><div class="colors" id="colors"></div><div style="margin-top:10px"><button class="action secondary" data-mode="跟随系统">跟随系统</button><button class="action secondary" data-mode="浅色模式">浅色</button><button class="action secondary" data-mode="深色模式">深色</button></div><input class="field" id="customcolor" placeholder="自定义颜色 #RRGGBB" maxlength="7"><button class="action secondary" id="savecolor">保存颜色</button></div><div class="section-title">程序管理</div><button class="action secondary" id="checkupdate">检查在线更新</button><div class="sub">固定入口不变。所有系统授权与写入保护继续由 Python 处理。</div></section>
+<section class="screen" id="settingsview" aria-label="设置"><div class="section-title">外观与主题</div><div class="card"><div class="sub">更换主题将作用于全部对话界面。设置保存在手机本地。</div><div class="colors" id="colors"></div><div style="margin-top:10px"><button class="action secondary" data-mode="跟随系统">跟随系统</button><button class="action secondary" data-mode="浅色模式">浅色</button><button class="action secondary" data-mode="深色模式">深色</button></div><input class="field" id="customcolor" placeholder="自定义颜色 #RRGGBB" maxlength="7"><button class="action secondary" id="savecolor">保存颜色</button></div><div class="section-title">原有工具与系统设置</div><div class="card">
+<button class="action secondary" data-legacy="ai_settings">DeepSeek 配置</button>
+<button class="action secondary" data-legacy="voice_privacy">语音隐私授权</button>
+<button class="action secondary" data-legacy="module_setup">系统模块验证</button>
+<button class="action secondary" id="showtools">查看工具库</button>
+<div id="toolslist" class="sub" hidden></div></div>
+<div class="section-title">高级与故障恢复</div><div class="card">
+<button class="action secondary" data-legacy="resume">恢复暂停任务</button>
+<button class="action secondary" data-legacy="review">核验待处理操作</button>
+<button class="action secondary" data-legacy="ai_test">测试 DeepSeek</button>
+<button class="action secondary" data-legacy="hub_echo">快捷指令回传测试</button>
+<button class="action secondary" data-legacy="add_shortcut">登记快捷指令</button>
+<button class="action secondary" data-legacy="notes_test">测试备忘录</button>
+<button class="action secondary" data-legacy="calendar_test">测试日历</button>
+<button class="action secondary" data-legacy="clear_state">清除任务状态</button>
+</div><div class="section-title">程序管理</div>
+<button class="action secondary" id="checkupdate">检查在线更新</button>
+<div class="sub">固定入口不变。写入确认、防重复、密钥及本地记录由原有 Python 模块管理。</div></section>
 <footer id="footer"><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" placeholder="输入任务或继续刚才的对话"></textarea><button id="mic" class="round mic" aria-label="开始手动录音">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风开始录音，再点击结束；不会自动收音</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
 <script>
 (function(){
@@ -102,7 +119,7 @@ function enter(t){tab=t;var screens={chat:'chatview',history:'historyview',setti
 function send(){var v=el('entry').value.trim();if(!v)return; if(busy&&!waiting){toast('正在执行上一项任务');return}el('entry').value='';addMessage({role:'user',text:v});setBusy(true,false);bridge('send',v)}
 function themeButtons(){var x=el('colors');Object.keys(accents).forEach(function(k){var b=node('button','color-choice');var dot=node('span','dot');dot.style.background=accents[k];b.appendChild(dot);b.appendChild(node('span','',k));b.onclick=function(){bridge('theme',k)};x.appendChild(b)})}
 function paintHistory(items){var p=el('historyresults');p.replaceChildren();if(!items||!items.length){p.appendChild(node('div','sub','没有匹配的记录'));return}items.forEach(function(it){var b=node('button','archive-btn',(it.title||'未命名任务')+'\n'+(it.created||'').slice(0,16));b.onclick=function(){bridge('detail',it.key||'')};p.appendChild(b)})}
-window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')})}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
+window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='tools'){var root=el('toolslist');root.hidden=false;root.replaceChildren();(m.items||[]).forEach(function(x){root.appendChild(node('div','sub',(x[0]||'')+' · '+(x[1]||'')))})}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')})}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
 el('send').onclick=send;el('entry').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
 el('mic').onclick=function(){if(recording)bridge('voice_stop','');else bridge('voice_start','')};el('cancelrecord').onclick=function(){bridge('voice_cancel','')};
 document.querySelectorAll('[data-tab]').forEach(function(b){b.onclick=function(){enter(b.getAttribute('data-tab'))}});
@@ -110,6 +127,8 @@ el('historysearch').onclick=function(){bridge('history',el('historyquery').value
 document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){bridge('mode',b.getAttribute('data-mode'))}});
 el('savecolor').onclick=function(){bridge('color',el('customcolor').value.trim())};
 el('checkupdate').onclick=function(){bridge('update','')};
+el('showtools').onclick=function(){bridge('tools','')};
+document.querySelectorAll('[data-legacy]').forEach(function(b){b.onclick=function(){bridge('legacy',b.getAttribute('data-legacy'))}});
 applyPalette(B.palette||{});el('version').textContent='V'+(B.version||'2.2.0')+' · 本地 WebView';
 messages.forEach(bubble);themeButtons();if(!messages.length){addMessage({role:'assistant',text:'你好，可以直接说任务，也可以输入文字。我会在这里继续追问并显示执行结果。'})}
 setBusy(false,false);scrollBottom();if(B.initial_result)card(B.initial_result);bridge('ready','');
@@ -437,6 +456,25 @@ class _ChatShell:
                 except OSError:
                     pass
 
+    def _legacy_action(self, action):
+        """Keep prior tools reachable; system setup can use native permission dialogs."""
+        def work():
+            try:
+                _V200_DISPATCH(action,'')
+                state = get_state()
+                if state.get('status') == 'awaiting_callback':
+                    self.message('assistant','已请求系统模块执行，等待回调；请勿重复创建。')
+                else:
+                    self.post({'type':'notice','text':'设置操作已返回，请查看相关权限与结果'})
+            except Exception as exc:
+                self.message('assistant','设置功能未完成：'+str(exc)[:160])
+        # Dialog-based configuration uses the original main-thread API.
+        if action in ('ai_settings','voice_privacy','module_setup',
+                      'review','add_shortcut','clear_state'):
+            self.ui.delay(work,0.1)
+        else:
+            _chat_threading.Thread(target=work,daemon=True).start()
+
     def _handle_action(self, action, text):
         if action == 'ready':
             self.ready = True
@@ -466,6 +504,22 @@ class _ChatShell:
             self.stop_record()
         elif action == 'voice_cancel':
             self.cancel_record()
+        elif action == 'tools':
+            try:
+                self.post({'type':'tools','items':_card_tool_rows('')[:120]})
+            except Exception as exc:
+                self.post({'type':'notice','text':'工具库读取失败：'+str(exc)[:80]})
+        elif action == 'legacy':
+            allowed = frozenset(('ai_settings','voice_privacy','module_setup',
+                'resume','review','ai_test','hub_echo','add_shortcut',
+                'notes_test','calendar_test','clear_state'))
+            if text not in allowed:
+                self.post({'type':'notice','text':'未授权的设置功能'})
+                return
+            if self.busy:
+                self.post({'type':'notice','text':'先结束正在执行的任务'})
+                return
+            self._legacy_action(text)
         elif action == 'history':
             try:
                 self.post({'type':'history','items':_history_search(text[:100],60)})
@@ -552,7 +606,7 @@ class _ChatShell:
                     return False
                 action, text = values['action'][0], values['payload'][0]
                 if action not in ('ready','send','approve','voice_start','voice_stop','voice_cancel',
-                                  'history','detail','copy','theme','mode','color','update','exit'):
+                                  'history','detail','copy','theme','mode','color','update','exit','tools','legacy'):
                     return False
                 if len(text)>11000:
                     return False
@@ -627,12 +681,16 @@ def final_report(state, show_dialog=True):
     if current is not None:
         if not current.closed and show_dialog:
             current.report(state)
+            if state.get('voice_session'):
+                _voice_report(state)
         return
     if getattr(_CHAT_IN_TASK,'active',False):
         return  # The WebView was closed while work was in flight: no console/modal.
     if len(sys.argv)>1 and sys.argv[1] in ('bridge_callback','callback'):
         if show_dialog:
             _CHAT_CALLBACK_RESULT = _result_card_model(state)
+            if state.get('voice_session'):
+                _voice_report(state)
         return
     return _CHAT_ORIGINAL_FINAL(state,show_dialog=show_dialog)
 
