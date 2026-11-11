@@ -1,6 +1,7 @@
-"""No-side-effect registry regression tests against the active manifest engine.
+"""V2 registry regression tests against V2 active/archived engine.
 
-Rebinds all state paths to a temporary directory; never calls iOS dialogs.
+V3 uses an independent SQLite registry tested in pyvoiceagent_v3/tests.
+Never import V3's mobile bootstrap as the old monolithic engine.
 """
 import importlib.util
 import json
@@ -19,7 +20,11 @@ class ActiveRegistryContractTests(unittest.TestCase):
         if not manifest_file.exists():
             raise unittest.SkipTest("no manifest in isolated local workspace")
         manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-        path = PROJECT / manifest["path"]
+        # V3 mobile release is a bootstrap with a separate real package.
+        # Keep testing the last V2 engine's registry without mis-importing it.
+        major = int(str(manifest["version"]).split(".")[0])
+        path = PROJECT / ("agent_core_2_3_9.py" if major >= 3
+                          else manifest["path"])
         spec = importlib.util.spec_from_file_location("active_pyvoiceagent_contract", path)
         cls.core = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.core)
