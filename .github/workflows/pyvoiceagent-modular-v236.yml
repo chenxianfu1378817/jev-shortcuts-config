@@ -1,0 +1,52 @@
+name: PYVoiceAgent modular candidate builder
+on:
+  push:
+    branches:
+      - refactor/pyvoiceagent-v236-modular
+    paths:
+      - 'pyvoiceagent/src/**'
+      - 'pyvoiceagent/tools/build_modular.py'
+      - 'pyvoiceagent/tests/test_voice_session_v236.py'
+      - 'pyvoiceagent/tests/test_modular_build_v236.py'
+      - '.github/workflows/pyvoiceagent-modular-v236.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-modular:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.ref == 'refactor/pyvoiceagent-v236-modular'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build legacy-compatible release from all source modules
+        run: python pyvoiceagent/tools/build_modular.py --sequence 236 --write
+      - name: Confirm generated artifact, manifest and SHA
+        run: python pyvoiceagent/tools/build_modular.py --sequence 236
+      - name: Test voice thread ownership and modular source
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p test_voice_session_v236.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_modular_build_v236.py -v
+      - name: Existing task and shortcut regression
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p test_storage_safety_v235.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_active_registry_contract.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_active_release_contract.py -v
+      - name: Publish candidate to feature branch only
+        if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/pyvoiceagent-v236-modular'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_2_3_6.py
+          if ! git diff --cached --quiet; then
+            git commit -m "build(pyvoiceagent): V2.3.6 generated modular release"
+            git push origin HEAD:refactor/pyvoiceagent-v236-modular
+          fi
