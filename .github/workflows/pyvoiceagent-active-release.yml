@@ -1,0 +1,29 @@
+name: PYVoiceAgent current release contract
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pyvoiceagent/manifest.json'
+      - 'pyvoiceagent/agent_core_*.py'
+      - 'pyvoiceagent/tests/test_active_release_contract.py'
+      - 'pyvoiceagent/tests/test_active_registry_contract.py'
+      - '.github/workflows/pyvoiceagent-active-release.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-active-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-current-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate current release manifest, version, SHA256, syntax and updater size
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_active_release_contract.py' -v
+      - name: Check current registry's user data safety
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_active_registry_contract.py' -v
