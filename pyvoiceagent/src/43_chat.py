@@ -106,7 +106,7 @@ footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding
 </div><div class="section-title">程序管理</div>
 <button class="action secondary" id="checkupdate">检查在线更新</button>
 <div class="sub">固定入口不变。写入确认、防重复、密钥及本地记录由原有 Python 模块管理。</div></section>
-<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" enterkeyhint="enter" placeholder="输入任务或继续刚才的对话"></textarea><button id="dismiss" class="round" aria-label="收起键盘" hidden>⌄</button><button id="mic" class="round mic" aria-label="使用系统键盘听写">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风按钮打开输入框，再点系统键盘上的麦克风听写</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
+<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button><button id="nativequick">原生输入</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" enterkeyhint="enter" placeholder="输入任务或继续刚才的对话"></textarea><button id="dismiss" class="round" aria-label="收起键盘" hidden>⌄</button><button id="mic" class="round mic" aria-label="使用系统键盘听写">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风按钮打开输入框，再点系统键盘上的麦克风听写</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
 <script>
 (function(){
 'use strict';
@@ -144,7 +144,7 @@ document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(
 el('savecolor').onclick=function(){bridge('color',el('customcolor').value.trim())};
 el('checkupdate').onclick=function(){bridge('update','')};
 el('clipboardquick').onclick=function(){if(busy&&!waiting)return toast('请先完成当前任务');el('entry').value='帮我整理剪贴板里的文字';send()};
-el('latestquick').onclick=function(){bridge('latest','')};
+el('latestquick').onclick=function(){bridge('latest','')};el('nativequick').onclick=function(){bridge('native_input','')};
 el('showtools').onclick=function(){bridge('tools','')};
 el('reg-open').onclick=function(){bridge('registry','')};
 document.querySelectorAll('[data-legacy]').forEach(function(b){b.onclick=function(){bridge('legacy',b.getAttribute('data-legacy'))}});
@@ -576,6 +576,17 @@ class _ChatShell:
                 self.post({'type':'notice','text':'请输入不超过2000字的任务'})
             else:
                 self.submit(text)
+        elif action == 'native_input':
+            def ask_native():
+                try:
+                    import dialogs
+                    value = dialogs.text_dialog('原生文字输入', '')
+                    if isinstance(value, str) and value.strip() and not self.closed:
+                        self._receive_bridge('send', value.strip()[:2000])
+                except (KeyboardInterrupt, Exception) as exc:
+                    self._callback_error('native_text_dialog', exc)
+            _chat_threading.Thread(target=ask_native,daemon=True,
+                                   name='PYVA-NativeText').start()
         elif action == 'voice_start':
             self.begin_record()
         elif action == 'voice_stop':
@@ -738,7 +749,7 @@ class _ChatShell:
                 action, text = values['action'][0], values['payload'][0]
                 if action not in ('ready','send','approve','voice_start','voice_stop','voice_cancel',
                                   'history','detail','copy','history_copy','history_share','latest',
-                                  'theme','mode','color','update','tools','legacy','registry'):
+                                  'theme','mode','color','update','tools','legacy','registry','native_input'):
                     return False
                 if len(text)>11000:
                     return False
