@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 227,
-  "version": "2.2.7",
-  "path": "agent_core_2_2_7.py",
-  "sha256": "a996641b7eb01a46a7e25c5a8cd612acd4ba4f1df4f7a3b22d4acd61334599f9",
-  "size_bytes": 346830,
-  "summary": "修复输入文字、发送和软键盘收起后 Pythonista 本地 WebView 整页横向向右偏移/左侧空白：取消 fixed left:50% + translateX(-50%) 居中变换，改为屏幕左边缘全宽固定容器；禁用页面及聊天记录的横向滚动，键盘收起后还原横向滚动坐标，发送后延迟二次刷新布局。保留 V2.2.6 的退出、本地快捷指令工具库、语音、DeepSeek、日历/提醒/地图及多主题和历史数据。旧版 350000 字节在线更新安全校验不变；GitHub 自动模拟回归通过，iPhone 真机尚待验证。"
+  "sequence": 228,
+  "version": "2.2.8",
+  "path": "agent_core_2_2_8.py",
+  "sha256": "f5a5372d502398a3a345c3f8eb41d0dc680080b39075a3ea820838bb5df9b8de",
+  "size_bytes": 347949,
+  "summary": "登记入口改用本地表单，保护既有工具库记录，延迟启动前复核任务与工具登记；专项模拟通过，iPhone 真机待验证。"
 }
