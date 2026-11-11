@@ -80,37 +80,27 @@ def start_new(goal, force_stepwise=False):
     put_state(state)
     return drive_agent(state) if force_stepwise else plan_once(state)
 def input_voice(hands_free=False, prompt=None):
-    import speech
-    ensure_dirs()
-    path = os.path.join(DATA_DIR,
-        'voice_{}_{}.m4a'.format(datetime.now().strftime('%Y%m%d_%H%M%S'), uuid.uuid4().hex[:6]))
+    """Crash-safe iOS keyboard dictation fallback for old voice entrypoints.
+
+    The iPhone keyboard's own microphone can dictate into a native text
+    input. This avoids Pythonista sound.Recorder in both legacy and chat flows.
+    Empty/cancelled dictation never submits a task.
+    """
+    import dialogs
+    title = '系统键盘麦克风听写'
     try:
-        print('手动录音：说完请点击「完成」停止录音。')
-        status = _manual_voice_record(path)
-        if status != 'recorded' or not os.path.isfile(path) or os.path.getsize(path) < 100:
-            print('录音为空或无法识别；本次不执行任务。')
-            return None
-        langs = speech.get_recognition_languages()
-        lang = next((x for x in langs if x.lower().replace('_', '-') in ('zh-cn','zh-hans-cn')), None)
-        results = speech.recognize(path, lang) if lang else speech.recognize(path)
-        if not results or not results[0][0].strip():
-            print('没有识别出有效文字；未执行新任务。')
-            return None
-        spoken = results[0][0].strip()
-        print('识别结果：{}'.format(spoken))
-        if hands_free:
-            return spoken
-        edited = ask_text('核对语音（可修改错字）', spoken)
-        return edited.strip() if edited is not None else None
-    except (Exception, KeyboardInterrupt) as exc:
-        print('语音识别失败，未执行新操作：' + str(exc)[:160])
+        # Keep the editor empty: the hint must never become an executed task.
+        result = dialogs.text_dialog(title, '')
+    except (KeyboardInterrupt, Exception) as exc:
+        print('系统听写输入已取消或不可用：' + type(exc).__name__)
         return None
-    finally:
-        try:
-            if os.path.isfile(path):
-                os.remove(path)
-        except OSError:
-            pass
+    if not isinstance(result, str):
+        return None
+    result = result.strip()
+    if not result:
+        return None
+    return result[:2000]
+
 def review_deferred_queue():
     queue = read_recovery_queue()
     unresolved = [(i, x) for i, x in enumerate(queue) if x.get('resolved') is not True]

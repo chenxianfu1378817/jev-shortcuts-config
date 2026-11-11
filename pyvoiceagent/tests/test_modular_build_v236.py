@@ -1,5 +1,6 @@
 """Validate all business/UI sources are included in the modular release."""
 import ast
+import json
 import importlib.util
 from pathlib import Path
 import unittest
@@ -40,8 +41,9 @@ class ModularBuildTests(unittest.TestCase):
                 self.assertIn(name, methods)
 
     def test_generated_single_file_matches_manifest(self):
-        result = build_module.build(sequence=236, write=False)
-        self.assertEqual(result['release']['version'], '2.3.6')
+        manifest = json.loads((ROOT / 'manifest.json').read_text(encoding='utf-8'))
+        result = build_module.build(sequence=manifest['sequence'], write=False)
+        self.assertEqual(result['release']['version'], manifest['version'])
         self.assertLessEqual(result['release']['size_bytes'], 350000)
 
     def test_comment_stripping_has_same_ast(self):

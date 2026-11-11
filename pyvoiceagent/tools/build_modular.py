@@ -75,7 +75,7 @@ def build(sequence, write=False):
         'path': filename,
         'sha256': hashlib.sha256(data).hexdigest(),
         'size_bytes': len(data),
-        'summary': '全部功能按源码模块分层打包，音频由独立会话模块在同一工作线程创建、停止、释放录音对象；保留原入口、用户数据与旧版在线更新。需要 iPhone 实机验收。',
+        'summary': '全功能模块化源码；禁用有真机崩溃报告的 Pythonista 原生录音入口，改用 iOS 系统键盘听写。保留文字、AI、工具、用户数据与在线更新，待 iPhone 验收。',
     }
     target = ROOT / filename
     if write:
@@ -93,7 +93,7 @@ def build(sequence, write=False):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sequence', type=int, default=236)
+    parser.add_argument('--sequence', type=int, default=237)
     parser.add_argument('--write', action='store_true')
     args = parser.parse_args()
     print(json.dumps(build(args.sequence, args.write), ensure_ascii=False, indent=2))

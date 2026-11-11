@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 236,
-  "version": "2.3.6",
-  "path": "agent_core_2_3_6.py",
-  "sha256": "9c8ce83f1d957db94ff2059cb9844bd63172be1137ca62914094b27a3e444598",
-  "size_bytes": 348310,
-  "summary": "全部功能按源码模块分层打包，音频由独立会话模块在同一工作线程创建、停止、释放录音对象；保留原入口、用户数据与旧版在线更新。需要 iPhone 实机验收。"
+  "sequence": 237,
+  "version": "2.3.7",
+  "path": "agent_core_2_3_7.py",
+  "sha256": "45d48543358d6bb3bd37bf04089c092fb5f83207604b627702d9e6a4e8132bf1",
+  "size_bytes": 346644,
+  "summary": "全功能模块化源码；禁用有真机崩溃报告的 Pythonista 原生录音入口，改用 iOS 系统键盘听写。保留文字、AI、工具、用户数据与在线更新，待 iPhone 验收。"
 }
