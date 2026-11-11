@@ -6080,9 +6080,13 @@ class _ChatShell:
             try:
                 if not self.closed:
                     add_shortcut_registration()
-            except (OSError, RuntimeError, ValueError) as exc:
-                import console
-                console.hud_alert('工具库操作失败：'+str(exc)[:90], 'error', 2)
+            except Exception as exc:
+                self._callback_error('shortcut_registry', exc)
+                try:
+                    import console
+                    console.hud_alert('工具库未完成，已保留本地数据', 'error', 2)
+                except Exception:
+                    pass
             finally:
                 with self.lock:
                     self.registry_requested = False
