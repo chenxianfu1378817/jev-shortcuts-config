@@ -82,7 +82,7 @@ focus(){document.activeElement=this;if(this.events?.focus)this.events.focus()},b
 function el(id){if(!all.has(id))all.set(id,E(id));return all.get(id)}
 const document={getElementById:el,createElement:(tag)=>E(),querySelectorAll:()=>[],documentElement:{style:{setProperty(){}}},body:E('body'),activeElement:null};
 const vv={height:812,offsetTop:0,events:{},addEventListener(n,f){this.events[n]=f}};
-const window={visualViewport:vv,innerHeight:812,location:{href:''}};
+const window={visualViewport:vv,innerHeight:812,location:{href:''},addEventListener(n,f){events[n]=f}};
 const sandbox={window,document,setTimeout:(f)=>f(),console};
 vm.runInNewContext(js,sandbox,{timeout:3000});
 assert.equal(el('app').style.height,'812px');
