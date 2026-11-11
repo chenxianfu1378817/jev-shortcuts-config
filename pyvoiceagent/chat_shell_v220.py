@@ -96,10 +96,12 @@ footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding
 <button class="action secondary" data-legacy="notes_test">测试备忘录</button>
 <button class="action secondary" data-legacy="calendar_test">测试日历</button>
 <button class="action secondary" data-legacy="clear_state">清除任务状态</button>
+<button class="action secondary" data-legacy="contact_import">剪贴板导入联系人</button>
+<button class="action secondary" data-legacy="stepwise">复杂任务逐步模式</button>
 </div><div class="section-title">程序管理</div>
 <button class="action secondary" id="checkupdate">检查在线更新</button>
 <div class="sub">固定入口不变。写入确认、防重复、密钥及本地记录由原有 Python 模块管理。</div></section>
-<footer id="footer"><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" placeholder="输入任务或继续刚才的对话"></textarea><button id="mic" class="round mic" aria-label="开始手动录音">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风开始录音，再点击结束；不会自动收音</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
+<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" placeholder="输入任务或继续刚才的对话"></textarea><button id="mic" class="round mic" aria-label="开始手动录音">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风开始录音，再点击结束；不会自动收音</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
 <script>
 (function(){
 'use strict';
@@ -119,7 +121,7 @@ function enter(t){tab=t;var screens={chat:'chatview',history:'historyview',setti
 function send(){var v=el('entry').value.trim();if(!v)return; if(busy&&!waiting){toast('正在执行上一项任务');return}el('entry').value='';addMessage({role:'user',text:v});setBusy(true,false);bridge('send',v)}
 function themeButtons(){var x=el('colors');Object.keys(accents).forEach(function(k){var b=node('button','color-choice');var dot=node('span','dot');dot.style.background=accents[k];b.appendChild(dot);b.appendChild(node('span','',k));b.onclick=function(){bridge('theme',k)};x.appendChild(b)})}
 function paintHistory(items){var p=el('historyresults');p.replaceChildren();if(!items||!items.length){p.appendChild(node('div','sub','没有匹配的记录'));return}items.forEach(function(it){var b=node('button','archive-btn',(it.title||'未命名任务')+'\n'+(it.created||'').slice(0,16));b.onclick=function(){bridge('detail',it.key||'')};p.appendChild(b)})}
-window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='tools'){var root=el('toolslist');root.hidden=false;root.replaceChildren();(m.items||[]).forEach(function(x){root.appendChild(node('div','sub',(x[0]||'')+' · '+(x[1]||'')))})}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')})}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
+window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='tools'){var root=el('toolslist');root.hidden=false;root.replaceChildren();(m.items||[]).forEach(function(x){root.appendChild(node('div','sub',(x[0]||'')+' · '+(x[1]||'')))})}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')});var p=node('div','quick');var cp=node('button','pill','复制全文');cp.onclick=function(){bridge('history_copy',m.key||'')};var share=node('button','pill','分享／导出');share.onclick=function(){bridge('history_share',m.key||'')};p.appendChild(cp);p.appendChild(share);el('chatview').appendChild(p);scrollBottom()}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
 el('send').onclick=send;el('entry').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
 el('mic').onclick=function(){if(recording)bridge('voice_stop','');else bridge('voice_start','')};el('cancelrecord').onclick=function(){bridge('voice_cancel','')};
 document.querySelectorAll('[data-tab]').forEach(function(b){b.onclick=function(){enter(b.getAttribute('data-tab'))}});
@@ -127,6 +129,8 @@ el('historysearch').onclick=function(){bridge('history',el('historyquery').value
 document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){bridge('mode',b.getAttribute('data-mode'))}});
 el('savecolor').onclick=function(){bridge('color',el('customcolor').value.trim())};
 el('checkupdate').onclick=function(){bridge('update','')};
+el('clipboardquick').onclick=function(){if(busy&&!waiting)return toast('请先完成当前任务');el('entry').value='帮我整理剪贴板里的文字';send()};
+el('latestquick').onclick=function(){bridge('latest','')};
 el('showtools').onclick=function(){bridge('tools','')};
 document.querySelectorAll('[data-legacy]').forEach(function(b){b.onclick=function(){bridge('legacy',b.getAttribute('data-legacy'))}});
 applyPalette(B.palette||{});el('version').textContent='V'+(B.version||'2.2.0')+' · 本地 WebView';
@@ -512,7 +516,7 @@ class _ChatShell:
         elif action == 'legacy':
             allowed = frozenset(('ai_settings','voice_privacy','module_setup',
                 'resume','review','ai_test','hub_echo','add_shortcut',
-                'notes_test','calendar_test','clear_state'))
+                'notes_test','calendar_test','clear_state','contact_import','stepwise'))
             if text not in allowed:
                 self.post({'type':'notice','text':'未授权的设置功能'})
                 return
@@ -520,6 +524,19 @@ class _ChatShell:
                 self.post({'type':'notice','text':'先结束正在执行的任务'})
                 return
             self._legacy_action(text)
+        elif action == 'latest':
+            self.post({'type':'result','result':_result_card_model(get_state())})
+        elif action == 'history_copy':
+            import clipboard
+            clipboard.set(_history_markdown_for_key(text))
+            self.post({'type':'notice','text':'档案全文已复制'})
+        elif action == 'history_share':
+            try:
+                import console
+                path = _history_share_path(text)
+                console.open_in(path)
+            except Exception as exc:
+                self.post({'type':'notice','text':'分享不可用：'+str(exc)[:120]})
         elif action == 'history':
             try:
                 self.post({'type':'history','items':_history_search(text[:100],60)})
@@ -606,7 +623,8 @@ class _ChatShell:
                     return False
                 action, text = values['action'][0], values['payload'][0]
                 if action not in ('ready','send','approve','voice_start','voice_stop','voice_cancel',
-                                  'history','detail','copy','theme','mode','color','update','exit','tools','legacy'):
+                                  'history','detail','copy','history_copy','history_share','latest',
+                                  'theme','mode','color','update','exit','tools','legacy'):
                     return False
                 if len(text)>11000:
                     return False
