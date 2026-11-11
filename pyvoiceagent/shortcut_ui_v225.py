@@ -60,6 +60,7 @@ document.querySelector('[data-tab="settings"]').addEventListener('click',functio
 var prior=window.PYChatReceive;
 window.PYChatReceive=function(data){if(data&&data.type==='reg_list'){items=data.items||[];build();return}return prior(data)};
 el('agent-exit').onclick=function(){if(window.confirm('退出 PYVoiceAgent 助手界面并返回 Pythonista？正在运行的系统快捷指令不会因此撤销。'))call('exit','')};
+var oldAdd=document.querySelector('[data-legacy="add_shortcut"]');if(oldAdd)oldAdd.onclick=function(){document.getElementById('reg-form').scrollIntoView({behavior:'smooth',block:'start'})};
 })();
 """
 CHAT_HTML=CHAT_HTML.replace('</style>','\n'+_REG_CSS+'</style>')
