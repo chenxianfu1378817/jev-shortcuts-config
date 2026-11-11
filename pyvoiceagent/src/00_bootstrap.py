@@ -17,7 +17,7 @@ from urllib.error import HTTPError, URLError
 from html.parser import HTMLParser
 import ipaddress
 import socket
-VERSION = '2.3.8-deepseek-flash'
+VERSION = '2.3.9-deepseek-flash'
 APP_FILE = 'PYVoiceAgent.py'
 CALENDAR_READ_SHORTCUT = 'PYAgentCalendarRead'  # clone of existing PYAgentCalendar
 BRIDGE_SHORTCUT = 'PYAgentHub'          # independent of previously verified PYBridgeEcho
