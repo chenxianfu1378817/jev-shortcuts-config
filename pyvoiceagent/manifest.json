@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 223,
-  "version": "2.2.3",
-  "path": "agent_core_2_2_3.py",
-  "sha256": "90e337f14191bb0f1c6cca9c7f6a38c3f4bb0d25f5a41df1b8797aeda06198d6",
-  "size_bytes": 348469,
-  "summary": "针对 iPhone 在持续 WebView 对话界面手动停止录音后闪退的风险：麦克风操作延迟到 WebView 导航回调退出后执行；原生 Recorder 停止并释放、等待音频文件完成写入后再调用 speech.recognize；识别操作不再立即创建 daemon 线程。增加连续点击防重复、停止异常保护、取消录音不执行及只存阶段的本地诊断。保留 V2.2.2 其余功能、主题和历史。低于 V2.1.0 350KB 更新限制；模拟回归通过，iPhone 真机待验收。"
+  "sequence": 224,
+  "version": "2.2.4",
+  "path": "agent_core_2_2_4.py",
+  "sha256": "8dcb97a841cb7f825046a476537d259aafb0c7ddac4d4424c1f26e994467d95a",
+  "size_bytes": 349647,
+  "summary": "修复 iPhone Pythonista 本地 WebView 点击文字输入框后键盘遮挡：动态跟随 VisualViewport 可见尺寸、缩小键盘态顶栏并保留对话/历史/设置导航、收起键盘按钮、输入框自动扩展，发送后收起键盘；支持中文拼音候选与换行，避免误提交和重复显示用户消息。保留 V2.2.3 手动语音、DeepSeek、历史、主题与业务接口，完整文件兼容旧版 350000 字节上限，模拟回归通过，iPhone 真机仍待验收。"
 }
