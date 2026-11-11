@@ -8,6 +8,7 @@ on:
       - 'pyvoiceagent/tools/build_modular.py'
       - 'pyvoiceagent/tests/test_voice_session_v236.py'
       - 'pyvoiceagent/tests/test_modular_build_v236.py'
+      - 'pyvoiceagent/tests/test_chat_audio_integration_v236.py'
       - '.github/workflows/pyvoiceagent-modular-v236.yml'
   pull_request:
     paths:
@@ -35,6 +36,7 @@ jobs:
         run: |
           python -m unittest discover -s pyvoiceagent/tests -p test_voice_session_v236.py -v
           python -m unittest discover -s pyvoiceagent/tests -p test_modular_build_v236.py -v
+          python -m unittest discover -s pyvoiceagent/tests -p test_chat_audio_integration_v236.py -v
       - name: Existing task and shortcut regression
         run: |
           python -m unittest discover -s pyvoiceagent/tests -p test_storage_safety_v235.py -v
