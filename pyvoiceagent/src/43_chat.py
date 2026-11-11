@@ -1,0 +1,914 @@
+def _webui_safe_json(value):
+    return (json.dumps(value, ensure_ascii=False, separators=(',', ':'), default=str)
+            .replace('<', r'\u003c').replace('>', r'\u003e')
+            .replace('&', r'\u0026').replace('\u2028', r'\u2028')
+            .replace('\u2029', r'\u2029'))
+_WEBUI_NATIVE_SHOW = _card_ui_show
+_WEBUI_NATIVE_RESULT = _result_ui_show
+import threading as _chat_threading
+import time as _chat_time
+from urllib.parse import urlsplit as _chat_urlsplit, parse_qs as _chat_parse_qs
+_CHAT_TRANSCRIPT_PATH = os.path.join(DATA_DIR, 'chat_transcript.json')
+_CHAT_ACTIVE = None
+_CHAT_ORIGINAL_MENU = show_menu
+_CHAT_ORIGINAL_FINAL = final_report
+_CHAT_ORIGINAL_ASK = _ask_clarification
+_CHAT_ORIGINAL_PROMPT = prompt_alert
+_CHAT_ORIGINAL_AUTHORIZE = _voice_authorize_ai
+_CHAT_ORIGINAL_MAIN = main
+_CHAT_IN_TASK = _chat_threading.local()
+_CHAT_CALLBACK_RESULT = None
+_CHAT_BOOTSTRAP_VOICE = False
+_CHAT_BOOTSTRAP_TEXT = ''
+_CHAT_APP_SCHEMES = {
+    'meituan': 'imeituan://',
+    'meituan_waimai': 'meituanwaimai://',
+}
+CHAT_HTML = r"""<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>PYVoiceAgent</title>
+<style>
+:root{--accent:#8a62d8;--bg:#101319;--surface:#1c222c;--raised:#252c38;--text:#f3f5fa;--muted:#abb3c1;--border:#343d4b;--light:#fff;--danger:#f57c85}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;margin:0;overflow-x:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+button,input,textarea{font:inherit}button{border:0;cursor:pointer;color:inherit}button:disabled{opacity:.4}
+#app{position:fixed;top:0;left:0;right:0;transform:none;margin:0;width:100%;max-width:100%;min-width:0;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.top{flex:none;padding:calc(16px + env(safe-area-inset-top,0px)) 18px 10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.brand{font-size:21px;letter-spacing:-.5px;font-weight:800}.version{margin-top:3px;font-size:10px;color:var(--muted)}
+.status{font-size:11px;color:var(--muted);border:1px solid var(--border);background:var(--surface);border-radius:99px;padding:8px 11px;white-space:nowrap}
+.tabs{display:flex;gap:8px;margin-top:14px}
+.tabs button{flex:1;background:transparent;border-radius:12px;color:var(--muted);font-size:13px;padding:10px 0}
+.tabs button.active{background:var(--surface);color:var(--text);font-weight:700}
+.screen{flex:1;min-height:0;display:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 16px 24px}
+.screen.active{display:block}
+#chatview{padding-bottom:4px}
+.bubble-row{display:flex;margin:0 0 13px;align-items:flex-start}
+.bubble-row.user{justify-content:flex-end}.bubble{max-width:88%;font-size:15px;line-height:1.55;padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:17px;background:var(--surface)}
+.bubble-row.user .bubble{background:var(--accent);color:var(--light);border-bottom-right-radius:5px}
+.bubble-row.assistant .bubble{border-bottom-left-radius:5px}
+.meta{font-size:10px;color:var(--muted);margin:4px 0 5px 3px}
+.bubble-row.user .meta{display:none}.section-title{font-size:13px;font-weight:700;color:var(--muted);margin:0 0 12px}
+.card{padding:15px;background:var(--surface);border-radius:17px;margin-bottom:12px}
+.card .title{font-weight:750;margin-bottom:8px}.sub{font-size:12px;line-height:1.6;color:var(--muted)}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 15px}
+.quick button,.pill{background:var(--raised);border:1px solid var(--border);border-radius:99px;color:var(--text);padding:10px 13px;font-size:12px;min-height:39px}
+.result-card{border:1px solid var(--border);padding:13px;background:var(--surface);border-radius:16px;margin:0 0 13px}
+.result-card .title{font-weight:750;font-size:15px;margin-bottom:7px}
+.result-card .body{font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
+.result-card .note{color:var(--muted);font-size:11px;line-height:1.6;margin-top:8px}
+footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding:9px 13px calc(12px + env(safe-area-inset-bottom,0px))}
+.composer{display:flex;align-items:flex-end;gap:8px}.entry{flex:1;min-width:0;max-height:110px;min-height:47px;resize:none;background:var(--surface);border:1px solid var(--border);outline:none;border-radius:17px;color:var(--text);padding:13px 12px;font-size:16px;line-height:1.4}.entry:focus{border-color:var(--accent)}
+.round{flex:none;background:var(--raised);border-radius:15px;height:47px;min-width:47px;font-size:21px;font-weight:700}
+.send{background:var(--accent);color:var(--light);font-size:18px}
+.recording .round.mic{background:var(--danger);color:#fff}.hint{color:var(--muted);font-size:11px;text-align:center;margin-top:8px;min-height:13px}
+.field{display:block;background:var(--raised);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:11px;outline:none;width:100%;margin:10px 0;font-size:14px}
+.action{background:var(--accent);color:var(--light);padding:11px 14px;border-radius:12px;font-size:13px;font-weight:650;margin:4px 7px 7px 0;min-height:44px}
+.secondary{background:var(--raised);color:var(--text)}
+.archive-btn{text-align:left;display:block;width:100%;background:var(--surface);padding:13px;border-radius:13px;margin-bottom:9px;font-size:13px}
+.colors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.color-choice{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:13px;padding:12px 9px;font-size:13px}
+.dot{height:18px;width:18px;border-radius:50%;flex:none}
+#toast{position:fixed;left:18px;right:18px;bottom:115px;margin:auto;max-width:520px;z-index:5;padding:11px;border-radius:12px;background:var(--raised);border:1px solid var(--border);text-align:center;font-size:12px}
+[hidden]{display:none!important}
+.keyboard-open .top{padding-top:max(51px,env(safe-area-inset-top,0px));padding-bottom:4px}
+.keyboard-open .brand{font-size:17px}.keyboard-open .version,.keyboard-open .status{display:none}
+.keyboard-open .tabs{margin-top:5px}.keyboard-open .tabs button{padding:7px 0}
+.keyboard-open footer{padding:5px 10px 8px}.keyboard-open footer .quick,.keyboard-open footer .hint{display:none}
+.keyboard-open #mic{display:none}.keyboard-open .screen{padding-bottom:5px}
+.keyboard-open .round{height:44px;min-width:44px}
+@media(max-width:350px){.top{padding-left:12px;padding-right:12px}.bubble{font-size:14px}.screen{padding-left:11px;padding-right:11px}}
+</style></head>
+<body><div id="app"><header class="top">
+<div class="topline"><div><div class="brand">PYVoiceAgent</div><div class="version" id="version"></div></div><div id="status" class="status">准备就绪</div></div>
+<div class="tabs"><button data-tab="chat" class="active">对话</button><button data-tab="history">历史</button><button data-tab="settings">设置</button></div>
+</header>
+<section class="screen active" id="chatview" aria-label="对话记录"></section>
+<section class="screen" id="historyview" aria-label="历史档案"><div class="section-title">本机历史档案</div><input class="field" id="historyquery" placeholder="搜索任务或 BU 行情"><button class="action" id="historysearch">搜索</button><div id="historyresults"></div></section>
+<section class="screen" id="settingsview" aria-label="设置"><div class="section-title">外观与主题</div><div class="card"><div class="sub">更换主题将作用于全部对话界面。设置保存在手机本地。</div><div class="colors" id="colors"></div><div style="margin-top:10px"><button class="action secondary" data-mode="跟随系统">跟随系统</button><button class="action secondary" data-mode="浅色模式">浅色</button><button class="action secondary" data-mode="深色模式">深色</button></div><input class="field" id="customcolor" placeholder="自定义颜色 #RRGGBB" maxlength="7"><button class="action secondary" id="savecolor">保存颜色</button></div><div class="section-title">原有工具与系统设置</div><div class="card">
+<button class="action secondary" data-legacy="ai_settings">DeepSeek 配置</button>
+<button class="action secondary" data-legacy="voice_privacy">语音隐私授权</button>
+<button class="action secondary" data-legacy="module_setup">系统模块验证</button>
+<button class="action secondary" id="showtools">查看工具库</button>
+<div id="toolslist" class="sub" hidden></div></div>
+<div class="section-title">高级与故障恢复</div><div class="card">
+<button class="action secondary" data-legacy="resume">恢复暂停任务</button>
+<button class="action secondary" data-legacy="review">核验待处理操作</button>
+<button class="action secondary" data-legacy="ai_test">测试 DeepSeek</button>
+<button class="action secondary" data-legacy="hub_echo">快捷指令回传测试</button>
+<button type="button" class="action secondary" id="reg-open">管理快捷指令</button>
+<button class="action secondary" data-legacy="notes_test">测试备忘录</button>
+<button class="action secondary" data-legacy="calendar_test">测试日历</button>
+<button class="action secondary" data-legacy="clear_state">清除任务状态</button>
+<button class="action secondary" data-legacy="contact_import">剪贴板导入联系人</button>
+<button class="action secondary" data-legacy="stepwise">复杂任务逐步模式</button>
+</div><div class="section-title">程序管理</div>
+<button class="action secondary" id="checkupdate">检查在线更新</button>
+<div class="sub">固定入口不变。写入确认、防重复、密钥及本地记录由原有 Python 模块管理。</div></section>
+<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" enterkeyhint="enter" placeholder="输入任务或继续刚才的对话"></textarea><button id="dismiss" class="round" aria-label="收起键盘" hidden>⌄</button><button id="mic" class="round mic" aria-label="开始手动录音">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风开始录音，再点击结束；不会自动收音</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
+<script>
+(function(){
+'use strict';
+var B=window.PYCHAT_BOOT||{}, messages=B.messages||[], busy=false, waiting=false, recording=false, tab='chat', accents={'活力橙':'#F07828','科技蓝':'#3979E8','翡翠绿':'#159F7B','典雅紫':'#8A62D8','中国红':'#D6434B','玫瑰粉':'#D66D96','深海青':'#168E9A','石墨黑':'#444B59'};
+function el(id){return document.getElementById(id)}
+function node(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e}
+function bridge(action,payload){if(typeof payload==='undefined')payload='';var u='pyagent-chat://dispatch?nonce='+encodeURIComponent(B.nonce)+'&action='+encodeURIComponent(action)+'&payload='+encodeURIComponent(String(payload));window.location.href=u}
+function toast(msg){var x=el('toast');x.textContent=String(msg);x.hidden=false;setTimeout(function(){x.hidden=true},2500)}
+function applyPalette(p){var map={accent:'--accent',background:'--bg',surface:'--surface',raised:'--raised',text:'--text',muted:'--muted',border:'--border',light:'--light',negative:'--danger'};Object.keys(map).forEach(function(k){if(p&&p[k])document.documentElement.style.setProperty(map[k],p[k])})}
+function scrollBottom(){var a=el('chatview');setTimeout(function(){a.scrollTop=a.scrollHeight},25)}
+var fullView=window.visualViewport?window.visualViewport.height:window.innerHeight;
+function fitKeyboard(){var vv=window.visualViewport;var h=vv?vv.height:window.innerHeight;var y=vv?vv.offsetTop:0;if(!h||h<190)return;var app=el('app');app.style.height=Math.round(h)+'px';app.style.top=Math.max(0,Math.round(y))+'px';app.style.left='0px';app.style.right='0px';app.style.transform='none';var opened=document.activeElement===el('entry')||h<fullView-130;document.body.classList.toggle('keyboard-open',opened);el('dismiss').hidden=!opened;if(opened)scrollBottom();else{document.documentElement.scrollLeft=0;document.body.scrollLeft=0;if(window.scrollTo)window.scrollTo(0,0)}}
+function growEntry(){var x=el('entry');x.style.height='47px';x.style.height=Math.max(47,Math.min(110,x.scrollHeight))+'px'}
+function bubble(msg){var row=node('div','bubble-row '+(msg.role==='user'?'user':'assistant'));var inner=node('div','bubble');if(msg.role!=='user')row.appendChild(node('div','meta',msg.role==='system'?'系统提示':'助手'));inner.textContent=msg.text||'';row.appendChild(inner);el('chatview').appendChild(row);return row}
+function addMessage(m){messages.push(m);bubble(m);scrollBottom()}
+function approval(question,choices){var wrap=node('div','result-card');wrap.appendChild(node('div','title','需要你确认'));wrap.appendChild(node('div','body',question));var row=node('div','quick');choices.forEach(function(item){var b=node('button','pill',item.label);b.onclick=function(){row.replaceChildren();row.appendChild(node('span','sub','已选择：'+item.label));bridge('approve',item.value)};row.appendChild(b)});wrap.appendChild(row);el('chatview').appendChild(wrap);scrollBottom()}
+function card(r){var wrap=node('div','result-card');wrap.appendChild(node('div','title',r.title||'执行结果'));if(r.subtitle)wrap.appendChild(node('div','sub',r.subtitle));if(Array.isArray(r.items)){r.items.forEach(function(i){var x=node('div','body',(i.title||'')+'\n'+(i.time||''));x.style.marginTop='10px';wrap.appendChild(x)})}if(r.body)wrap.appendChild(node('div','body',r.body));if(r.notice)wrap.appendChild(node('div','note',r.notice));var copy=node('button','action secondary','复制结果');copy.onclick=function(){bridge('copy',r.copy||r.body||'')};wrap.appendChild(copy);el('chatview').appendChild(wrap);scrollBottom()}
+function setBusy(v,w){busy=!!v;waiting=!!w;el('status').textContent=waiting?'等待你补充':busy?'正在处理':'准备就绪';el('send').disabled=busy&&!waiting;el('hint').textContent=recording?'正在录音 · 再点麦克风结束':waiting?'输入回答或点击麦克风回答；不会自动收音':busy?'正在处理任务，请勿重复提交':'手动录音 · 点击开始，再点击结束'}
+function enter(t){if(t!=='chat')el('entry').blur();tab=t;var screens={chat:'chatview',history:'historyview',settings:'settingsview'};Object.keys(screens).forEach(function(k){el(screens[k]).classList.toggle('active',k===t)});document.querySelectorAll('[data-tab]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===t)});el('footer').hidden=t!=='chat';if(t==='history')bridge('history','');if(t==='chat')scrollBottom()}
+function send(){var v=el('entry').value.trim();if(!v)return;if(busy&&!waiting){toast('正在执行上一项任务');return}el('entry').value='';growEntry();el('entry').blur();fitKeyboard();setTimeout(fitKeyboard,350);setBusy(true,false);bridge('send',v)}
+function themeButtons(){var x=el('colors');Object.keys(accents).forEach(function(k){var b=node('button','color-choice');var dot=node('span','dot');dot.style.background=accents[k];b.appendChild(dot);b.appendChild(node('span','',k));b.onclick=function(){bridge('theme',k)};x.appendChild(b)})}
+function paintHistory(items){var p=el('historyresults');p.replaceChildren();if(!items||!items.length){p.appendChild(node('div','sub','没有匹配的记录'));return}items.forEach(function(it){var b=node('button','archive-btn',(it.title||'未命名任务')+'\n'+(it.created||'').slice(0,16));b.onclick=function(){bridge('detail',it.key||'')};p.appendChild(b)})}
+window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='tools'){var root=el('toolslist');root.hidden=false;root.replaceChildren();(m.items||[]).forEach(function(x){root.appendChild(node('div','sub',(x[0]||'')+' · '+(x[1]||'')))})}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')});var p=node('div','quick');var cp=node('button','pill','复制全文');cp.onclick=function(){bridge('history_copy',m.key||'')};var share=node('button','pill','分享／导出');share.onclick=function(){bridge('history_share',m.key||'')};p.appendChild(cp);p.appendChild(share);el('chatview').appendChild(p);scrollBottom()}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
+el('send').onclick=send;el('dismiss').onclick=function(){el('entry').blur();fitKeyboard()};
+el('entry').addEventListener('focus',function(){fitKeyboard();setTimeout(fitKeyboard,250)});
+el('entry').addEventListener('blur',function(){setTimeout(fitKeyboard,280)});
+el('entry').addEventListener('input',growEntry);
+el('entry').onkeydown=function(e){if(e.key==='Enter'&&!e.isComposing&&(e.ctrlKey||e.metaKey)){e.preventDefault();send()}};
+if(window.visualViewport){window.visualViewport.addEventListener('resize',fitKeyboard);window.visualViewport.addEventListener('scroll',fitKeyboard)}
+window.addEventListener('resize',fitKeyboard);
+el('mic').onclick=function(){if(recording)bridge('voice_stop','');else bridge('voice_start','')};el('cancelrecord').onclick=function(){bridge('voice_cancel','')};
+document.querySelectorAll('[data-tab]').forEach(function(b){b.onclick=function(){enter(b.getAttribute('data-tab'))}});
+el('historysearch').onclick=function(){bridge('history',el('historyquery').value.trim())};
+document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){bridge('mode',b.getAttribute('data-mode'))}});
+el('savecolor').onclick=function(){bridge('color',el('customcolor').value.trim())};
+el('checkupdate').onclick=function(){bridge('update','')};
+el('clipboardquick').onclick=function(){if(busy&&!waiting)return toast('请先完成当前任务');el('entry').value='帮我整理剪贴板里的文字';send()};
+el('latestquick').onclick=function(){bridge('latest','')};
+el('showtools').onclick=function(){bridge('tools','')};
+el('reg-open').onclick=function(){bridge('registry','')};
+document.querySelectorAll('[data-legacy]').forEach(function(b){b.onclick=function(){bridge('legacy',b.getAttribute('data-legacy'))}});
+applyPalette(B.palette||{});el('version').textContent='V'+(B.version||'2.2.0')+' · 本地 WebView';
+messages.forEach(bubble);themeButtons();if(!messages.length){addMessage({role:'assistant',text:'你好，可以直接说任务，也可以输入文字。我会在这里继续追问并显示执行结果。'})}
+setBusy(false,false);growEntry();fitKeyboard();scrollBottom();if(B.initial_result)card(B.initial_result);bridge('ready','');
+})();
+</script></body></html>"""
+
+
+def _chat_local_intent(text, food_context=False):
+    """Pure intent classifier; never claims an unverified delivery/order."""
+    text = re.sub(r'[\s，。！？!?.]+', '', str(text or ''))
+    if text in ('我要点外卖', '我想点外卖', '点外卖', '叫外卖', '想点外卖'):
+        return ('food', '想吃什么？也可以直接说「打开美团」或「打开美团外卖」。我可以打开应用，但不会替你下单。')
+    if food_context and text in ('快餐', '汉堡', '米饭', '面条', '炸鸡', '早餐', '午餐', '晚餐'):
+        return ('food', '好的，想找'+text+'。可以说「打开美团外卖」，进入应用后自行选择商家。')
+    if text in ('打开美团', '启动美团', '进入美团', '打开美团APP', '打开美团应用'):
+        return ('open', 'meituan')
+    if text in ('打开美团外卖', '启动美团外卖', '进入美团外卖', '打开美团外卖APP'):
+        return ('open', 'meituan_waimai')
+    return None
+
+
+def _chat_transcript_load():
+    data = read_json(_CHAT_TRANSCRIPT_PATH, {})
+    if not isinstance(data, dict) or not isinstance(data.get('messages'), list):
+        return []
+    clean = []
+    for m in data['messages'][-50:]:
+        if isinstance(m, dict) and m.get('role') in ('user', 'assistant', 'system'):
+            clean.append({'role': m['role'], 'text': str(m.get('text') or '')[:4000]})
+    return clean
+
+
+class _ChatShell:
+    """One persistent WebView, background AI worker and inline follow-up replies."""
+    def __init__(self):
+        self.ui = None
+        self.web = None
+        self.holder = None
+        self.nonce = uuid.uuid4().hex
+        self.lock = _chat_threading.RLock()
+        self.busy = False
+        self.waiting = False
+        self.answer_event = None
+        self.answer = None
+        self.approval_event = None
+        self.approval_choice = 0
+        self.recorder = None
+        self.record_file = None
+        self.pending_audio = None
+        self.audio_stop_cancel = None
+        self.recognizing = False
+        self._voice_stage = ''
+        self.closed = False
+        self.ready = False
+        self.failed = False
+        self.registry_requested = False
+        self.updating = False
+        self.food_context = False
+        self.last_report_id = ''
+        self.messages = _chat_transcript_load()
+
+    def save(self):
+        try:
+            atomic_json(_CHAT_TRANSCRIPT_PATH, {'schema': 1, 'messages': self.messages[-50:]})
+        except Exception:
+            pass  # UI transcript must never interrupt the task engine.
+
+    def _callback_error(self, stage, exc):
+        # Keep task text, credentials and exception arguments out of diagnostics.
+        frame = traceback.extract_tb(exc.__traceback__, limit=-1)
+        error = {'version': VERSION.split('-')[0], 'stage': stage,
+                 'type': type(exc).__name__, 'at': now_iso()}
+        if frame:
+            error.update(function=frame[0].name, line=frame[0].lineno)
+        try:
+            atomic_json(os.path.join(DATA_DIR, 'callback_last_error.json'), error)
+        except Exception:
+            pass
+        print('【界面回调失败】{} · {}'.format(stage, error['type']))
+
+    def _ui_later(self, stage, callback, delay):
+        def guarded():
+            if self.closed:
+                return
+            try:
+                callback()
+            except Exception as exc:
+                self._callback_error(stage, exc)
+        try:
+            self.ui.delay(guarded, delay)
+        except Exception as exc:
+            self._callback_error(stage + '.schedule', exc)
+
+    def post(self, payload):
+        if self.closed or self.ui is None:
+            return
+        js = 'window.PYChatReceive(' + _webui_safe_json(payload) + ');'
+        def deliver():
+            if self.holder is not None and self.holder.on_screen:
+                self.web.eval_js(js)
+        self._ui_later('webview_reply', deliver, 0.0)
+
+    def message(self, role, text):
+        text = str(text or '')[:4000]
+        if not text:
+            return
+        msg = {'role': role, 'text': text}
+        with self.lock:
+            self.messages.append(msg)
+            self.messages = self.messages[-50:]
+            self.save()
+        self.post({'type': 'message', 'message': msg})
+
+    def status(self, busy, waiting=False):
+        with self.lock:
+            self.busy = bool(busy)
+            self.waiting = bool(waiting)
+        self.post({'type': 'busy', 'busy': bool(busy), 'waiting': bool(waiting)})
+
+    def close(self):
+        with self.lock:
+            self.closed = True
+            if self.audio_stop_cancel is not None:
+                self.audio_stop_cancel.set()
+            self.answer = None
+            if self.answer_event is not None:
+                self.answer_event.set()
+            if self.approval_event is not None:
+                self.approval_choice = 0
+                self.approval_event.set()
+            recorder = self.recorder
+            self.recorder = None
+            path = self.record_file or self.pending_audio
+            self.record_file = self.pending_audio = None
+        if recorder is not None:
+            try:
+                recorder.stop()
+            except Exception:
+                pass
+        if path:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+    def ask(self, question):
+        """Runs in the worker; no native dialogs or automatic recording."""
+        event = _chat_threading.Event()
+        with self.lock:
+            if self.closed:
+                return None
+            self.answer_event = event
+            self.answer = None
+            self.waiting = True
+        self.message('assistant', question)
+        self.status(True, True)
+        event.wait()
+        with self.lock:
+            ans = self.answer
+            self.answer = None
+            if self.answer_event is event:
+                self.answer_event = None
+            self.waiting = False
+        self.status(True, False)
+        return ans
+
+    def approve(self, question, choices=None):
+        """Secure explicit user approval inside the current WebView."""
+        if choices is None:
+            choices = [('确认','1'),('取消','0')]
+        event = _chat_threading.Event()
+        with self.lock:
+            if self.closed:
+                return 0
+            self.approval_event = event
+            self.approval_choice = 0
+        self.post({'type':'approval','question':str(question)[:650],
+                   'choices':[{'label':str(label),'value':str(value)}
+                              for label,value in choices]})
+        event.wait()
+        with self.lock:
+            result = self.approval_choice
+            if self.approval_event is event:
+                self.approval_event = None
+            self.approval_choice = 0
+        return result
+
+    def submit(self, value, from_voice=False):
+        text = str(value or '').strip()[:2000]
+        if not text:
+            self.post({'type': 'notice', 'text': '没有识别到有效文字'})
+            return
+        with self.lock:
+            if self.closed:
+                return
+            if (self.recognizing or self.recorder is not None) and not from_voice:
+                self.post({'type':'notice','text':'录音或识别正在进行，请先结束'})
+                return
+            if from_voice:
+                self.recognizing = False
+            if self.answer_event is not None:
+                self.message('user', text)
+                self.answer = None if text in ('稍后继续','暂停任务','取消任务') else text
+                self.answer_event.set()
+                return
+            if self.busy:
+                self.post({'type': 'notice', 'text': '上一项任务仍在处理，请勿重复发送'})
+                return
+        self.message('user', text)
+        intent = _chat_local_intent(text, self.food_context)
+        if intent is not None:
+            if intent[0] == 'food':
+                self.food_context = True
+                self.message('assistant', intent[1])
+            elif intent[0] == 'open':
+                self.food_context = False
+                self._open_trusted_app(intent[1])
+            return
+        self.food_context = False
+        self.status(True, False)
+        _chat_threading.Thread(target=self._worker, args=(text, bool(from_voice)),
+                               name='PYVoiceAgent-Task', daemon=True).start()
+
+    def _open_trusted_app(self, key):
+        url = _CHAT_APP_SCHEMES.get(key)
+        if not url:
+            self.message('assistant', '没有登记此 App 的原生直达方式。')
+            return
+        self.message('assistant', '正在尝试打开对应 App。此操作不代表已经选好商家或完成下单。')
+        def launch():
+            try:
+                import shortcuts
+                shortcuts.open_url(url)
+                self.post({'type': 'handoff'})
+            except Exception as exc:
+                self.message('assistant', '未能确认 App 已打开：'+str(exc)[:100])
+        self._ui_later('open_app', launch, 0.1)
+
+    def _worker(self, value, from_voice):
+        global VOICE_SESSION_ACTIVE
+        try:
+            _CHAT_IN_TASK.active = True
+            VOICE_SESSION_ACTIVE = bool(from_voice)
+            previous = get_state()
+            outcome = start_new(value)
+            state = get_state()
+            if not isinstance(state, dict):
+                state = {}
+            if (outcome is None and state.get('id') == previous.get('id')
+                    and state.get('status') == previous.get('status')
+                    and len(state.get('events') or []) == len(previous.get('events') or [])):
+                self.message('assistant','本次没有启动新操作。请检查指令或联网配置。')
+            elif state.get('status') == 'finished':
+                if str(state.get('id') or '') != self.last_report_id:
+                    self.report(state)
+            elif state.get('status') == 'awaiting_callback':
+                self.message('assistant', '已移交快捷指令，正在等待系统回传；请勿重复提交相同操作。')
+            elif state.get('status') in ('needs_input','replan_pending'):
+                self.message('assistant', str(state.get('error') or '已保存原任务，可以继续补充或稍后恢复。')[:700])
+            elif state.get('status') in ('needs_review','paused','failed'):
+                self.message('assistant', str(state.get('error') or '任务未完成，原记录已保留。')[:700])
+            elif outcome is None:
+                self.message('assistant', '没有执行新的操作。请检查指令或设置。')
+        except Exception as exc:
+            self.message('assistant', '执行未完成：'+type(exc).__name__+': '+str(exc)[:180])
+        finally:
+            _CHAT_IN_TASK.active = False
+            self.status(False, False)
+
+    def report(self, state):
+        self.last_report_id = str(state.get('id') or '')
+        result = _result_card_model(state)
+        self.post({'type': 'result', 'result': result})
+
+    def _voice_trace(self, phase):
+        """Last audio transition for crash diagnosis; no private voice content."""
+        self._voice_stage = phase
+        try:
+            atomic_json(os.path.join(DATA_DIR, 'voice_last_stage.json'),
+                        {'version':VERSION.split('-')[0], 'stage':phase, 'at':now_iso()})
+        except Exception:
+            pass
+
+    def begin_record(self):
+        with self.lock:
+            if self.closed or self.recorder is not None or self.recognizing:
+                return
+            if self.busy and self.answer_event is None:
+                self.post({'type':'notice','text':'当前任务正在处理'})
+                return
+        try:
+            import sound
+            ensure_dirs()
+            path = os.path.join(DATA_DIR, 'chat_voice_'+uuid.uuid4().hex[:12]+'.m4a')
+            self._voice_trace('recorder_start')
+            rec = sound.Recorder(path)
+            rec.record()
+            self._voice_trace('recording')
+            with self.lock:
+                self.recorder = rec
+                self.record_file = path
+            self.post({'type':'recording','active':True})
+        except Exception as exc:
+            self.message('assistant', '无法开始手动录音：'+str(exc)[:150])
+
+    def stop_record(self, cancelled):
+        """Stop and recognize on the audio worker, outside WebView callbacks."""
+        with self.lock:
+            if self.closed or cancelled.is_set():
+                return
+            rec, path = self.recorder, self.record_file
+            self.recorder = None
+            self.record_file = None
+            if rec is None:
+                self.recognizing = False
+                return
+            self.recognizing = True
+        self._voice_trace('stop_enter')
+        error = None
+        try:
+            rec.stop()
+        except Exception as exc:
+            error = exc
+        finally:
+            rec = None  # Release AVAudioRecorder before speech recognition.
+        self.post({'type':'recording','active':False})
+        if error is not None:
+            self._voice_trace('stop_failed')
+            self.recognizing = False
+            if path:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+            self.message('assistant','停止录音失败：'+str(error)[:130]+'。没有执行任务。')
+            self.post({'type':'busy','busy':False,'waiting':False})
+            return
+        with self.lock:
+            if self.closed or cancelled.is_set():
+                if path and os.path.isfile(path):
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+                return
+            self.pending_audio = path
+        self._voice_trace('audio_stopped')
+        self.post({'type':'busy','busy':True,'waiting':False})
+        if not cancelled.wait(0.7):
+            self._transcribe_pending(path, cancelled)
+
+    def cancel_record(self):
+        """Discard user-cancelled audio; never run recognition or a task."""
+        with self.lock:
+            if self.audio_stop_cancel is not None:
+                self.audio_stop_cancel.set()
+            rec, path = self.recorder, self.record_file or self.pending_audio
+            if rec is not None or path is not None or self.audio_stop_cancel is None:
+                self.recognizing = False
+            self.recorder = None
+            self.record_file = self.pending_audio = None
+        if rec is not None:
+            try:
+                rec.stop()
+            except Exception:
+                pass
+        if path:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        self._voice_trace('cancelled')
+        self.post({'type':'recording','active':False})
+        if not self.busy:
+            self.post({'type':'busy','busy':False,'waiting':False})
+        self.post({'type':'notice','text':'本次录音已取消，没有执行任务'})
+
+    def _transcribe_pending(self, path, cancelled):
+        with self.lock:
+            if self.closed or cancelled.is_set() or not path or self.pending_audio != path:
+                return
+            self.pending_audio = None
+        self._transcribe(path, cancelled)
+
+    def _transcribe(self, path, cancelled):
+        try:
+            if self.closed or cancelled.is_set():
+                return
+            self._voice_trace('recognizing')
+            import speech
+            if not path or not os.path.isfile(path) or os.path.getsize(path) < 100:
+                raise ValueError('录音过短或无有效内容')
+            langs = speech.get_recognition_languages()
+            lang = next((x for x in langs
+                         if x.lower().replace('_','-') in ('zh-cn','zh-hans-cn')), None)
+            results = speech.recognize(path, lang) if lang else speech.recognize(path)
+            if self.closed or cancelled.is_set():
+                return
+            spoken = str(results[0][0]).strip() if results and results[0] else ''
+            if not spoken:
+                raise ValueError('没有识别到有效语音')
+            self._voice_trace('recognized')
+            self.submit(spoken, from_voice=True)
+        except Exception as exc:
+            if not self.closed and not cancelled.is_set():
+                self.message('assistant', '语音识别未完成：'+str(exc)[:140]+'。也可以直接输入文字。')
+        finally:
+            self.recognizing = False
+            self._voice_trace('idle')
+            if not self.busy:
+                self.post({'type':'busy','busy':False,'waiting':False})
+            if path:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+
+    def _legacy_action(self, action):
+        """Keep prior tools reachable; system setup can use native permission dialogs."""
+        def work():
+            try:
+                _V200_DISPATCH(action,'')
+                state = get_state()
+                if state.get('status') == 'awaiting_callback':
+                    self.message('assistant','已请求系统模块执行，等待回调；请勿重复创建。')
+                else:
+                    self.post({'type':'notice','text':'设置操作已返回，请查看相关权限与结果'})
+            except Exception as exc:
+                self.message('assistant','设置功能未完成：'+str(exc)[:160])
+        if action in ('ai_settings','voice_privacy','module_setup',
+                      'review','add_shortcut','clear_state'):
+            self._ui_later('legacy_settings', work, 0.1)
+        else:
+            _chat_threading.Thread(target=work,daemon=True).start()
+
+    def _handle_action(self, action, text):
+        if action == 'ready':
+            self.ready = True
+            global _CHAT_BOOTSTRAP_VOICE, _CHAT_BOOTSTRAP_TEXT
+            if _CHAT_BOOTSTRAP_VOICE:
+                _CHAT_BOOTSTRAP_VOICE = False
+                self._ui_later('voice_start_entry', self.begin_record, 0.3)
+            if _CHAT_BOOTSTRAP_TEXT:
+                text = _CHAT_BOOTSTRAP_TEXT
+                _CHAT_BOOTSTRAP_TEXT = ''
+                self._ui_later('text_entry', lambda: self.submit(text), 0.4)
+        elif action == 'approve':
+            with self.lock:
+                if self.closed or self.approval_event is None or self.approval_event.is_set():
+                    return
+                self.approval_choice = int(text) if text in ('0','1','2') else 0
+                self.approval_event.set()
+        elif action == 'send':
+            if not text.strip() or len(text) > 2000:
+                self.post({'type':'notice','text':'请输入不超过2000字的任务'})
+            else:
+                self.submit(text)
+        elif action == 'voice_start':
+            with self.lock:
+                if self.closed or self.recorder is not None or self.recognizing:
+                    return
+            self._ui_later('voice_start', self.begin_record, 0.08)
+        elif action == 'voice_stop':
+            with self.lock:
+                if self.closed or self.recognizing or self.recorder is None:
+                    return
+                self.recognizing = True  # De-duplicate double taps immediately.
+                cancelled = self.audio_stop_cancel = _chat_threading.Event()
+            def stop_audio():
+                try:
+                    if not cancelled.wait(0.08):
+                        self.stop_record(cancelled)
+                except Exception as exc:
+                    self._callback_error('audio_stop_worker', exc)
+                    self.post({'type':'notice','text':'停止录音未完成，未提交语音任务'})
+                    self.post({'type':'busy','busy':False,'waiting':False})
+                finally:
+                    with self.lock:
+                        if self.audio_stop_cancel is cancelled:
+                            self.audio_stop_cancel = None
+                            self.recognizing = False
+            try:
+                _chat_threading.Thread(target=stop_audio, daemon=True, name='PYVA-AudioStop').start()
+            except RuntimeError:
+                with self.lock:
+                    self.recognizing = False
+                    self.audio_stop_cancel = None
+                raise
+        elif action == 'voice_cancel':
+            self._ui_later('voice_cancel', self.cancel_record, 0.08)
+        elif action == 'registry':
+            self._ui_later('open_registry', self.request_registry, 0.08)
+        elif action == 'tools':
+            try:
+                self.post({'type':'tools','items':_card_tool_rows('')[:120]})
+            except Exception as exc:
+                self.post({'type':'notice','text':'工具库读取失败：'+str(exc)[:80]})
+        elif action == 'legacy':
+            allowed = frozenset(('ai_settings','voice_privacy','module_setup',
+                'resume','review','ai_test','hub_echo','add_shortcut',
+                'notes_test','calendar_test','clear_state','contact_import','stepwise'))
+            if text not in allowed:
+                self.post({'type':'notice','text':'未授权的设置功能'})
+                return
+            if self.busy:
+                self.post({'type':'notice','text':'先结束正在执行的任务'})
+                return
+            self._legacy_action(text)
+        elif action == 'latest':
+            self.post({'type':'result','result':_result_card_model(get_state())})
+        elif action == 'history_copy':
+            import clipboard
+            clipboard.set(_history_markdown_for_key(text))
+            self.post({'type':'notice','text':'档案全文已复制'})
+        elif action == 'history_share':
+            try:
+                import console
+                path = _history_share_path(text)
+                console.open_in(path)
+            except Exception as exc:
+                self.post({'type':'notice','text':'分享不可用：'+str(exc)[:120]})
+        elif action == 'history':
+            try:
+                self.post({'type':'history','items':_history_search(text[:100],60)})
+            except Exception as exc:
+                self.post({'type':'notice','text':'历史查询失败：'+str(exc)[:80]})
+        elif action == 'detail':
+            try:
+                rec = _history_read(text)
+                self.post({'type':'detail','title':str(rec.get('goal') or '')[:120],
+                           'text':_history_md(rec)[:14000]})
+            except Exception:
+                self.post({'type':'notice','text':'档案读取失败或记录不存在'})
+        elif action == 'copy':
+            import clipboard
+            clipboard.set(text[:10000])
+            self.post({'type':'notice','text':'已复制结果'})
+        elif action in ('theme','mode','color'):
+            appearance = _card_appearance_load()
+            if action == 'theme' and text in CARD_THEMES:
+                appearance['theme'],appearance['custom_color'] = text,''
+            elif action == 'mode' and text in DISPLAY_MODES:
+                appearance['mode'] = text
+            elif action == 'color' and _card_hex(text):
+                appearance['custom_color'] = _card_hex(text)
+            else:
+                self.post({'type':'notice','text':'主题参数不合法'})
+                return
+            saved = _card_appearance_save(appearance)
+            self.post({'type':'theme','palette':_card_palette(saved)})
+        elif action == 'update':
+            with self.lock:
+                if self.closed or self.busy or self.updating:
+                    self.post({'type':'notice','text':'正在执行任务或检查更新，请稍候'})
+                    return
+                self.updating = True
+            def check_update():
+                try:
+                    outcome = immediate_check_and_update()
+                    self.message('assistant', '在线更新：'+str(outcome.get('message') or '未知结果')[:300]+
+                                 ('。请退出并重新打开固定入口使用新版。' if outcome.get('updated') else ''))
+                except Exception as exc:
+                    self.message('assistant', '检查更新失败：'+str(exc)[:150])
+                finally:
+                    with self.lock:
+                        self.updating = False
+            try:
+                _chat_threading.Thread(target=check_update,daemon=True).start()
+            except RuntimeError:
+                with self.lock:
+                    self.updating = False
+                raise
+
+    def request_registry(self, sender=None):
+        with self.lock:
+            if self.closed or self.registry_requested:
+                return
+            if self.busy or self.recorder is not None or self.recognizing:
+                import console
+                console.hud_alert('请先结束正在处理的任务或录音', 'error', 2)
+                return
+            self.registry_requested = True
+        def manage():
+            try:
+                if not self.closed:
+                    add_shortcut_registration()
+            except Exception as exc:
+                self._callback_error('shortcut_registry', exc)
+                try:
+                    import console
+                    console.hud_alert('工具库未完成，已保留本地数据', 'error', 2)
+                except Exception:
+                    pass
+            finally:
+                with self.lock:
+                    self.registry_requested = False
+        try:
+            _chat_threading.Thread(target=manage, daemon=True, name='PYVA-Registry').start()
+        except RuntimeError:
+            with self.lock:
+                self.registry_requested = False
+            raise
+
+    def show(self):
+        import ui
+        if not hasattr(ui, 'WebView'):
+            raise RuntimeError('Pythonista 缺少本地 WebView')
+        self.ui = ui
+        global _CHAT_CALLBACK_RESULT
+        boot = {'nonce':self.nonce,'version':VERSION.split('-')[0],
+                'palette':_card_palette(_card_appearance_load()),'messages':self.messages,
+                'initial_result':_CHAT_CALLBACK_RESULT}
+        _CHAT_CALLBACK_RESULT = None
+        doc = CHAT_HTML.replace('/*CHAT_BOOT*/',
+                  'window.PYCHAT_BOOT='+_webui_safe_json(boot)+';')
+        width, height = ui.get_screen_size()
+        holder = ui.View(frame=(0,0,width,height))
+        self.holder = holder
+        holder.name = 'PYVoiceAgent · 对话助手'
+        holder.background_color = boot['palette']['background']
+        holder.flex = 'WH'
+        web = ui.WebView(frame=holder.bounds)
+        self.web = web
+        web.flex = 'WH'
+        holder.add_subview(web)
+        outer = self
+
+        class Bridge:
+            def webview_should_start_load(self, view, url, nav_type):
+                if url in ('about:blank','about:srcdoc') or url.startswith('data:text/html'):
+                    return True
+                if len(url)>13500:
+                    return False
+                parsed = _chat_urlsplit(url)
+                if parsed.scheme!='pyagent-chat' or parsed.netloc!='dispatch':
+                    return False
+                values = _chat_parse_qs(parsed.query,keep_blank_values=True)
+                if set(values)!={'nonce','action','payload'}:
+                    return False
+                if any(len(items)!=1 for items in values.values()):
+                    return False
+                if values['nonce'][0]!=outer.nonce or outer.closed:
+                    return False
+                action, text = values['action'][0], values['payload'][0]
+                if action not in ('ready','send','approve','voice_start','voice_stop','voice_cancel',
+                                  'history','detail','copy','history_copy','history_share','latest',
+                                  'theme','mode','color','update','tools','legacy','registry'):
+                    return False
+                if len(text)>11000:
+                    return False
+                try:
+                    outer._handle_action(action,text)
+                except Exception as exc:
+                    outer.post({'type':'notice','text':'操作未完成：'+str(exc)[:110]})
+                return False
+
+            def webview_did_fail_load(self, view, error_code, message):
+                if not outer.ready and str(error_code) not in ('-999','-1002'):
+                    outer.failed = True
+                    outer._ui_later('webview_failed', holder.close, 0.02)
+
+        web.delegate = Bridge()
+        holder.right_button_items = [ui.ButtonItem(title='快捷指令', action=self.request_registry)]
+        # Pythonista owns the close control and dismisses the presented view.
+        holder.present('full_screen', hide_title_bar=False)
+        doc = doc.replace('<!--CHAT_BOOT-->', '')
+        web.load_html(doc)
+        def watchdog():
+            if not self.ready and holder.on_screen:
+                self.failed = True
+                holder.close()
+        self._ui_later('webview_watchdog', watchdog, 7.0)
+        try:
+            holder.wait_modal()
+        finally:
+            self.close()
+        if self.failed:
+            raise RuntimeError('持续对话 WebView 加载失败')
+        return True
+
+
+CHAT_HTML = CHAT_HTML.replace('<title>PYVoiceAgent</title>',
+   '<title>PYVoiceAgent</title><script>/*CHAT_BOOT*/</script>')
+
+
+def _ask_clarification(question):
+    current = _CHAT_ACTIVE
+    if current is not None and not current.closed:
+        return current.ask(question)
+    return _CHAT_ORIGINAL_ASK(question)
+
+
+def prompt_alert(title, message, ok='确认', cancel='取消'):
+    current = _CHAT_ACTIVE
+    if current is not None and not current.closed and getattr(_CHAT_IN_TASK,'active',False):
+        return current.approve(str(title)+'：\n'+str(message)[:500],
+                               [(ok,'1'),(cancel,'0')]) == 1
+    return _CHAT_ORIGINAL_PROMPT(title,message,ok=ok,cancel=cancel)
+
+
+def _voice_authorize_ai(state):
+    current = _CHAT_ACTIVE
+    if current is not None and not current.closed:
+        flags = read_json(VOICE_PRIVACY_PATH,{})
+        if isinstance(flags,dict) and flags.get('voice_text_auto_share') is True:
+            return True
+        choice = current.approve('是否允许将本次任务文字发送给 DeepSeek？\n'
+            '不包含未经许可的剪贴板、通讯录或日历内容。',
+            [('仅本次允许','1'),('今后自动允许','2'),('取消','0')])
+        if choice == 2:
+            atomic_json(VOICE_PRIVACY_PATH,{
+                'voice_text_auto_share':True,'approved_at':now_iso()})
+        return choice in (1,2)
+    return _CHAT_ORIGINAL_AUTHORIZE(state)
+
+
+def final_report(state, show_dialog=True):
+    global _CHAT_CALLBACK_RESULT
+    current = _CHAT_ACTIVE
+    if current is not None:
+        if not current.closed and show_dialog:
+            current.report(state)
+            if state.get('voice_session'):
+                _voice_report(state)
+        return
+    if getattr(_CHAT_IN_TASK,'active',False):
+        return  # The WebView was closed while work was in flight: no console/modal.
+    if len(sys.argv)>1 and sys.argv[1] in ('bridge_callback','callback'):
+        if show_dialog:
+            _CHAT_CALLBACK_RESULT = _result_card_model(state)
+            if state.get('voice_session'):
+                _voice_report(state)
+        return
+    return _CHAT_ORIGINAL_FINAL(state,show_dialog=show_dialog)
+
+
+def show_menu():
+    global _CHAT_ACTIVE
+    if _CHAT_ACTIVE is not None:
+        return
+    shell = _ChatShell()
+    _CHAT_ACTIVE = shell
+    try:
+        return shell.show()
+    except Exception as exc:
+        print('持续对话界面未能初始化，恢复旧界面：'+str(exc)[:140])
+        shell.close()
+        _CHAT_ACTIVE = None
+        return _CHAT_ORIGINAL_MENU()
+    finally:
+        shell.close()
+        _CHAT_ACTIVE = None
+
+
+def main():
+    global _CHAT_BOOTSTRAP_VOICE, _CHAT_BOOTSTRAP_TEXT
+    entry = sys.argv[1] if len(sys.argv)>1 else ''
+    if entry == 'voice':
+        _CHAT_BOOTSTRAP_VOICE = True
+        return show_menu()
+    if entry == 'text' and len(sys.argv)>2:
+        _CHAT_BOOTSTRAP_TEXT = str(sys.argv[2])[:2000]
+        return show_menu()
+    return _CHAT_ORIGINAL_MAIN()
