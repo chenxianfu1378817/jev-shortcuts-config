@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 220,
-  "version": "2.2.0",
-  "path": "agent_core_2_2_0.py",
-  "sha256": "55434f750e8a0d24a5a955edb6419cee4bf07576f9331dd084a1e584bf3a4fe7",
-  "size_bytes": 366684,
-  "summary": "持续 WebView 对话模式：任务后台执行，语音手动开始/结束/取消录音，DeepSeek 追问、授权、文字补充及结果在同一页面展示；原固定语音/文字 URL 改为进入对话。外卖/快餐/打开美团由本地白名单响应，不重复调用 AI 或自动下单。历史、主题和更新入口整合在本地，保留 V2.1.0 原业务工具与用户数据。Python/JS 离线回归成功，iPhone 真机交互仍待验收。"
+  "sequence": 221,
+  "version": "2.2.1",
+  "path": "agent_core_2_2_1.py",
+  "sha256": "032311de35aa3307177bc9ca4f21e8216aa1571af72dab953f6ed9b1eb267701",
+  "size_bytes": 371889,
+  "summary": "持续 WebView 对话正式兼容版：语音手动开始/结束/取消、AI 追问和文字补充、隐私授权、任务结果在同一会话；外卖/快餐/打开美团本地路由；保留语音结果播报、剪贴板、历史复制分享、全部旧设置及高级诊断入口。BU、日历、提醒、地图及原 GitHub 更新逻辑不改。GitHub Python/JS 模拟回归通过；iPhone 真机仍待验收。"
 }
