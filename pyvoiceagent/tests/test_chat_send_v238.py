@@ -105,8 +105,7 @@ class ChatSendTests(unittest.TestCase):
         import sys
         dialogs = Mock()
         dialogs.text_dialog.return_value = '显示支付宝付款码'
-        with patch.dict(sys.modules, {'dialogs': dialogs}), \\
-             patch.object(core._chat_threading, 'Thread') as thread:
+        with patch.dict(sys.modules, {'dialogs': dialogs}), patch.object(core._chat_threading, 'Thread') as thread:
             thread.side_effect = lambda **kw: type(
                 'FakeThread', (), {'start': lambda self: kw['target']()})()
             self.shell._receive_bridge = Mock()
@@ -118,8 +117,7 @@ class ChatSendTests(unittest.TestCase):
         import sys
         dialogs = Mock()
         dialogs.text_dialog.return_value = None
-        with patch.dict(sys.modules, {'dialogs': dialogs}), \\
-             patch.object(core._chat_threading, 'Thread') as thread:
+        with patch.dict(sys.modules, {'dialogs': dialogs}), patch.object(core._chat_threading, 'Thread') as thread:
             thread.side_effect = lambda **kw: type(
                 'FakeThread', (), {'start': lambda self: kw['target']()})()
             self.shell._receive_bridge = Mock()
