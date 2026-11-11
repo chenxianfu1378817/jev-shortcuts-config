@@ -270,6 +270,26 @@ class UpdateSafetyTests(unittest.TestCase):
         self.assertEqual(Path(self.backup).read_bytes(),self.old)
         self.assertEqual(json.loads(Path(self.meta).read_text())['installed_seq'],301)
 
+    def test_user_rolls_back_verified_engine_and_blocks_broken_version(self):
+        fetch,_ = self._fetch()
+        self.assertTrue(mobile_update.check_for_update(downloader=fetch)['updated'])
+        result=mobile_update.rollback_to_previous()
+        self.assertTrue(result['rolled_back'],result['message'])
+        self.assertEqual(Path(self.current).read_bytes(),self.old)
+        meta=json.loads(Path(self.meta).read_text(encoding='utf-8'))
+        self.assertEqual(meta['installed_version'],'3.0.0')
+        self.assertEqual(meta['installed_seq'],300)
+        self.assertEqual(meta['broken_version'],'3.0.1')
+
+    def test_corrupt_previous_sha_rejects_rollback_without_changes(self):
+        fetch,_ = self._fetch()
+        self.assertTrue(mobile_update.check_for_update(downloader=fetch)['updated'])
+        expected=Path(self.current).read_bytes()
+        Path(self.backup).write_bytes(b'modified previous engine')
+        result=mobile_update.rollback_to_previous()
+        self.assertFalse(result['rolled_back'])
+        self.assertEqual(Path(self.current).read_bytes(),expected)
+
     def test_bad_sha_never_overwrites(self):
         fetch,_=self._fetch(False)
         result=mobile_update.check_for_update(downloader=fetch)
