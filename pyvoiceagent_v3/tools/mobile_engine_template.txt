@@ -1,0 +1,99 @@
+"""Fixed-launcher-compatible V3 entry. Generated payload injected by builder.
+
+No imports from old V2 runtime. The V3 modules remain regular importable
+Python files inside an authenticated (HTTPS + SHA256) package installed in an
+immutable, private runtime directory.
+"""
+import base64
+import hashlib
+import io
+import os
+import sys
+import tempfile
+import zipfile
+
+VERSION = '3.0.0'
+_BUNDLE_SHA256 = '__BUNDLE_SHA256__'
+_BUNDLE_B64 = '__BUNDLE_BASE64__'
+
+
+def _runtime_location():
+    home = os.path.join(os.path.expanduser('~/Documents'),
+                        'PYVoiceAgent_V3_Runtime', 'releases')
+    return os.path.join(home, 'v3_0_0_' + _BUNDLE_SHA256[:12])
+
+
+def _install():
+    target = _runtime_location()
+    marker = os.path.join(target, '.bundle_sha256')
+    if os.path.isfile(marker):
+        with open(marker, 'r', encoding='ascii') as stream:
+            if stream.read().strip() == _BUNDLE_SHA256:
+                # Ensure the critical entry still exists. User data is elsewhere.
+                expected = os.path.join(target, 'pyvoiceagent_v3', 'mobile.py')
+                if os.path.isfile(expected):
+                    return target
+        raise RuntimeError('V3 runtime checksum marker invalid; refusing overwrite')
+
+    archive = base64.b64decode(_BUNDLE_B64, validate=True)
+    if hashlib.sha256(archive).hexdigest() != _BUNDLE_SHA256:
+        raise RuntimeError('V3 bundle digest mismatch')
+    if len(archive) > 160000:
+        raise RuntimeError('V3 archive too large')
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    stage = tempfile.mkdtemp(prefix='.v3_install_',dir=os.path.dirname(target))
+    ready = False
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+            files = bundle.infolist()
+            if len(files)>120:
+                raise RuntimeError('Unexpected V3 bundle entry count')
+            for member in files:
+                name = member.filename
+                if (not name.startswith('pyvoiceagent_v3/')
+                        or name.startswith('/')
+                        or '..' in name.split('/')
+                        or name.endswith('/')
+                        or member.file_size > 120000):
+                    raise RuntimeError('Unexpected path in V3 package')
+                dest = os.path.join(stage, *name.split('/'))
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                with bundle.open(member) as src, open(dest, 'wb') as out:
+                    data = src.read(120001)
+                    if len(data) != member.file_size:
+                        raise RuntimeError('Incomplete package member')
+                    if name.endswith('.py'):
+                        compile(data.decode('utf-8'), name, 'exec')
+                    out.write(data)
+        with open(os.path.join(stage,'.bundle_sha256'), 'w',
+                  encoding='ascii') as f:
+            f.write(_BUNDLE_SHA256)
+            f.flush()
+            os.fsync(f.fileno())
+        # An immutable release folder is atomically installed; never modify V2 data.
+        if os.path.exists(target):
+            raise RuntimeError('Target runtime already exists; refusing overwrite')
+        os.rename(stage, target)
+        ready = True
+        return target
+    finally:
+        if not ready:
+            import shutil
+            shutil.rmtree(stage, ignore_errors=True)
+
+
+def main():
+    try:
+        base = _install()
+        if base not in sys.path:
+            sys.path.insert(0, base)
+        from pyvoiceagent_v3.mobile import run
+        return run()
+    except Exception as exc:
+        print('PYVoiceAgent V3 启动未完成（{}），旧用户数据未修改。'.format(
+            type(exc).__name__))
+        raise
+
+
+if __name__ == '__main__':
+    main()
