@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 230,
-  "version": "2.3.0",
-  "path": "agent_core_2_3_0.py",
-  "sha256": "26f3b5686a4798d1cbd23c64987d75334e9e74fdfb3181ec5e4e2446e47f45e2",
-  "size_bytes": 346973,
-  "summary": "恢复 Pythonista 原生标题栏关闭按钮，退出由 Pythonista 直接关闭窗口。保留登记快捷指令入口及原有数据。iPhone 待复验。"
+  "sequence": 231,
+  "version": "2.3.1",
+  "path": "agent_core_2_3_1.py",
+  "sha256": "a009710884b08bbb3534b08d9009f095a0401d58db1c8b02d3a70751f1cdfa88",
+  "size_bytes": 348385,
+  "summary": "快捷指令登记由 Pythonista 直接读取本地表单请求，显示保存结果及超时提示。iPhone 待复验。"
 }
