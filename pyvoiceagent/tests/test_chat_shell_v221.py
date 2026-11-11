@@ -52,6 +52,25 @@ class ChatV221Test(unittest.TestCase):
         self.assertTrue(any('设置操作' in e.get('text','')
                             for e in self.logs if e.get('type')=='notice'))
 
+    def test_shortcuts_and_archive_controls_restored(self):
+        html=self.ns['CHAT_HTML']
+        for snippet in ('id="clipboardquick"','id="latestquick"',
+                        "bridge('history_copy'","bridge('history_share'",
+                        '剪贴板导入联系人','复杂任务逐步模式'):
+            self.assertIn(snippet,html)
+
+    def test_latest_result_and_archive_copy_actions(self):
+        import sys as system_sys
+        from unittest.mock import patch as mock_patch
+        self.ns['_result_card_model']=lambda state:{'title':'最近结果','body':'保留'}
+        self.shell._handle_action('latest','')
+        self.assertEqual(next(m for m in self.logs if m.get('type')=='result')['result']['title'],'最近结果')
+        copy=Mock()
+        self.ns['_history_markdown_for_key']=lambda key:'归档内容-'+key
+        with mock_patch.dict(system_sys.modules,{'clipboard':type('Clip',(),{'set':copy})}):
+            self.shell._handle_action('history_copy','2026-11/task_demo.json')
+        copy.assert_called_once_with('归档内容-2026-11/task_demo.json')
+
     def test_tool_library_stays_accessible(self):
         self.ns['_card_tool_rows']=lambda pattern:[('calendar.list','日历读取'),('text.respond','文本反馈')]
         self.shell._handle_action('tools','')
