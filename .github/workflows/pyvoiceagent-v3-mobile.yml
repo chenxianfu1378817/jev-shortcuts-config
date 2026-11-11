@@ -1,0 +1,51 @@
+name: PYVoiceAgent V3 phone release
+on:
+  push:
+    branches: [v3/phase1-pure-python-core]
+    paths:
+      - 'pyvoiceagent_v3/**'
+      - '.github/workflows/pyvoiceagent-v3-mobile.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent_v3/**'
+      - 'pyvoiceagent/agent_core_3_0_0.py'
+      - 'pyvoiceagent/manifest.json'
+      - '.github/workflows/pyvoiceagent-v3-mobile.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build iPhone-updater-compatible V3 engine
+        run: python pyvoiceagent_v3/tools/build_mobile_release.py --write
+      - name: Verify deterministic rebuild and SHA256
+        run: python pyvoiceagent_v3/tools/build_mobile_release.py
+      - name: Existing independent V3 core regressions
+        run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_engine.py' -v
+      - name: AI network timeout, offline and consent tests
+        run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_network_cli.py' -v
+      - name: V3 actual iPhone bootstrap, user UI and update failures
+        run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_mobile_release.py' -v
+      - name: Publish engine and manifest only to development branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/v3/phase1-pure-python-core' && matrix.python-version == '3.11'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_0.py
+          if ! git diff --cached --quiet; then
+            git commit -m "build(v3): release mobile-compatible engine V3.0.0"
+            git push origin HEAD:v3/phase1-pure-python-core
+          fi

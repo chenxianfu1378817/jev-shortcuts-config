@@ -14,7 +14,7 @@ class RemoteError(Exception):
 
 
 class DeepSeekText:
-    def __init__(self, api_key, opener=None, model='deepseek-chat', timeout=18,
+    def __init__(self, api_key, opener=None, model='deepseek-flash', timeout=18,
                  endpoint='https://api.deepseek.com/chat/completions'):
         if not isinstance(api_key, str) or not api_key.strip():
             raise InputError('DeepSeek API key is missing')
