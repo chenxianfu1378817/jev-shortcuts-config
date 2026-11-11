@@ -4,6 +4,14 @@
 >
 > 最近核对：**2026-11-11**；状态来源：GitHub `main` 正式更新清单、V2.3.4 源码及 V2.3.5 发布变更。在线发布状态以 main 的 manifest 为准。
 
+## V2.3.9 原生对话安全模式与分层崩溃隔离（待真机验收）
+
+用户再度报告：V2.3.8 发送文字仍然闪退，因此不能将问题仅归咎于语音对象、WebView URL 编码或中文输入法的某一种时序。V2.3.9 已**更换默认 UI 运行路径**：基于现有模块化引擎，新增 Pythonista `ui.View` + `ui.TextView` 的原生窗口。正常启动不创建 `ui.WebView`，不进入 `webview_should_start_load`，不使用 JS 桥接发消息。旧 HTML 完整存档于 `legacy/CHAT_HTML_V238.html`，供未来故障定位。
+
+原生窗口提供对话记录、提交、历史、快捷指令工具库、八色主题、外观模式、系统键盘听写和退出。新增「仅测试」按钮：只读取文字并返回界面成功状态，不调用 DeepSeek、用户资料存储、快捷指令或任务线程；再点「发送」时才创建后台任务线程，沿用已有 AI/执行/回调代码。这样可按“原生 UI → 任务接收 → Agent 任务处理”进行真机分段判断，而不是每次合并一堆未经验证的修复。
+
+构建和模拟检查以 V2.3.9 sequence=239 为基线：生成单文件 `agent_core_2_3_9.py`，341361 字节，SHA-256 `5ea81156b9aca124a1006854586ed95a993748dd8f6e2bc9036a4890be5af810`。`PYVoiceAgent.py` 固定入口、DeepSeek、系统工具、主题配置、历史与数据目录保留；仍需同一台 iPhone 验收按钮和 Pythonista UI 兼容性。若仅测试也退出，采集 iOS .ips；若仅发送退出，取 `native_chat_stage.json` 的脱敏阶段（或 .ips），优先定位任务线程和系统原生操作。
+
 ## V2.3.8 文本发送崩溃 / 中文输入法与 WebView 接口改造（真机待验收）
 
 用户提供 V2.3.6 iPhone 截图：手工输入后按发送可能直接退出 Pythonista，粘贴进去后发送偶尔正常。截图版本仍是 V2.3.6；V2.3.7 的原生录音关闭并没有解决文本发送问题。查看源码可确认，之前 JavaScript 发送时立即清空并 blur 中文输入框，同时通过 `window.location.href=pyagent-chat://...` 进入 WebView 委托，并在主线程直接调用 `outer._handle_action('send',text)`。这一时序冲突及可能的主线程重入是**代码确凿的风险点**，但没有原始完整 .ips 不能当作最终根因。
@@ -89,11 +97,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.3.8**（以 main 的 manifest 为准） |
-| 更新序号 | `238` |
-| 发布文件 | `pyvoiceagent/agent_core_2_3_8.py` |
-| 发布 SHA-256 | `5076fb19fd513dd130401ba77c714401df9d1a4f5bbb0cb84cb1cfbfb74e5436` |
-| 发布大小 | `345999` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.9**（以 main 的 manifest 为准） |
+| 更新序号 | `239` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_9.py` |
+| 发布 SHA-256 | `5ea81156b9aca124a1006854586ed95a993748dd8f6e2bc9036a4890be5af810` |
+| 发布大小 | `341361` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
