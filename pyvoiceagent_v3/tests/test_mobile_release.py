@@ -86,6 +86,46 @@ class MobileApplicationTests(unittest.TestCase):
         self.assertEqual(self.agent.store.get_task(outcome.task_id)['status'],
                          'needs_review')
 
+    def test_legacy_shortcuts_are_copied_without_modifying_v2(self):
+        from pyvoiceagent_v3.services.legacy_import import (
+            preview_legacy_registry, import_legacy_registry)
+        old = os.path.join(self.dir,'old_v2')
+        os.makedirs(old)
+        legacy_file=os.path.join(old,'shortcut_registry.json')
+        original={
+            'pay_scan': {'name':'支付宝付款码','description':'显示收款码',
+                         'aliases':['打开支付宝付款码'],'mode':'launch',
+                         'input_mode':'none','enabled':True},
+            'legacy_bridge':{'name':'PYAgentHub','description':'旧式回调',
+                            'aliases':['转交旧系统'],'mode':'bridge',
+                            'enabled':True},
+        }
+        data=json.dumps(original,ensure_ascii=False)
+        Path(legacy_file).write_text(data,encoding='utf-8')
+        result=preview_legacy_registry(old)
+        self.assertEqual(len(result['ready']),1)
+        self.assertEqual(result['skipped'],1)
+        outcome=import_legacy_registry(self.agent.shortcuts,old)
+        self.assertEqual(outcome['imported'],['pay_scan'])
+        self.assertEqual(len(self.agent.shortcuts.list()),1)
+        self.assertEqual(Path(legacy_file).read_text(encoding='utf-8'),data)
+        second=import_legacy_registry(self.agent.shortcuts,old)
+        self.assertEqual(second['imported'],[])
+
+    def test_history_legacy_view_does_not_modify_disk(self):
+        v2 = os.path.join(self.dir,'PYVoiceAgent_Data','history','2026-11')
+        os.makedirs(v2)
+        name='task_abcdef123456.json'
+        content=json.dumps({
+            'kind':'task','archive_key':'2026-11/'+name,
+            'goal':'旧版日历查询','status':'completed','created':'2026-11-10T12:00:00'
+        },ensure_ascii=False)
+        original=os.path.join(v2,name)
+        Path(original).write_text(content,encoding='utf-8')
+        result=self.agent.history.preview_legacy(os.path.join(self.dir,'PYVoiceAgent_Data'))
+        self.assertEqual(len(result['entries']),1)
+        self.assertEqual(Path(original).read_text(encoding='utf-8'),content)
+
     def test_theme_persistence_and_backup(self):
         self.agent.appearance.change(theme='典雅紫',mode='深色模式')
         reloaded=Agent(LocalStore(os.path.join(self.dir,'agent.sqlite3')))
