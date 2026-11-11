@@ -37,6 +37,20 @@ class CallbackErrors(unittest.TestCase):
         callback()
         work.assert_not_called()
 
+    def test_registry_worker_error_is_logged_and_does_not_escape(self):
+        from types import SimpleNamespace
+        import sys
+        with patch.object(core, 'add_shortcut_registration',
+                          side_effect=TypeError('private shortcut name')), \
+             patch.object(self.shell, '_callback_error') as report, \
+             patch.dict(sys.modules, {'console': Mock()}), \
+             patch.object(core._chat_threading, 'Thread',
+                          side_effect=lambda **kw: SimpleNamespace(start=kw['target'])):
+            self.shell.request_registry()
+        report.assert_called_once()
+        self.assertEqual(report.call_args.args[0], 'shortcut_registry')
+        self.assertFalse(self.shell.registry_requested)
+
     def test_schedule_failure_is_reported_without_escaping(self):
         self.shell.ui.delay.side_effect = RuntimeError('schedule failure')
         with patch.object(core, 'atomic_json') as save:
