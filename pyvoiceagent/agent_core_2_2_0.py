@@ -6538,6 +6538,7 @@ class _ChatShell:
         self.approval_choice = 0
         self.recorder = None
         self.record_file = None
+        self.recognizing = False
         self.closed = False
         self.ready = False
         self.failed = False
@@ -6654,6 +6655,11 @@ class _ChatShell:
         with self.lock:
             if self.closed:
                 return
+            if self.recognizing and not from_voice:
+                self.post({'type':'notice','text':'正在识别语音，请稍后'})
+                return
+            if from_voice:
+                self.recognizing = False
             if self.answer_event is not None:
                 self.message('user', text)
                 self.answer = None if text in ('稍后继续','暂停任务','取消任务') else text
@@ -6698,11 +6704,16 @@ class _ChatShell:
         try:
             _CHAT_IN_TASK.active = True
             VOICE_SESSION_ACTIVE = bool(from_voice)
+            previous = get_state()
             outcome = start_new(value)
             state = get_state()
             if not isinstance(state, dict):
                 state = {}
-            if state.get('status') == 'finished':
+            if (outcome is None and state.get('id') == previous.get('id')
+                    and state.get('status') == previous.get('status')
+                    and len(state.get('events') or []) == len(previous.get('events') or [])):
+                self.message('assistant','本次没有启动新操作。请检查指令或联网配置。')
+            elif state.get('status') == 'finished':
                 if str(state.get('id') or '') != self.last_report_id:
                     self.report(state)
             elif state.get('status') == 'awaiting_callback':
@@ -6726,7 +6737,7 @@ class _ChatShell:
 
     def begin_record(self):
         with self.lock:
-            if self.closed or self.recorder is not None:
+            if self.closed or self.recorder is not None or self.recognizing:
                 return
             if self.busy and self.answer_event is None:
                 self.post({'type':'notice','text':'当前任务正在处理'})
@@ -6750,6 +6761,7 @@ class _ChatShell:
             path = self.record_file
             self.recorder = None
             self.record_file = None
+            self.recognizing = bool(rec is not None)
         if rec is None:
             return
         try:
@@ -6757,6 +6769,7 @@ class _ChatShell:
         except Exception as exc:
             self.message('assistant', '停止录音失败：'+str(exc)[:100])
         self.post({'type':'recording','active':False})
+        self.post({'type':'busy','busy':True,'waiting':False})
         _chat_threading.Thread(target=self._transcribe, args=(path,),
                                name='PYVoiceAgent-Speech', daemon=True).start()
 
@@ -6776,6 +6789,9 @@ class _ChatShell:
         except Exception as exc:
             self.message('assistant', '语音识别未完成：'+str(exc)[:140]+'。也可以直接输入文字。')
         finally:
+            self.recognizing = False
+            if not self.busy:
+                self.post({'type':'busy','busy':False,'waiting':False})
             if path:
                 try:
                     os.remove(path)
@@ -6993,6 +7009,8 @@ def show_menu():
             return shell.show()
         except Exception as exc:
             print('持续对话界面未能初始化，恢复已验证的旧界面：'+str(exc)[:140])
+            shell.close()
+            _CHAT_ACTIVE = None
             return _CHAT_ORIGINAL_MENU()
     finally:
         shell.close()
