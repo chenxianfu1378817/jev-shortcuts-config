@@ -5532,12 +5532,14 @@ class _ChatShell:
         self.approval_choice = 0
         self.recorder = None
         self.record_file = None
+        self.pending_audio = None
         self.recognizing = False
         self._voice_stage = ''
         self.closed = False
         self.ready = False
         self.failed = False
         self.registry_requested = False
+        self.updating = False
         self.food_context = False
         self.last_report_id = ''
         self.messages = _chat_transcript_load()
@@ -5589,8 +5591,8 @@ class _ChatShell:
                 self.approval_event.set()
             recorder = self.recorder
             self.recorder = None
-            path = self.record_file
-            self.record_file = None
+            path = self.record_file or self.pending_audio
+            self.record_file = self.pending_audio = None
         if recorder is not None:
             try:
                 recorder.stop()
@@ -5792,16 +5794,25 @@ class _ChatShell:
             self.message('assistant','停止录音失败：'+str(error)[:130]+'。没有执行任务。')
             self.post({'type':'busy','busy':False,'waiting':False})
             return
+        with self.lock:
+            if self.closed:
+                if path and os.path.isfile(path):
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+                return
+            self.pending_audio = path
         self._voice_trace('audio_stopped')
         self.post({'type':'busy','busy':True,'waiting':False})
-        self.ui.delay(lambda: self._transcribe(path), 0.7)
+        self.ui.delay(lambda: self._transcribe_pending(path), 0.7)
 
     def cancel_record(self):
         """Discard user-cancelled audio; never run recognition or a task."""
         with self.lock:
-            rec, path = self.recorder, self.record_file
+            rec, path = self.recorder, self.record_file or self.pending_audio
             self.recorder = None
-            self.record_file = None
+            self.record_file = self.pending_audio = None
         if rec is not None:
             try:
                 rec.stop()
@@ -5815,7 +5826,16 @@ class _ChatShell:
         self.recognizing = False
         self._voice_trace('cancelled')
         self.post({'type':'recording','active':False})
+        if not self.busy:
+            self.post({'type':'busy','busy':False,'waiting':False})
         self.post({'type':'notice','text':'本次录音已取消，没有执行任务'})
+
+    def _transcribe_pending(self, path):
+        with self.lock:
+            if self.closed or not path or self.pending_audio != path:
+                return
+            self.pending_audio = None
+        self._transcribe(path)
 
     def _transcribe(self, path):
         try:
@@ -5961,9 +5981,11 @@ class _ChatShell:
             saved = _card_appearance_save(appearance)
             self.post({'type':'theme','palette':_card_palette(saved)})
         elif action == 'update':
-            if self.busy:
-                self.post({'type':'notice','text':'正在执行任务，暂不更新'})
-                return
+            with self.lock:
+                if self.closed or self.busy or self.updating:
+                    self.post({'type':'notice','text':'正在执行任务或检查更新，请稍候'})
+                    return
+                self.updating = True
             def check_update():
                 try:
                     outcome = immediate_check_and_update()
@@ -5971,7 +5993,15 @@ class _ChatShell:
                                  ('。请退出并重新打开固定入口使用新版。' if outcome.get('updated') else ''))
                 except Exception as exc:
                     self.message('assistant', '检查更新失败：'+str(exc)[:150])
-            _chat_threading.Thread(target=check_update,daemon=True).start()
+                finally:
+                    with self.lock:
+                        self.updating = False
+            try:
+                _chat_threading.Thread(target=check_update,daemon=True).start()
+            except RuntimeError:
+                with self.lock:
+                    self.updating = False
+                raise
 
     def request_registry(self, sender=None):
         with self.lock:
