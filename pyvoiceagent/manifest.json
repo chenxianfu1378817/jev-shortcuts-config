@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 210,
-  "version": "2.1.0",
-  "path": "agent_core_2_1_0.py",
-  "sha256": "d4a771290c3f18e6304a06fff7248a21c3aca94c5dd1e3132c82f1797548e85c",
-  "size_bytes": 328571,
-  "summary": "采用 Pythonista 本地 ui.WebView 加载内嵌 HTML/CSS/JavaScript，重构首页、结果、历史、主题与设置；自定义 URL 桥接验证随机 nonce、动作白名单、内容转义，外部 URL 不放行，保留原生 ui 回退。原 V2.0.2 的 AI、手动语音、日历回调、BU、系统操作、历史和在线更新逻辑保持不变。13 项离线 Python 模拟与 JS DOM 烟测通过；GitHub CI 与 iPhone 真机表现仍待核验。"
+  "sequence": 220,
+  "version": "2.2.0",
+  "path": "agent_core_2_2_0.py",
+  "sha256": "55434f750e8a0d24a5a955edb6419cee4bf07576f9331dd084a1e584bf3a4fe7",
+  "size_bytes": 366684,
+  "summary": "持续 WebView 对话模式：任务后台执行，语音手动开始/结束/取消录音，DeepSeek 追问、授权、文字补充及结果在同一页面展示；原固定语音/文字 URL 改为进入对话。外卖/快餐/打开美团由本地白名单响应，不重复调用 AI 或自动下单。历史、主题和更新入口整合在本地，保留 V2.1.0 原业务工具与用户数据。Python/JS 离线回归成功，iPhone 真机交互仍待验收。"
 }
