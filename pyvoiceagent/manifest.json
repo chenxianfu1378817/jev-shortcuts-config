@@ -3,7 +3,7 @@
   "sequence": 300,
   "version": "3.0.0",
   "path": "agent_core_3_0_0.py",
-  "sha256": "8af3ef6f6197b1c58990ec45e375ec648634fac8e4f2886398db27e966a7d6b9",
-  "size_bytes": 38156,
+  "sha256": "8604fddd0aa06b320517b4bf5a65b535f75c3925ada5d42d26aa1344b699773c",
+  "size_bytes": 39088,
   "summary": "V3 手机可直接使用：固定 Pythonista 入口无缝升级至独立 Python 包；稳定系统菜单、DeepSeek 逐次确认、历史/设置、快捷指令显式授权、完整性校验和在线更新。V2 数据不覆盖；真机待验收。"
 }
