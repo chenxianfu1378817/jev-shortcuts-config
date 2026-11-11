@@ -59,7 +59,9 @@ class NativeChatTests(unittest.TestCase):
         self.shell.ui = SimpleNamespace(delay=lambda fn, wait: fn())
         self.root = SimpleNamespace(entry=SimpleNamespace(text='你好'),
                                     send=SimpleNamespace(enabled=True),
-                                    status=SimpleNamespace(text=''))
+                                    status=SimpleNamespace(text=''),
+                                    log=SimpleNamespace(text='', content_size=(0, 0),
+                                                        height=200, content_offset=(0, 0)))
         self.shell._native_root = self.root
 
     def test_probe_does_not_execute_agent_or_touch_task_files(self):
