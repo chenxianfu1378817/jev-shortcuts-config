@@ -82,7 +82,7 @@ footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding
 <section class="screen active" id="chatview" aria-label="对话记录"></section>
 <section class="screen" id="historyview" aria-label="历史档案"><div class="section-title">本机历史档案</div><input class="field" id="historyquery" placeholder="搜索任务或 BU 行情"><button class="action" id="historysearch">搜索</button><div id="historyresults"></div></section>
 <section class="screen" id="settingsview" aria-label="设置"><div class="section-title">外观与主题</div><div class="card"><div class="sub">更换主题将作用于全部对话界面。设置保存在手机本地。</div><div class="colors" id="colors"></div><div style="margin-top:10px"><button class="action secondary" data-mode="跟随系统">跟随系统</button><button class="action secondary" data-mode="浅色模式">浅色</button><button class="action secondary" data-mode="深色模式">深色</button></div><input class="field" id="customcolor" placeholder="自定义颜色 #RRGGBB" maxlength="7"><button class="action secondary" id="savecolor">保存颜色</button></div><div class="section-title">程序管理</div><button class="action secondary" id="checkupdate">检查在线更新</button><div class="sub">固定入口不变。所有系统授权与写入保护继续由 Python 处理。</div></section>
-<footer id="footer"><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" placeholder="输入任务或继续刚才的对话"></textarea><button id="mic" class="round mic" aria-label="开始手动录音">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风开始录音，再点击结束；不会自动收音</div></footer></div><div id="toast" hidden></div>
+<footer id="footer"><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" placeholder="输入任务或继续刚才的对话"></textarea><button id="mic" class="round mic" aria-label="开始手动录音">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风开始录音，再点击结束；不会自动收音</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
 <script>
 (function(){
 'use strict';
@@ -102,9 +102,9 @@ function enter(t){tab=t;var screens={chat:'chatview',history:'historyview',setti
 function send(){var v=el('entry').value.trim();if(!v)return; if(busy&&!waiting){toast('正在执行上一项任务');return}el('entry').value='';addMessage({role:'user',text:v});setBusy(true,false);bridge('send',v)}
 function themeButtons(){var x=el('colors');Object.keys(accents).forEach(function(k){var b=node('button','color-choice');var dot=node('span','dot');dot.style.background=accents[k];b.appendChild(dot);b.appendChild(node('span','',k));b.onclick=function(){bridge('theme',k)};x.appendChild(b)})}
 function paintHistory(items){var p=el('historyresults');p.replaceChildren();if(!items||!items.length){p.appendChild(node('div','sub','没有匹配的记录'));return}items.forEach(function(it){var b=node('button','archive-btn',(it.title||'未命名任务')+'\n'+(it.created||'').slice(0,16));b.onclick=function(){bridge('detail',it.key||'')};p.appendChild(b)})}
-window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')})}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
+window.PYChatReceive=function(m){if(!m||typeof m!=='object')return;if(m.type==='message')addMessage(m.message||{});else if(m.type==='result')card(m.result||{});else if(m.type==='busy')setBusy(m.busy,m.waiting);else if(m.type==='recording'){recording=!!m.active;el('cancelrecord').hidden=!recording;document.body.classList.toggle('recording',recording);setBusy(busy,waiting)}else if(m.type==='approval')approval(m.question||'',m.choices||[]);else if(m.type==='history')paintHistory(m.items||[]);else if(m.type==='detail'){enter('chat');addMessage({role:'assistant',text:(m.title||'档案')+'\n\n'+(m.text||'')})}else if(m.type==='theme'){applyPalette(m.palette||{});toast('主题已保存')}else if(m.type==='notice')toast(m.text||'操作完成');else if(m.type==='handoff'){setBusy(false,false);toast('已向系统发出打开请求，请在目标 App 核验')}};
 el('send').onclick=send;el('entry').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}};
-el('mic').onclick=function(){if(recording)bridge('voice_stop','');else bridge('voice_start','')};
+el('mic').onclick=function(){if(recording)bridge('voice_stop','');else bridge('voice_start','')};el('cancelrecord').onclick=function(){bridge('voice_cancel','')};
 document.querySelectorAll('[data-tab]').forEach(function(b){b.onclick=function(){enter(b.getAttribute('data-tab'))}});
 el('historysearch').onclick=function(){bridge('history',el('historyquery').value.trim())};
 document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){bridge('mode',b.getAttribute('data-mode'))}});
@@ -275,8 +275,8 @@ class _ChatShell:
         with self.lock:
             if self.closed:
                 return
-            if self.recognizing and not from_voice:
-                self.post({'type':'notice','text':'正在识别语音，请稍后'})
+            if (self.recognizing or self.recorder is not None) and not from_voice:
+                self.post({'type':'notice','text':'录音或识别正在进行，请先结束'})
                 return
             if from_voice:
                 self.recognizing = False
@@ -393,6 +393,25 @@ class _ChatShell:
         _chat_threading.Thread(target=self._transcribe, args=(path,),
                                name='PYVoiceAgent-Speech', daemon=True).start()
 
+    def cancel_record(self):
+        """Discard user-cancelled audio; never run recognition or a task."""
+        with self.lock:
+            rec, path = self.recorder, self.record_file
+            self.recorder = None
+            self.record_file = None
+        if rec is not None:
+            try:
+                rec.stop()
+            except Exception:
+                pass
+        if path:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        self.post({'type':'recording','active':False})
+        self.post({'type':'notice','text':'本次录音已取消，没有执行任务'})
+
     def _transcribe(self, path):
         try:
             import speech
@@ -446,7 +465,7 @@ class _ChatShell:
         elif action == 'voice_stop':
             self.stop_record()
         elif action == 'voice_cancel':
-            self.stop_record()
+            self.cancel_record()
         elif action == 'history':
             try:
                 self.post({'type':'history','items':_history_search(text[:100],60)})
