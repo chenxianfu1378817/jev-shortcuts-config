@@ -1,0 +1,33 @@
+name: PYVoiceAgent V2.2.1 continuous chat and legacy navigation
+on:
+  push:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v221.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  complete-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax checks for single-file release and WebView source
+        run: |
+          python -m py_compile pyvoiceagent/agent_core_2_2_1.py
+          python -m py_compile pyvoiceagent/chat_shell_v220.py
+      - name: Continuous chat, local app, JS syntax and microphone regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_shell_v220.py' -v
+      - name: Legacy settings and voice report regression
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_chat_shell_v221.py' -v
+      - name: Previous manual recording, lifecycle, calendar, map and result behavior
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_manual_voice_v198.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_lifecycle_v201.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_result_center_v200.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_amap_native_v199.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_bu_calendar_v196.py' -v
