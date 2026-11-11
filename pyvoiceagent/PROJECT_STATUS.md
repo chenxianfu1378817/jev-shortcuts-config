@@ -4,6 +4,16 @@
 >
 > 最近核对：**2026-11-11**；状态来源：GitHub `main` 正式更新清单、V2.3.4 源码及 V2.3.5 发布变更。在线发布状态以 main 的 manifest 为准。
 
+## V2.3.6 全功能模块化源码 / 独立音频会话（真机待验收）
+
+用户确认：V2.3.5 再次按麦克风结束录音时仍然闪退，因此不继续叠加录音处理回调，改为可分模块维护的设计。已把基于 V2.3.5 的**所有功能**按 25 个源码单元拆开，模块清单见 [MODULAR_ARCHITECTURE_V236.md](MODULAR_ARCHITECTURE_V236.md)。现阶段是开发源码模块化，最终仍由构建器组合成旧启动器可安装的单引擎，以避免改变本地数据或反复下载安装；实际新隔离的运行时模块为音频会话，其他业务模块仍沿用原共享调用接口。
+
+**音频根因假设及修复**：V2.3.5 的 `sound.Recorder` 在 `ui.delay` 所在的 UI 线程启动，在另一个工作线程停止，关闭/取消时可能存在第三个停止路径。V2.3.6 的 `_VoiceSession` 在**同一个专属线程**创建、启动、停止和释放 Recorder；界面只发出开始、停止和取消请求，待识别结果在取消/关闭后丢弃，且不重复 stop。原生 SIGSEGV 是否根治仍依赖 iPhone 验证，Python 捕获不能拦截 C/Objective-C 崩溃。
+
+**正式构建数据（GitHub 分支候选）**：V2.3.6 / sequence=236、`agent_core_2_3_6.py`、**348310** 字节、SHA-256 `9c8ce83f1d957db94ff2059cb9844bd63172be1137ca62914094b27a3e444598`，旧更新器上限 350000 字节。候选生成与回读一致、AST 等价、音频模拟及当前登记/更新器兼容检查已通过；尚未做 iPhone 真机，且 V1.9.4/1.9.5 历史归档相关工作流以及固定检查 V2.2.1 的旧工作流仍可能报红，不能称所有历史 CI 全部通过。
+
+**手机验收优先序**：现有同一个 `PYVoiceAgent.py` 更新后打开对话 → 点击麦克风开始 → 说「你好」 → 再点结束 → 检查识别/回复 → 单独测试取消、关闭、连续两次录音、切后台。若出现闪退，检查 `voice_last_stage.json` 最后阶段（不得上传真实语音/密钥），必要时提供脱敏 .ips；先停用有问题的录音入口、改用文字，保留旧引擎回滚能力。
+
 ## V2.3.5 回调异常与工具库持久化修复（真机待验收）
 
 11 月 11 日 16:40:28 的 Pythonista 真机报告显示，主线程在执行延迟回调后进入异常打印及事后调试器。调试器通过 PyFrame_FastToLocalsWithError 读取局部变量时发生 SIGSEGV；报告未给出最初的 Python 异常或回调名。V2.3.5 在 V2.3.4 上为聊天延迟回调和原生快捷指令管理线程建立异常边界；窗口关闭后的延迟动作不再执行，阶段、异常类型和 Python 行号记在本机 callback_last_error.json（不记录正文和密钥）。另修正 atomic_json 固定 .tmp 文件名引起的并发写入竞争，工具库读改写受可重入锁保护；任务状态文件损坏、暂停、执行中或待回调/待核验时拒绝变更快捷指令。保留 V2.3.4 的独立录音工作线程、所有原功能、固定入口和 350000 字节更新上限。Python/CI 回归已通过，**iPhone 退出或闪退问题尚需同机复验，不得宣称已经彻底解决**。
@@ -57,11 +67,11 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | GitHub | `chenxianfu1378817/jev-shortcuts-config` |
 | 项目目录 | `pyvoiceagent/` |
 | 正式分支 | `main` |
-| 正式版本 | **V2.3.5**（以 main 的 manifest 为准） |
-| 更新序号 | `235` |
-| 发布文件 | `pyvoiceagent/agent_core_2_3_5.py` |
-| 发布 SHA-256 | `1f48e0c4c5344aa52a6569db06597c8e8d8c93a7d8ef6582b45bc6b37814012f` |
-| 发布大小 | `348665` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 正式版本 | **V2.3.6**（以 main 的 manifest 为准） |
+| 更新序号 | `236` |
+| 发布文件 | `pyvoiceagent/agent_core_2_3_6.py` |
+| 发布 SHA-256 | `9c8ce83f1d957db94ff2059cb9844bd63172be1137ca62914094b27a3e444598` |
+| 发布大小 | `348310` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
@@ -94,7 +104,7 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 ## 4. 关键文件速查
 
 - `manifest.json`：唯一正式更新清单，包含 `version / sequence / path / sha256 / size_bytes`。
-- `agent_core_2_3_5.py`：当前发布主引擎；今后按清单更新，不能固定编辑本文件名。
+- `agent_core_2_3_6.py`：当前发布主引擎；今后按清单更新，不能固定编辑本文件名。
 - `README.md`：功能概览、各版本发布记录及使用说明。
 - `V223_录音停止闪退修复与验收.md`、`V224_键盘输入与对话区适配.md`、`V225_退出与本地快捷指令工具库.md`、`V226_本地快捷指令正式兼容与数据保护.md`、`V227_输入法导致页面横向偏移修复.md`：最近故障与验收基准。
 - `tests/test_audio_stop_v223.py`、`tests/test_keyboard_v224.py`、`tests/test_registered_shortcuts_v225.py`、`tests/test_shortcut_guard_v226.py`、`tests/test_horizontal_keyboard_v227.py`：关键回归用例；旧工具对应其他 tests 不可删除。
