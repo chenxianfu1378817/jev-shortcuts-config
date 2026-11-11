@@ -156,6 +156,25 @@ class NativeChatTests(unittest.TestCase):
         self.assertIsNone(self.shell.web)
         self.assertTrue(self.shell.closed)
 
+    def test_small_keyboard_keeps_input_send_and_probe_visible(self):
+        fake_ui = SimpleNamespace(
+            View=FakeView, Label=FakeView, TextView=FakeView, Button=FakeView,
+            get_screen_size=lambda: (390, 760),
+            convert_rect=lambda frame, parent, view: frame,
+            delay=lambda func, seconds: func())
+        def check_modal(root):
+            root.keyboard_frame_did_change((0, 300, 390, 460))
+            self.assertEqual(root.keyboard_top, 300)
+            self.assertLessEqual(root.entry.frame[1]+root.entry.frame[3], 300)
+            for button in (root.send, root.probe, root.dictate, root.close_button):
+                self.assertLessEqual(button.frame[1]+button.frame[3], 300)
+            self.assertTrue(root.theme.hidden)
+            root.keyboard_frame_did_change((0, 760, 390, 0))
+            self.assertFalse(root.theme.hidden)
+        with patch.dict(sys.modules, {'ui': fake_ui}), \\
+             patch.object(FakeView, 'wait_modal', check_modal):
+            self.assertTrue(self.shell.show())
+
     def test_all_eight_palette_choices_remain_available(self):
         self.assertEqual(len(core.CARD_THEMES), 8)
         self.assertTrue(all(x in core.CARD_THEMES for x in
