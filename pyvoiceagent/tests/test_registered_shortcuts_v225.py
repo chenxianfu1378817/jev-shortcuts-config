@@ -108,6 +108,8 @@ class ToolsV225(unittest.TestCase):
         self.assertIn('def bridge_callback(',text)
         self.assertIn('def _bu_capture_and_calendar(',text)
         self.assertIn('def immediate_check_and_update(',text)
+        self.assertIn(ADDON.read_text('utf-8'),text)
+        self.assertIn(UI.read_text('utf-8'),text)
 
     def test_legacy_registry_is_backward_compatible(self):
         Path(self.path).write_text(json.dumps({'legacy':{'name':'日历查询','description':'查苹果日历'}},ensure_ascii=False),'utf8')
@@ -215,6 +217,18 @@ class ToolsV225(unittest.TestCase):
         self.env['_ChatShell']._handle_action(shell,'reg_delete',json.dumps({'id':'work','confirm':True}))
         self.assertEqual(self.env['_reg_items'](),[])
         self.env['_ChatShell']._handle_action(shell,'exit','')
+        self.assertTrue(shell.closed)
+        shell.holder.close.assert_called_once()
+
+    def test_exit_is_deferred_until_webview_callback_returns(self):
+        shell=ShellStub()
+        queued=[]
+        shell.ui.delay=lambda fn,d:queued.append((fn,d))
+        self.env['_ChatShell']._handle_action(shell,'exit','')
+        self.assertFalse(shell.closed)
+        self.assertEqual(len(queued),1)
+        self.assertGreater(queued[0][1],0)
+        queued[0][0]()
         self.assertTrue(shell.closed)
         shell.holder.close.assert_called_once()
 
