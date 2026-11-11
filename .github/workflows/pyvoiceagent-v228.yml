@@ -16,6 +16,6 @@ jobs:
           python-version: '3.11'
       - run: python -m py_compile pyvoiceagent/agent_core_2_2_8.py
       - run: |
-          for suite in test_registry_save_v231 test_native_exit_v230 test_webview_controls_v229 test_registration_v228 test_horizontal_keyboard_v227 test_shortcut_guard_v226 test_registered_shortcuts_v225 test_audio_stop_v223 test_chat_shell_v221 test_release_compat_v222; do
+          for suite in test_native_registry_v232 test_registry_save_v231 test_native_exit_v230 test_webview_controls_v229 test_registration_v228 test_horizontal_keyboard_v227 test_shortcut_guard_v226 test_registered_shortcuts_v225 test_audio_stop_v223 test_chat_shell_v221 test_release_compat_v222; do
             python -m unittest discover -s pyvoiceagent/tests -p "$suite.py" -v || exit 1
           done
