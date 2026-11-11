@@ -148,7 +148,7 @@ class MobileReleaseTests(unittest.TestCase):
             old_marker=os.path.join(old_data,'shortcut_registry.json')
             Path(old_marker).write_text('keep v2 data',encoding='utf-8')
             with patch.object(namespace['os'].path,'expanduser',
-                              side_effect=lambda path: root if path=='~' else path):
+                              side_effect=lambda path: os.path.join(root, path[2:]) if path.startswith('~/') else (root if path=='~' else path)):
                 first=namespace['_install']()
                 second=namespace['_install']()
             self.assertEqual(first,second)
@@ -164,7 +164,7 @@ class MobileReleaseTests(unittest.TestCase):
         namespace['_BUNDLE_SHA256']='0'*64
         with tempfile.TemporaryDirectory() as root:
             with patch.object(namespace['os'].path,'expanduser',
-                              side_effect=lambda path: root if path=='~' else path):
+                              side_effect=lambda path: os.path.join(root, path[2:]) if path.startswith('~/') else (root if path=='~' else path)):
                 with self.assertRaises(RuntimeError):
                     namespace['_install']()
 
