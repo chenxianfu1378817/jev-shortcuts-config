@@ -10,7 +10,7 @@
 
 原生窗口提供对话记录、提交、历史、快捷指令工具库、八色主题、外观模式、系统键盘听写和退出。新增「仅测试」按钮：只读取文字并返回界面成功状态，不调用 DeepSeek、用户资料存储、快捷指令或任务线程；再点「发送」时才创建后台任务线程，沿用已有 AI/执行/回调代码。这样可按“原生 UI → 任务接收 → Agent 任务处理”进行真机分段判断，而不是每次合并一堆未经验证的修复。
 
-构建和模拟检查以 V2.3.9 sequence=239 为基线：生成单文件 `agent_core_2_3_9.py`，341361 字节，SHA-256 `5ea81156b9aca124a1006854586ed95a993748dd8f6e2bc9036a4890be5af810`。`PYVoiceAgent.py` 固定入口、DeepSeek、系统工具、主题配置、历史与数据目录保留；仍需同一台 iPhone 验收按钮和 Pythonista UI 兼容性。若仅测试也退出，采集 iOS .ips；若仅发送退出，取 `native_chat_stage.json` 的脱敏阶段（或 .ips），优先定位任务线程和系统原生操作。
+构建和模拟检查以 V2.3.9 sequence=239 为基线：生成单文件 `agent_core_2_3_9.py`，341614 字节，SHA-256 `bea8c3d94ecd828e78b259d5ec09fcd94f2760a3c7263ac3936616244ae16915`。`PYVoiceAgent.py` 固定入口、DeepSeek、系统工具、主题配置、历史与数据目录保留；仍需同一台 iPhone 验收按钮和 Pythonista UI 兼容性。若仅测试也退出，采集 iOS .ips；若仅发送退出，取 `native_chat_stage.json` 的脱敏阶段（或 .ips），优先定位任务线程和系统原生操作。
 
 ## V2.3.8 文本发送崩溃 / 中文输入法与 WebView 接口改造（真机待验收）
 
@@ -100,8 +100,8 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | 正式版本 | **V2.3.9**（以 main 的 manifest 为准） |
 | 更新序号 | `239` |
 | 发布文件 | `pyvoiceagent/agent_core_2_3_9.py` |
-| 发布 SHA-256 | `5ea81156b9aca124a1006854586ed95a993748dd8f6e2bc9036a4890be5af810` |
-| 发布大小 | `341361` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 发布 SHA-256 | `bea8c3d94ecd828e78b259d5ec09fcd94f2760a3c7263ac3936616244ae16915` |
+| 发布大小 | `341614` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |
