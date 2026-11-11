@@ -1,0 +1,50 @@
+name: PYVoiceAgent V2.3.9 native chat safe-mode
+on:
+  push:
+    branches:
+      - fix/pyvoiceagent-v239-native-safe-chat
+    paths:
+      - 'pyvoiceagent/src/**'
+      - 'pyvoiceagent/tools/build_modular.py'
+      - 'pyvoiceagent/tests/test_native_chat_v239.py'
+      - '.github/workflows/pyvoiceagent-native-v239.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify-native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build legacy-compatible V2.3.9 package
+        run: python pyvoiceagent/tools/build_modular.py --sequence 239 --write
+      - name: Rebuild byte-for-byte and validate SHA-256
+        run: python pyvoiceagent/tools/build_modular.py --sequence 239
+      - name: Test native UI without WebView, send probe and worker dispatch
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_native_chat_v239.py' -v
+      - name: Verify module coverage, iOS dictation fallback, registry and storage
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_modular_build_v236.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_safe_dictation_v237.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_storage_safety_v235.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_active_registry_contract.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_active_release_contract.py' -v
+      - name: Publish generated artifact only on candidate branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/pyvoiceagent-v239-native-safe-chat'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyvoiceagent/agent_core_2_3_9.py pyvoiceagent/manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "build(pyvoiceagent): V2.3.9 native safe chat release"
+            git push origin HEAD:fix/pyvoiceagent-v239-native-safe-chat
+          fi

@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 238,
-  "version": "2.3.8",
-  "path": "agent_core_2_3_8.py",
-  "sha256": "5076fb19fd513dd130401ba77c714401df9d1a4f5bbb0cb84cb1cfbfb74e5436",
-  "size_bytes": 345999,
-  "summary": "修复 WebView 导航回调中直接执行文字任务、中文输入法收键盘与发送的时序冲突；异步排队、确认回执、防重复并保留未确认草稿。保留系统听写、全部工具和模块化源码。iPhone 真机待验收。"
+  "sequence": 239,
+  "version": "2.3.9",
+  "path": "agent_core_2_3_9.py",
+  "sha256": "bea8c3d94ecd828e78b259d5ec09fcd94f2760a3c7263ac3936616244ae16915",
+  "size_bytes": 341614,
+  "summary": "全功能模块化引擎切换到 Pythonista 原生卡片对话，移除 WebView 运行时依赖；新增无副作用发送测试、原生文字输入及独立任务线程，保留主题、历史、快捷指令与用户数据。iPhone 真机待验收。"
 }
