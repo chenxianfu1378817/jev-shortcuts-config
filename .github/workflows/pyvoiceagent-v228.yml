@@ -1,0 +1,21 @@
+name: PYVoiceAgent registration candidate
+on:
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+      - '.github/workflows/pyvoiceagent-v228.yml'
+permissions:
+  contents: read
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m py_compile pyvoiceagent/agent_core_2_2_8.py
+      - run: |
+          for suite in test_registration_v228 test_horizontal_keyboard_v227 test_shortcut_guard_v226 test_registered_shortcuts_v225 test_audio_stop_v223 test_chat_shell_v221 test_release_compat_v222; do
+            python -m unittest discover -s pyvoiceagent/tests -p "$suite.py" -v || exit 1
+          done
