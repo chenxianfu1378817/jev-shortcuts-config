@@ -52,8 +52,8 @@ iPhone 上 V2.2.8 的退出与登记按钮均无响应。退出原先依赖 WebV
 | 正式版本 | **V2.3.3**（以 main 的 manifest 为准） |
 | 更新序号 | `233` |
 | 发布文件 | `pyvoiceagent/agent_core_2_3_3.py` |
-| 发布 SHA-256 | `a62b7605c684d84250e4539e5e0cf67ab93cb21d84aaa2a986fb0740b3fabf56` |
-| 发布大小 | `344244` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
+| 发布 SHA-256 | `b3dd5d8bd1ec92ea2b7a8e7a078e4e02cd0219c3ebe596b46fac4cc758207257` |
+| 发布大小 | `344433` 字节；兼容旧更新器 `MAX_UPDATE_BYTES=350000` |
 | 固定手机入口 | `PYVoiceAgent.py`；不得改名或要求反复重装入口 |
 | 运行环境 | iPhone、Pythonista 3、Python + 本地 `ui.WebView` + 内置 HTML/CSS/JavaScript |
 | DeepSeek | 用于需 AI 规划的任务；可由本地明确意图直接路由的任务应尽量不耗模型 Token |

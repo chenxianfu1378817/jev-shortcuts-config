@@ -20,9 +20,10 @@ class RegistryReturnTests(unittest.TestCase):
         holder = shell.holder = Mock()
         web = shell.web = Mock()
         queued = []
-        shell.ui = Mock(in_background=lambda work: lambda: queued.append(work))
 
-        with patch.object(core, 'add_shortcut_registration') as manager:
+        with patch.object(core, 'add_shortcut_registration') as manager, \
+             patch.object(core._chat_threading, 'Thread',
+                          side_effect=lambda target, **kwargs: Mock(start=lambda: queued.append(target))):
             shell.request_registry()
             shell.request_registry()
             self.assertEqual(len(queued), 1)
@@ -40,8 +41,9 @@ class RegistryReturnTests(unittest.TestCase):
         with patch.object(core, '_chat_transcript_load', return_value=[]):
             shell = core._ChatShell()
         queued = []
-        shell.ui = Mock(in_background=lambda work: lambda: queued.append(work))
-        with patch.object(core, 'add_shortcut_registration') as manager:
+        with patch.object(core, 'add_shortcut_registration') as manager, \
+             patch.object(core._chat_threading, 'Thread',
+                          side_effect=lambda target, **kwargs: Mock(start=lambda: queued.append(target))):
             shell.request_registry()
             shell.close()
             queued.pop()()

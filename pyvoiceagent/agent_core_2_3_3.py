@@ -6022,7 +6022,12 @@ class _ChatShell:
             finally:
                 with self.lock:
                     self.registry_requested = False
-        self.ui.in_background(manage)()
+        try:
+            _chat_threading.Thread(target=manage, daemon=True, name='PYVA-Registry').start()
+        except RuntimeError:
+            with self.lock:
+                self.registry_requested = False
+            raise
 
     def show(self):
         import ui
