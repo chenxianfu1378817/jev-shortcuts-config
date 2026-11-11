@@ -26,20 +26,28 @@ def _runtime_location():
 def _install():
     target = _runtime_location()
     marker = os.path.join(target, '.bundle_sha256')
-    if os.path.isfile(marker):
-        with open(marker, 'r', encoding='ascii') as stream:
-            if stream.read().strip() == _BUNDLE_SHA256:
-                # Ensure the critical entry still exists. User data is elsewhere.
-                expected = os.path.join(target, 'pyvoiceagent_v3', 'mobile.py')
-                if os.path.isfile(expected):
-                    return target
-        raise RuntimeError('V3 runtime checksum marker invalid; refusing overwrite')
-
     archive = base64.b64decode(_BUNDLE_B64, validate=True)
     if hashlib.sha256(archive).hexdigest() != _BUNDLE_SHA256:
         raise RuntimeError('V3 bundle digest mismatch')
     if len(archive) > 160000:
         raise RuntimeError('V3 archive too large')
+    if os.path.isfile(marker):
+        with open(marker, 'r', encoding='ascii') as stream:
+            if stream.read().strip() != _BUNDLE_SHA256:
+                raise RuntimeError('V3 runtime marker invalid; refusing overwrite')
+        # Recheck every extracted file before reuse. Never silently execute a
+        # modified runtime package or rewrite user files during startup.
+        with zipfile.ZipFile(io.BytesIO(archive)) as source:
+            for member in source.infolist():
+                path = os.path.join(target, *member.filename.split('/'))
+                if not os.path.isfile(path):
+                    raise RuntimeError('V3 runtime module missing')
+                with open(path, 'rb') as stream:
+                    actual = stream.read(member.file_size + 1)
+                if hashlib.sha256(actual).digest() != hashlib.sha256(
+                        source.read(member.filename)).digest():
+                    raise RuntimeError('V3 runtime module hash mismatch')
+        return target
     os.makedirs(os.path.dirname(target), exist_ok=True)
     stage = tempfile.mkdtemp(prefix='.v3_install_',dir=os.path.dirname(target))
     ready = False
@@ -90,9 +98,15 @@ def main():
         from pyvoiceagent_v3.mobile import run
         return run()
     except Exception as exc:
-        print('PYVoiceAgent V3 启动未完成（{}），旧用户数据未修改。'.format(
-            type(exc).__name__))
-        raise
+        message = 'PYVoiceAgent V3 启动失败（{}）。旧用户数据未修改，请勿重复操作真实工具。'.format(
+            type(exc).__name__)
+        print(message)
+        try:
+            import console
+            console.alert('V3 安全保护', message, '确定', hide_cancel_button=True)
+        except Exception:
+            pass
+        return 1
 
 
 if __name__ == '__main__':
