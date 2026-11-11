@@ -259,23 +259,29 @@ class _NativeChatShell(_ChatShell):
             def layout(self):
                 w = max(280, self.width)
                 h = self.keyboard_top if self.keyboard_top else self.height
-                h = max(260, min(h, self.height))
+                h = max(220, min(h, self.height))
+                compact = h < 350  # keyboard may cover most of a small iPhone
+                self.title.hidden = compact
+                self.version.hidden = compact
                 self.title.frame = (16, 8, w-180, 30)
                 self.version.frame = (16, 40, w-30, 19)
-                self.status.frame = (16, 62, w-30, 22)
+                self.status.frame = (16, 5 if compact else 62, w-30, 22)
                 row = [('theme', 0), ('mode', 1), ('tools', 2), ('recent', 3)]
                 tw = max(54, (w-42)/4)
                 for name, index in row:
-                    getattr(self, name).frame = (12 + index*(tw+6), 92, tw, 36)
+                    item = getattr(self, name)
+                    item.hidden = compact
+                    item.frame = (12 + index*(tw+6), 92, tw, 36)
                 input_height = 68 if h < 420 else 88
-                bottom = max(170, h - input_height - 62)
-                self.log.frame = (12, 137, w-24, max(50, bottom-147))
+                top = 34 if compact else 137
+                bottom = h - input_height - 50
+                self.log.frame = (12, top, w-24, max(30, bottom-top-7))
                 self.entry.frame = (12, bottom, w-24, input_height)
                 bw = (w-44)/4
                 for index, button in enumerate((self.dictate, self.probe, self.send,
                                                 self.close_button)):
-                    button.frame = (12+index*(bw+7), bottom+input_height+9,
-                                    bw, 40)
+                    button.frame = (12+index*(bw+7), bottom+input_height+8,
+                                    bw, 39)
                 self.close_button.title = '退出'
 
         root = NativeRoot()
