@@ -138,11 +138,24 @@ def _send(agent, value):
 def _history(agent):
     rows = agent.history.list(limit=30)
     if not rows:
-        _alert('历史记录', 'V3 暂无任务历史。旧版 V2 记录不会自动导入。')
-        return
+        _alert('历史记录', 'V3 暂无任务历史。可以在下方选择「旧版历史预览」。')
     labels = ['{} · {} · {}'.format(row['created_at'][:16],
                                    row['status'][:20], row['text'][:35]) for row in rows]
+    labels.append('旧版历史预览（只读，不迁移）')
     selected = _choose('V3 历史记录（只读）', labels)
+    if selected == '旧版历史预览（只读，不迁移）':
+        legacy = os.path.join(os.path.expanduser('~/Documents'), 'PYVoiceAgent_Data')
+        preview = HistoryService.preview_legacy(legacy, limit=25)
+        entries = preview['entries']
+        if entries:
+            chosen = _choose('旧版历史（只读）',
+                             ['{} · {}'.format(x['created'][:16], x['goal'][:45])
+                              for x in entries])
+            if chosen:
+                _alert('旧版历史预览', chosen)
+        else:
+            _alert('旧版历史', '未发现可读取的旧版历史档案。')
+        return
     if selected in labels:
         row = rows[labels.index(selected)]
         _alert('任务历史', '输入：{}\n状态：{}\n回复：{}'.format(
@@ -152,7 +165,7 @@ def _history(agent):
 def _tools(agent):
     while True:
         selected = _choose('快捷指令工具库', (
-            '已登记工具', '登记一个快捷指令', '旧版工具库说明', '返回'))
+            '已登记工具', '登记一个快捷指令', '导入旧版快捷指令', '返回'))
         if not selected or selected == '返回':
             return
         if selected == '已登记工具':
@@ -168,9 +181,24 @@ def _tools(agent):
                 _alert('工具说明', '快捷指令：{}\n触发词：{}\n状态：{}\n系统执行必须二次确认。'.format(
                     item['shortcut_name'], '、'.join(item['aliases']),
                     '启用' if item['enabled'] else '停用'))
-        elif selected == '旧版工具库说明':
-            _alert('保护旧数据', 'V2 工具文件保留在 PYVoiceAgent_Data/shortcut_registry.json。'
-                   'V3 使用独立工具库，暂不自动导入旧记录，避免覆盖已验证配置。')
+        elif selected == '导入旧版快捷指令':
+            from .services.legacy_import import (preview_legacy_registry,
+                                                 import_legacy_registry)
+            legacy = os.path.join(os.path.expanduser('~/Documents'), 'PYVoiceAgent_Data')
+            preview = preview_legacy_registry(legacy)
+            count = len(preview['ready'])
+            if not count:
+                _alert('旧版快捷指令', '没有可安全导入的直达型快捷指令。'
+                       '需要旧 PYAgentHub 桥接的工具不会自动迁移。')
+                continue
+            if _confirm('导入旧版快捷指令',
+                        '找到 {} 项直达型工具，另有 {} 项不兼容而跳过。'
+                        '只复制配置到 V3，绝不改动 V2 原文件。'
+                        .format(count,preview['skipped']), '确认复制'):
+                result = import_legacy_registry(agent.shortcuts, legacy)
+                _alert('导入结果', '新增 {} 项，跳过 {} 项。'
+                       '旧版配置完整保留；实际执行仍须每次授权。'
+                       .format(len(result['imported']), result['skipped']))
         elif selected == '登记一个快捷指令':
             ident = _text('工具 ID（英文字母开头、下划线）')
             if not ident:
