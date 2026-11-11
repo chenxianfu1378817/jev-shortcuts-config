@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 228,
-  "version": "2.2.8",
-  "path": "agent_core_2_2_8.py",
-  "sha256": "f5a5372d502398a3a345c3f8eb41d0dc680080b39075a3ea820838bb5df9b8de",
-  "size_bytes": 347949,
-  "summary": "登记入口改用本地表单，保护既有工具库记录，延迟启动前复核任务与工具登记；专项模拟通过，iPhone 真机待验证。"
+  "sequence": 229,
+  "version": "2.2.9",
+  "path": "agent_core_2_2_9.py",
+  "sha256": "91c689fd1c863f381afedd909fc6722d1ad7a82154009e5fc2ab286359bba4c2",
+  "size_bytes": 347884,
+  "summary": "退出按钮直接发送本地退出请求，登记按钮直接滚动到表单并刷新工具库。真机待验证。"
 }
