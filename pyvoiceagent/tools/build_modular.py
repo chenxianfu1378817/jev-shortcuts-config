@@ -24,9 +24,12 @@ def assembled_source():
     parts = sorted(SOURCE_DIR.glob('[0-9][0-9]_*.py'))
     if len(parts) < 24:
         raise RuntimeError('Some source modules are missing; refusing to build')
-    text = ''.join(part.read_text(encoding='utf-8') for part in parts)
+    # The experimental native Recorder service is retained for isolated
+    # regression but not shipped: all reachable UI paths use iOS dictation.
+    active = [part for part in parts if part.name != '39_voice_session.py']
+    text = ''.join(part.read_text(encoding='utf-8') for part in active)
     ast.parse(text, filename='assembled-pyvoiceagent.py')
-    return text, [part.name for part in parts]
+    return text, [part.name for part in active]
 
 
 def remove_nonfunctional_lines(source):
