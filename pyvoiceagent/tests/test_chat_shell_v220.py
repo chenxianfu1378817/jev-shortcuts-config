@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import tempfile
+import types
 import threading
 import time
 import uuid
@@ -228,6 +229,45 @@ class ChatV220Test(unittest.TestCase):
                             if e.get('type')=='notice'))
         self.ns['start_new'].assert_not_called()
         self.assertIn('id="cancelrecord"',self.ns['CHAT_HTML'])
+
+    def test_manual_record_start_stop_without_dialog(self):
+        import unittest.mock as um
+        self.shell.ui=types.SimpleNamespace(delay=lambda callback,seconds:callback())
+        created=[]
+        class FakeRecorder:
+            def __init__(self,path):self.path=path;self.stopped=False;created.append(self)
+            def record(self):
+                Path(self.path).write_bytes(b'voice recording bytes'*10)
+            def stop(self):self.stopped=True
+        scheduled=[]
+        class FakeThread:
+            def __init__(self,target,args=(),**kwargs):self.target=target;self.args=args
+            def start(self):scheduled.append((self.target,self.args))
+        with um.patch.dict(sys.modules,{'sound':types.SimpleNamespace(Recorder=FakeRecorder)}):
+            with um.patch.object(self.ns['_chat_threading'],'Thread',FakeThread):
+                self.shell.begin_record()
+                self.assertIsNotNone(self.shell.recorder)
+                self.assertTrue(any(x.get('type')=='recording' and x.get('active') for x in self.events))
+                self.shell.stop_record()
+        self.assertTrue(created[0].stopped)
+        self.assertEqual(len(scheduled),1)
+        self.assertEqual(scheduled[0][0].__name__,'_transcribe')
+        self.assertTrue(any(x.get('type')=='recording' and not x.get('active') for x in self.events))
+        Path(created[0].path).unlink(missing_ok=True)
+
+    def test_recognized_voice_uses_same_session_and_cleans_audio(self):
+        import unittest.mock as um
+        path=Path(self.folder.name)/'spoken.m4a'
+        path.write_bytes(b'speech dummy bytes'*10)
+        looked=[]
+        self.shell._open_trusted_app=lambda key:looked.append(key)
+        fake=types.SimpleNamespace(get_recognition_languages=lambda:['zh-CN'],
+                                   recognize=lambda p,lang:[('打开美团',1.0)])
+        with um.patch.dict(sys.modules,{'speech':fake}):
+            self.shell._transcribe(str(path))
+        self.assertFalse(path.exists())
+        self.assertEqual(looked,['meituan'])
+        self.ns['start_new'].assert_not_called()
 
     def test_recognition_disables_concurrent_text(self):
         self.shell.recognizing=True
