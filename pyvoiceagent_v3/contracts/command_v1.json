@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PYVoiceAgent V3 Task Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_id", "text"],
+  "properties": {
+    "request_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{8,128}$"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 2000}
+  }
+}

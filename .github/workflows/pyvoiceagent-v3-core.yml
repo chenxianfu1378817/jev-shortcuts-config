@@ -1,0 +1,33 @@
+name: PYVoiceAgent V3 independent core
+on:
+  push:
+    branches:
+      - v3/phase1-pure-python-core
+    paths:
+      - 'pyvoiceagent_v3/**'
+      - '.github/workflows/pyvoiceagent-v3-core.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent_v3/**'
+      - '.github/workflows/pyvoiceagent-v3-core.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-core:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile true independent modules
+        run: python -m compileall -q pyvoiceagent_v3
+      - name: Run V3 offline behavior and fault injection suites
+        run: python -m unittest discover -s pyvoiceagent_v3/tests -v
+      - name: Verify clean separate-data startup
+        run: python -m pyvoiceagent_v3 --data /tmp/pyvoiceagent-v3-ci --check
