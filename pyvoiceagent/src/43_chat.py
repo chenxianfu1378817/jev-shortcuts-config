@@ -106,7 +106,7 @@ footer{flex:none;background:var(--bg);border-top:1px solid var(--border);padding
 </div><div class="section-title">程序管理</div>
 <button class="action secondary" id="checkupdate">检查在线更新</button>
 <div class="sub">固定入口不变。写入确认、防重复、密钥及本地记录由原有 Python 模块管理。</div></section>
-<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" enterkeyhint="enter" placeholder="输入任务或继续刚才的对话"></textarea><button id="dismiss" class="round" aria-label="收起键盘" hidden>⌄</button><button id="mic" class="round mic" aria-label="开始手动录音">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风开始录音，再点击结束；不会自动收音</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
+<footer id="footer"><div class="quick" style="margin:0 0 8px"><button id="clipboardquick">整理剪贴板</button><button id="latestquick">最近结果</button></div><div class="composer"><textarea id="entry" class="entry" rows="1" maxlength="2000" enterkeyhint="enter" placeholder="输入任务或继续刚才的对话"></textarea><button id="dismiss" class="round" aria-label="收起键盘" hidden>⌄</button><button id="mic" class="round mic" aria-label="使用系统键盘听写">🎙</button><button id="send" class="round send" aria-label="发送">↑</button></div><div class="hint" id="hint">点击麦克风按钮打开输入框，再点系统键盘上的麦克风听写</div><button id="cancelrecord" class="pill" style="display:block;margin:7px auto 0" hidden>取消本次录音</button></footer></div><div id="toast" hidden></div>
 <script>
 (function(){
 'use strict';
@@ -137,7 +137,7 @@ el('entry').addEventListener('input',growEntry);
 el('entry').onkeydown=function(e){if(e.key==='Enter'&&!e.isComposing&&(e.ctrlKey||e.metaKey)){e.preventDefault();send()}};
 if(window.visualViewport){window.visualViewport.addEventListener('resize',fitKeyboard);window.visualViewport.addEventListener('scroll',fitKeyboard)}
 window.addEventListener('resize',fitKeyboard);
-el('mic').onclick=function(){if(recording)bridge('voice_stop','');else bridge('voice_start','')};el('cancelrecord').onclick=function(){bridge('voice_cancel','')};
+el('mic').onclick=function(){if(busy&&!waiting)return toast('请先结束当前任务');enter('chat');el('entry').focus();toast('请点 iPhone 键盘上的麦克风进行听写，完成后点发送')};el('cancelrecord').onclick=function(){bridge('voice_cancel','')};
 document.querySelectorAll('[data-tab]').forEach(function(b){b.onclick=function(){enter(b.getAttribute('data-tab'))}});
 el('historysearch').onclick=function(){bridge('history',el('historyquery').value.trim())};
 document.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){bridge('mode',b.getAttribute('data-mode'))}});
@@ -458,47 +458,23 @@ class _ChatShell:
             self.post({'type':'busy','busy':False,'waiting':False})
 
     def begin_record(self):
-        with self.lock:
-            if self.closed or self.recorder is not None or self.recognizing:
-                return
-            if self.busy and self.answer_event is None:
-                self.post({'type':'notice','text':'当前任务正在处理'})
-                return
-            self.recorder = True  # UI-only activity marker; not a native recorder.
-            session = _VoiceSession(DATA_DIR, self._voice_trace, self._voice_progress,
-                                    self._voice_result, self._voice_error, self._voice_done)
-            self._voice_session = session
-            self.audio_stop_cancel = session.cancel_event
-        try:
-            session.start()
-        except Exception as exc:
-            with self.lock:
-                self.recorder = None
-                self._voice_session = None
-                self.audio_stop_cancel = None
-            self._callback_error('voice_start_worker', exc)
-            self.post({'type':'notice','text':'无法启动录音，请使用文字输入'})
+        """Safe fallback: never instantiate native Recorder from a chat callback.
+
+        V2.3.6 crashed on-device immediately. iOS keyboard dictation remains
+        available through the HTML input, without Pythonista sound.Recorder.
+        """
+        if not self.closed:
+            self.post({'type':'notice',
+                       'text':'已停用易闪退的原生录音。点击输入框，再点 iPhone 键盘上的麦克风听写，完成后发送。'})
 
     def stop_record(self, cancelled=None):
-        with self.lock:
-            session = self._voice_session
-            if self.closed or session is None or self.recognizing:
-                return
-            self.recognizing = True  # Fast duplicate-tap guard.
-        if not session.stop():
-            with self.lock:
-                self.recognizing = False
+        """Legacy bridge compatibility, without touching microphone hardware."""
+        self.begin_record()
 
     def cancel_record(self):
-        with self.lock:
-            session = self._voice_session
-            if self.closed or session is None:
-                return
-            self.recognizing = True
-            self.recorder = None
-        session.cancel()
-        self.post({'type':'recording','active':False})
-        self.post({'type':'notice','text':'本次录音已取消，没有执行任务'})
+        """Legacy bridge compatibility; no audio resource is created."""
+        if not self.closed:
+            self.post({'type':'notice','text':'无需取消录音；可直接编辑或清空输入框'})
 
     def _legacy_action(self, action):
         """Keep prior tools reachable; system setup can use native permission dialogs."""
@@ -541,14 +517,11 @@ class _ChatShell:
             else:
                 self.submit(text)
         elif action == 'voice_start':
-            with self.lock:
-                if self.closed or self.recorder is not None or self.recognizing:
-                    return
-            self._ui_later('voice_start', self.begin_record, 0.08)
+            self.begin_record()
         elif action == 'voice_stop':
             self.stop_record()
         elif action == 'voice_cancel':
-            self._ui_later('voice_cancel', self.cancel_record, 0.08)
+            self.cancel_record()
         elif action == 'registry':
             self._ui_later('open_registry', self.request_registry, 0.08)
         elif action == 'tools':
