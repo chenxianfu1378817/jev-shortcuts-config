@@ -15,11 +15,14 @@ SPEC.loader.exec_module(build_module)
 class ModularBuildTests(unittest.TestCase):
     def test_all_feature_buckets_present(self):
         source, parts = build_module.assembled_source()
-        self.assertGreaterEqual(len(parts), 25)
+        self.assertGreaterEqual(len(parts), 24)
+        self.assertTrue((ROOT / 'src' / '39_voice_session.py').is_file())
+        self.assertFalse(any('39_voice_session' in x for x in parts))
+        self.assertNotIn('class _VoiceSession:', source)
         expected = ('11_contacts_clipboard', '22_deepseek', '26_shortcuts_bridge',
                     '27_ios_services', '29_agent_execution',
                     '30_shortcuts_generator', '32_updater',
-                    '34_bu_market', '39_voice_session',
+                    '34_bu_market',
                     '40_ui_cards', '41_history', '42_result',
                     '43_chat', '44_registered_tools')
         for name in expected:
