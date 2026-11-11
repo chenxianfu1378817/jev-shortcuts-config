@@ -1,0 +1,50 @@
+name: PYVoiceAgent V2.3.7 safe iOS Dictation hotfix
+on:
+  push:
+    branches:
+      - hotfix/pyvoiceagent-v237-safe-dictation
+    paths:
+      - 'pyvoiceagent/src/**'
+      - 'pyvoiceagent/tools/build_modular.py'
+      - 'pyvoiceagent/tests/test_safe_dictation_v237.py'
+      - 'pyvoiceagent/tests/test_modular_build_v236.py'
+      - '.github/workflows/pyvoiceagent-safe-dictation-v237.yml'
+  pull_request:
+    paths:
+      - 'pyvoiceagent/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-safe-dictation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build old-updater-compatible V2.3.7
+        run: python pyvoiceagent/tools/build_modular.py --sequence 237 --write
+      - name: Verify repeatable build and SHA-256
+        run: python pyvoiceagent/tools/build_modular.py --sequence 237
+      - name: Verify microphone UI cannot activate Pythonista sound Recorder
+        run: python -m unittest discover -s pyvoiceagent/tests -p 'test_safe_dictation_v237.py' -v
+      - name: Verify entire modular source and functional contracts
+        run: |
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_modular_build_v236.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_storage_safety_v235.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_active_registry_contract.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_active_release_contract.py' -v
+      - name: Publish candidate only on hotfix branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/hotfix/pyvoiceagent-v237-safe-dictation'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyvoiceagent/agent_core_2_3_7.py pyvoiceagent/manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "build(pyvoiceagent): V2.3.7 safe system dictation release"
+            git push origin HEAD:hotfix/pyvoiceagent-v237-safe-dictation
+          fi
