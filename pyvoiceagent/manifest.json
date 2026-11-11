@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 233,
-  "version": "2.3.3",
-  "path": "agent_core_2_3_3.py",
-  "sha256": "b3dd5d8bd1ec92ea2b7a8e7a078e4e02cd0219c3ebe596b46fac4cc758207257",
-  "size_bytes": 344433,
-  "summary": "工具库在助手窗口上打开，关闭后返回原助手页面；保留无轮询实现。真机待复验。"
+  "sequence": 234,
+  "version": "2.3.4",
+  "path": "agent_core_2_3_4.py",
+  "sha256": "1329b1881e89159db2ccf3353035b5b5a6a6915b69992c91e7db24e9349ea864",
+  "size_bytes": 345820,
+  "summary": "手动停止录音和语音识别移到独立工作线程；保留原生工具库及返回原助手界面。真机待复验。"
 }
