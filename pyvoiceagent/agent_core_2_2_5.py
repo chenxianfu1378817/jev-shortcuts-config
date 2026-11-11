@@ -6141,6 +6141,7 @@ _REG_PREVIOUS_RUN = run_tool
 _REG_PREVIOUS_APPLY = _apply_one_shot_plan
 _REG_PREVIOUS_PARSE = parse_action_plan
 _REG_PREVIOUS_SUBMIT = _ChatShell.submit
+_REG_PREVIOUS_ADD = add_shortcut_registration
 ONE_SHOT_TOOLS += ('shortcut.run',)
 
 def local_registry():
@@ -6439,6 +6440,15 @@ def _reg_action(shell,action,text):
     return _REG_OLD_ACTION(shell,action,text)
 _ChatShell._handle_action=_reg_action
 
+def add_shortcut_registration():
+    # The former prompt path wrote only enabled entries and could erase disabled
+    # user tools. Always use the new local manager when WebView is available.
+    shell=_CHAT_ACTIVE
+    if shell is not None and not shell.closed:
+        shell.post({'type':'notice','text':'请在设置中的「我的快捷指令工具库」添加或编辑。'})
+        return False
+    return _REG_PREVIOUS_ADD()
+
 # -*- coding: utf-8 -*-
 """UI add-on for V2.2.5; HTML runs entirely inside the local Pythonista WebView."""
 _REG_CSS = r"""
@@ -6501,6 +6511,7 @@ document.querySelector('[data-tab="settings"]').addEventListener('click',functio
 var prior=window.PYChatReceive;
 window.PYChatReceive=function(data){if(data&&data.type==='reg_list'){items=data.items||[];build();return}return prior(data)};
 el('agent-exit').onclick=function(){if(window.confirm('退出 PYVoiceAgent 助手界面并返回 Pythonista？正在运行的系统快捷指令不会因此撤销。'))call('exit','')};
+var oldAdd=document.querySelector('[data-legacy="add_shortcut"]');if(oldAdd)oldAdd.onclick=function(){document.getElementById('reg-form').scrollIntoView({behavior:'smooth',block:'start'})};
 })();
 """
 CHAT_HTML=CHAT_HTML.replace('</style>','\n'+_REG_CSS+'</style>')
