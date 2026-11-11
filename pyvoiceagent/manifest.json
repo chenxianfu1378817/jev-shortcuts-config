@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 232,
-  "version": "2.3.2",
-  "path": "agent_core_2_3_2.py",
-  "sha256": "54f057b78328465a08d00198f6baa118fb2833dfcd9e3ed19f9436a0c1ccca2a",
-  "size_bytes": 344152,
-  "summary": "移除持续 WebView 轮询，快捷指令管理改用原生窗口；取消录音或关闭时作废排队的识别。稳定性待真机复验。"
+  "sequence": 233,
+  "version": "2.3.3",
+  "path": "agent_core_2_3_3.py",
+  "sha256": "a62b7605c684d84250e4539e5e0cf67ab93cb21d84aaa2a986fb0740b3fabf56",
+  "size_bytes": 344244,
+  "summary": "工具库在助手窗口上打开，关闭后返回原助手页面；保留无轮询实现。真机待复验。"
 }
