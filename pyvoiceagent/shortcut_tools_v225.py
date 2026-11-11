@@ -37,6 +37,8 @@ def _reg_validate(item, legacy=False):
         raise ValueError('不允许覆盖系统快捷指令')
     if not 1 <= len(desc) <= 160:
         raise ValueError('请输入简短用途说明（1–160 字）')
+    if type(item.get('confirm',True)) is not bool or type(item.get('enabled',True)) is not bool:
+        raise ValueError('确认及启用字段必须为布尔值')
     aliases=item.get('aliases', [])
     if isinstance(aliases,str):
         aliases=[x.strip() for x in aliases.replace('，',',').split(',')]
@@ -77,6 +79,8 @@ def _reg_save(data):
     ident=str(data.get('id','')).strip()
     candidate=_reg_validate(data)
     reg=_reg_all()
+    if get_state().get('status')=='awaiting_callback':
+        raise ValueError('存在待回调任务，暂不可修改工具库')
     if ident not in reg and len(reg)>=MAX_SHORTCUTS:
         raise ValueError('最多登记 {} 个快捷指令'.format(MAX_SHORTCUTS))
     for key,other in reg.items():
@@ -85,8 +89,6 @@ def _reg_save(data):
             set(x.casefold() for x in other['aliases']) &
             set(x.casefold() for x in candidate['aliases'])):
             raise ValueError('触发语句与已启用的其他工具重复')
-    if ident in reg and get_state().get('status')=='awaiting_callback':
-        raise ValueError('存在等待回调的任务，不允许修改登记信息')
     reg[ident]=candidate
     atomic_json(REGISTRY_PATH,reg)
     return ident
@@ -151,10 +153,15 @@ def _apply_one_shot_plan(state,plan):
     if any(a.get('tool')=='shortcut.run' for a in actions):
         if len(actions)!=1 or actions[0]['shortcut_id'] not in local_registry():
             raise ValueError('未注册或被停用的快捷指令')
+        ident=actions[0]['shortcut_id']
+        item=local_registry()[ident]
         if not prompt_alert('确认执行本地快捷指令',
-                            '即将请求 iOS 运行：'+local_registry()[actions[0]['shortcut_id']]['name']):
+                            '即将请求 iOS 运行：'+item['name']):
             state.update(status='paused',error='用户取消了自定义快捷指令')
             put_state(state)
+            return state
+        if item['mode']=='launch':
+            _reg_direct_launch(state,actions[0],item)
             return state
     return _REG_PREVIOUS_APPLY(state,plan)
 
@@ -189,6 +196,7 @@ def run_tool(state,choice):
 def _reg_invoke(shell,goal,match):
     ident,item,arg=match
     def start():
+        scheduled=False
         try:
             if shell.closed: return
             old=get_state()
@@ -235,11 +243,14 @@ def _reg_invoke(shell,goal,match):
                 else:
                     result=_reg_direct_launch(state,choice,item)
                     shell.message('assistant',str(result.get('result',''))+'；请在快捷指令中核实。')
+                shell.status(False,False)
             shell.ui.delay(on_ui,0.08)
+            scheduled=True
         except Exception as exc:
             shell.message('assistant','本地快捷指令调用失败：'+str(exc)[:160])
         finally:
-            shell.status(False,False)
+            if not scheduled:
+                shell.status(False,False)
     shell.status(True,False)
     _chat_threading.Thread(target=start,daemon=True,name='PYVA-RegisteredShortcut').start()
 
