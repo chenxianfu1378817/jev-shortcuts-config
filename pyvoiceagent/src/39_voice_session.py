@@ -86,8 +86,10 @@ class _VoiceSession:
             self.stop_event.wait()
             self._safe_stage('stop_enter')
             # Same thread creates, starts, stops and releases native recorder.
-            recorder.stop()
-            recorder = None
+            closing = recorder
+            recorder = None  # Never call stop twice if native stop raises.
+            closing.stop()
+            del closing
             self._safe_stage('audio_stopped')
             self._safe_progress('stopped')
             if self.cancel_event.wait(0.7):
