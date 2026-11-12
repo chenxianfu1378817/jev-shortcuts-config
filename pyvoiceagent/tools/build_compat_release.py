@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '3.0.5'
-SEQUENCE = 305
+VERSION = '3.0.6'
+SEQUENCE = 306
 
 
 def build(write=False):
@@ -16,6 +16,11 @@ def build(write=False):
         raise ValueError('Unexpected legacy version marker')
     marker = "VERSION = '{}-legacy-compat'\n".format(VERSION).encode()
     data = source.replace(original, marker, 1)
+    old = b"    url='shortcuts://run-shortcut?'+urlencode({'name':item['name'],'input':'text','text':payload})"
+    new = b"    from urllib.parse import quote\n" + old[:-1] + b", quote_via=quote)"
+    if data.count(old) != 1:
+        raise ValueError('Unexpected registered shortcut launch code')
+    data = data.replace(old, new, 1)
     entry = b'if __name__ == "__main__":\n    main()\n'
     if not data.endswith(entry):
         raise ValueError('Unexpected engine entry point')
@@ -28,7 +33,7 @@ def build(write=False):
     manifest = {'schema': 1, 'sequence': SEQUENCE, 'version': VERSION,
                 'path': name, 'sha256': hashlib.sha256(data).hexdigest(),
                 'size_bytes': len(data),
-                'summary': '保留完整工具引擎，改用系统输入对话框绕过原生卡片发送闪退；iPhone 待验收。'}
+                'summary': '修复自注册快捷指令名称中的空格编码，保留系统输入与完整工具引擎；iPhone 待验收。'}
     meta = ROOT / 'manifest.json'
     engine = ROOT / name
     if write:
