@@ -12,7 +12,7 @@ import sys
 import tempfile
 import zipfile
 
-VERSION = '3.0.1'
+VERSION = '3.0.2'
 _BUNDLE_SHA256 = '__BUNDLE_SHA256__'
 _BUNDLE_B64 = '__BUNDLE_BASE64__'
 
@@ -20,7 +20,7 @@ _BUNDLE_B64 = '__BUNDLE_BASE64__'
 def _runtime_location():
     home = os.path.join(os.path.expanduser('~/Documents'),
                         'PYVoiceAgent_V3_Runtime', 'releases')
-    return os.path.join(home, 'v3_0_1_' + _BUNDLE_SHA256[:12])
+    return os.path.join(home, 'v3_0_2_' + _BUNDLE_SHA256[:12])
 
 
 def _install():
