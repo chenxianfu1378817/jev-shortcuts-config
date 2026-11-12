@@ -35,6 +35,7 @@ class DeepSeekText:
             raise InputError('AI prompt must be 1-2000 characters')
         payload = {
             'model': self.model, 'stream': False,
+            'thinking': {'type': 'disabled'},
             'messages': [{'role':'system','content':
                           '你是个人只读问答助手。不要声称执行了任何日历、付款、快捷指令或系统操作。'},
                          {'role':'user','content':text}],
