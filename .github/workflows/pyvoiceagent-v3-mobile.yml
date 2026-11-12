@@ -1,14 +1,14 @@
 name: PYVoiceAgent V3 phone release
 on:
   push:
-    branches: [v3/phase1-pure-python-core]
+    branches: [main, v3/phase1-pure-python-core]
     paths:
       - 'pyvoiceagent_v3/**'
       - '.github/workflows/pyvoiceagent-v3-mobile.yml'
   pull_request:
     paths:
       - 'pyvoiceagent_v3/**'
-      - 'pyvoiceagent/agent_core_3_0_0.py'
+      - 'pyvoiceagent/agent_core_3_0_1.py'
       - 'pyvoiceagent/manifest.json'
       - '.github/workflows/pyvoiceagent-v3-mobile.yml'
   workflow_dispatch:
@@ -39,13 +39,30 @@ jobs:
         run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_network_cli.py' -v
       - name: V3 actual iPhone bootstrap, user UI and update failures
         run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_mobile_release.py' -v
-      - name: Publish engine and manifest only to development branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/v3/phase1-pure-python-core' && matrix.python-version == '3.11'
+  publish-after-tests:
+    # Only publish to the updater branch once BOTH Python versions passed.
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Generate and verify pinned V3.0.1 release
+        run: |
+          python pyvoiceagent_v3/tools/build_mobile_release.py --write
+          python pyvoiceagent_v3/tools/build_mobile_release.py
+      - name: Publish checked iPhone engine and manifest
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_0.py
+          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_1.py
           if ! git diff --cached --quiet; then
-            git commit -m "build(v3): release mobile-compatible engine V3.0.0"
-            git push origin HEAD:v3/phase1-pure-python-core
+            git commit -m "build(v3): publish SHA256-checked V3.0.1 phone update"
+            git push origin HEAD:main
           fi
