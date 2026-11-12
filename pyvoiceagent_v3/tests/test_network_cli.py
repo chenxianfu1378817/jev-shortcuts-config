@@ -46,6 +46,9 @@ class NetworkAndCliTests(unittest.TestCase):
         def fake(req,timeout):
             self.assertTrue(req.headers['Authorization'].endswith('sensitive_key_123'))
             self.assertEqual(timeout,18)
+            payload = json.loads(req.data.decode('utf-8'))
+            self.assertEqual(payload['model'], 'deepseek-flash')
+            self.assertEqual(payload['thinking'], {'type':'disabled'})
             raise urllib.error.URLError('secret credentials in raw exception')
         with self.assertRaises(RemoteError) as cm:
             self.client(b'',fake).answer('请介绍云计算')
