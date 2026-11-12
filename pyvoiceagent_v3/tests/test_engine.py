@@ -25,7 +25,7 @@ class EngineTests(unittest.TestCase):
     def test_local_hello_never_calls_remote(self):
         out = self.agent.submit('你好')
         self.assertEqual(out.status, 'completed')
-        self.assertIn('未联网', out.message)
+        self.assertIn('不需要联网', out.message)
         self.assertEqual([x['event_type'] for x in self.store.task_events(out.task_id)],
                          ['queued','completed'])
 

@@ -18,7 +18,7 @@ from .services.llm import DeepSeekText
 from .services.settings import THEMES, MODES
 from .storage.sqlite_store import LocalStore
 
-VERSION = '3.0.0'
+VERSION = '3.0.1'
 KEY_SERVICE = 'PYVoiceAgent_DeepSeekV3'
 KEY_ACCOUNT = 'main'
 MAX_DISPLAY = 1600
@@ -115,13 +115,18 @@ def _send(agent, value):
         return
     try:
         result = agent.submit(value, request_id=uuid.uuid4().hex)
+        if result.status == 'waiting_consent':
+            # Pressing Send authorizes sending this *text* to configured DeepSeek.
+            # System tools still require a separate explicit confirmation.
+            if agent.llm is None:
+                _alert('DeepSeek 尚未配置',
+                       '未从 Pythonista Keychain 读取到 API Key。请进入「设置 → DeepSeek API Key」。本次文字未联网。')
+                agent.approve_remote(result.task_id, True)
+                return
+            _message(agent.approve_remote(result.task_id, True))
+            return
         decision = _message(result)
-        if decision == 'consent':
-            approved = _confirm('DeepSeek 授权',
-                                '仅将本次文字发送到 DeepSeek。不会自动执行任何系统工具。\n\n'+value[:260],
-                                '仅本次同意')
-            _message(agent.approve_remote(result.task_id, approved))
-        elif decision == 'handoff':
+        if decision == 'handoff':
             action = result.action or {}
             info = ('快捷指令：{}\n参数：{}\n仅打开苹果快捷指令，不保证执行成功。'
                     .format(action.get('shortcut_name', ''),
@@ -272,9 +277,10 @@ def _settings(agent):
                 _alert('备份失败', type(exc).__name__)
         elif selected == '运行诊断与版本':
             _alert('版本与诊断',
-                'V3.0.0 · 独立模块\nSQLite：已初始化\nWebView：未使用\n'
+                'V3.0.1 · 独立模块\nSQLite：已初始化\nWebView：未使用\n'
                 'Pythonista 原生录音：未启用\n旧数据：未修改\n'
-                '本机是否稳定，仍需实际使用验证。')
+                'DeepSeek Keychain：{}\n本机稳定性仍需真机验证。'.format(
+                    '已读取' if _key() else '未检测到'))
 
 
 def _credentials():

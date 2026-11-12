@@ -6,6 +6,7 @@ AI text requests require a separate explicit consent transition.
 import json
 
 from .models import InputError, InvalidTransition, TaskResult
+from ..services.llm import RemoteError
 from ..services.history import HistoryService
 from ..services.settings import AppearanceSettings
 from ..services.shortcuts import ShortcutRegistry
@@ -44,7 +45,7 @@ class Agent:
                 task_id, 'waiting_confirmation', message, action))
         if value in ('你好', '您好', 'hi', 'Hi', 'hello', 'Hello'):
             return self._result(self.store.move_task(
-                task_id, 'completed', '你好，V3 核心运行正常；未联网，也未调用系统工具。'))
+                task_id, 'completed', '你好，V3 本地引擎正常。这条问候不需要联网，也没有调用手机工具。'))
         if value in ('/帮助', '/help'):
             return self._result(self.store.move_task(task_id, 'completed', _HELP))
         if value in ('/历史', '/history'):
@@ -90,6 +91,10 @@ class Agent:
                 raise RuntimeError('DeepSeek 尚未配置；未发送任何网络请求')
             answer = self.llm.answer(running['text'])
             result = self.store.move_task(task_id, 'completed', answer)
+        except RemoteError as exc:
+            # RemoteError messages are deliberately fixed/sanitized by the adapter.
+            result = self.store.move_task(task_id, 'failed',
+                'DeepSeek：{}。未调用手机系统工具。'.format(str(exc)))
         except Exception as exc:
             # Avoid writing credentials, URLs or raw request data to a trace.
             result = self.store.move_task(task_id, 'failed',

@@ -38,21 +38,22 @@ class MobileApplicationTests(unittest.TestCase):
                 mobile._history(self.agent)
         self.assertGreaterEqual(len(self.agent.history.list()), 1)
 
-    def test_ai_requires_per_request_consent(self):
+    def test_normal_chat_sends_directly_only_with_configured_llm(self):
         llm = Mock()
         llm.answer.return_value = '这是测试回答'
         self.agent.llm = llm
-        with patch.object(mobile, '_alert'), patch.object(mobile, '_confirm',
-                                                          return_value=False):
+        with patch.object(mobile, '_alert') as alert, patch.object(mobile, '_confirm') as confirm:
             mobile._send(self.agent, '分析最新道路沥青价格')
-        llm.answer.assert_not_called()
-        self.assertEqual(self.agent.history.list(limit=1)[0]['status'],'cancelled')
-        with patch.object(mobile, '_alert'), patch.object(mobile, '_confirm',
-                                                          return_value=True):
-            mobile._send(self.agent, '分析最新道路沥青价格')
-        llm.answer.assert_called_once()
-        self.assertEqual(sorted(x['status'] for x in self.agent.history.list(limit=3)),
-                         ['cancelled','completed'])
+            confirm.assert_not_called()
+            self.assertIn('这是测试回答', alert.call_args.args[1])
+        llm.answer.assert_called_once_with('分析最新道路沥青价格')
+        self.assertEqual(self.agent.history.list(limit=1)[0]['status'], 'completed')
+
+    def test_missing_key_does_not_send_and_shows_settings(self):
+        with patch.object(mobile, '_alert') as alert:
+            mobile._send(self.agent, '解释网络协议')
+        self.assertIn('DeepSeek API Key', alert.call_args.args[1])
+        self.assertEqual(self.agent.history.list(limit=1)[0]['status'], 'failed')
 
     def test_shortcut_is_never_invoked_without_confirmation(self):
         self.agent.shortcuts.register('go_pay','Test Payment', ['打开付款码'])
@@ -162,8 +163,8 @@ class MobileApplicationTests(unittest.TestCase):
 class MobileReleaseTests(unittest.TestCase):
     def test_release_size_sha_and_all_python_modules(self):
         engine, manifest = builder.make_release()
-        self.assertEqual(manifest['version'],'3.0.0')
-        self.assertEqual(manifest['sequence'],300)
+        self.assertEqual(manifest['version'],'3.0.1')
+        self.assertEqual(manifest['sequence'],301)
         self.assertLessEqual(len(engine),350000)
         self.assertEqual(hashlib.sha256(engine).hexdigest(),manifest['sha256'])
         namespace={'__name__':'v3_embedded_test'}
