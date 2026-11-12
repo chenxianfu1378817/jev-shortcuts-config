@@ -17,8 +17,8 @@ REPOSITORY = Path(__file__).resolve().parents[2]
 PACKAGE = REPOSITORY / 'pyvoiceagent_v3'
 RELEASE_DIR = REPOSITORY / 'pyvoiceagent'
 TEMPLATE = PACKAGE / 'tools' / 'mobile_engine_template.txt'
-VERSION = '3.0.0'
-SEQUENCE = 300
+VERSION = '3.0.1'
+SEQUENCE = 301
 LEGACY_CAP = 350000
 
 
@@ -75,7 +75,7 @@ def make_release():
     source = template.replace('__BUNDLE_SHA256__',sha).replace(
         '__BUNDLE_BASE64__', base64.b64encode(packed).decode('ascii'))
     data = source.encode('utf-8')
-    compile(data,'agent_core_3_0_0.py','exec')
+    compile(data,'agent_core_3_0_1.py','exec')
     if not 2000 < len(data) <= LEGACY_CAP:
         raise RuntimeError('Mobile package violates old 350000 byte updater limit')
     manifest = {
@@ -83,7 +83,7 @@ def make_release():
         'path': 'agent_core_3_0_0.py',
         'sha256': hashlib.sha256(data).hexdigest(),
         'size_bytes': len(data),
-        'summary': 'V3 手机可直接使用：固定 Pythonista 入口无缝升级至独立 Python 包；稳定系统菜单、DeepSeek 逐次确认、历史/设置、快捷指令显式授权、完整性校验和在线更新。V2 数据不覆盖；真机待验收。',
+        'summary': 'V3.0.1：修正「你好」本地提示、DeepSeek 文字自动发送与 HTTP/TLS/超时错误分类；系统工具仍须确认。保持既有更新器与用户数据，待 iPhone 真机验收。',
     }
     return data, manifest
 
