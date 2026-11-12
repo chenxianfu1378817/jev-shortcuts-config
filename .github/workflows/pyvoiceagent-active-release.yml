@@ -31,3 +31,4 @@ jobs:
         run: |
           python pyvoiceagent/tools/build_compat_release.py
           python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_mobile_release.py' -v
+          python -m unittest discover -s pyvoiceagent/tests -p 'test_semantic_shortcuts.py' -v

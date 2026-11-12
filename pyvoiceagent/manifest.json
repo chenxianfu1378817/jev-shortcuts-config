@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 306,
-  "version": "3.0.6",
-  "path": "agent_core_3_0_6.py",
-  "sha256": "b7575312b6c35624fa25e27d2881b72404aff607a56d0e23f630345950a0c037",
-  "size_bytes": 344398,
-  "summary": "修复自注册快捷指令名称中的空格编码，保留系统输入与完整工具引擎；iPhone 待验收。"
+  "sequence": 307,
+  "version": "3.0.7",
+  "path": "agent_core_3_0_7.py",
+  "sha256": "30a6758721b6e72fd4e1de8bb57ce4434266e4a763c8f645d0fa1da93424c39d",
+  "size_bytes": 347704,
+  "summary": "按用途匹配已登记快捷指令，并在本地校验传参模式；iPhone 待验收。"
 }
