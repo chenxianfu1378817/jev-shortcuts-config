@@ -17,8 +17,8 @@ REPOSITORY = Path(__file__).resolve().parents[2]
 PACKAGE = REPOSITORY / 'pyvoiceagent_v3'
 RELEASE_DIR = REPOSITORY / 'pyvoiceagent'
 TEMPLATE = PACKAGE / 'tools' / 'mobile_engine_template.txt'
-VERSION = '3.0.2'
-SEQUENCE = 302
+VERSION = '3.0.3'
+SEQUENCE = 303
 LEGACY_CAP = 350000
 
 
@@ -83,7 +83,7 @@ def make_release():
         'path': 'agent_core_' + VERSION.replace('.', '_') + '.py',
         'sha256': hashlib.sha256(data).hexdigest(),
         'size_bytes': len(data),
-        'summary': 'V3.0.2：修正 DeepSeek 角色与真实快捷指令 Tool Calls 分流、高德原生唤起和假完成状态；保护旧数据，iPhone 待验收。',
+        'summary': 'V3.0.3：修复口语操作分流、快捷指令授权复核与重复交接；保护旧数据，iPhone 待验收。',
     }
     return data, manifest
 

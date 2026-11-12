@@ -160,8 +160,24 @@ class Agent:
                 raise InputError('Unapproved app URL; refusing to open')
         elif kind != 'ios_shortcut_handoff':
             raise InputError('Unsupported handoff kind')
-        return self._result(self.store.move_task(task_id, 'handoff_ready',
-            '已生成交接信息，尚未启动苹果快捷指令。需要由用户授权的 iOS 适配器执行，并回传核验。', action))
+        if kind == 'ios_shortcut_handoff':
+            current = next((tool for tool in self.shortcuts.list()
+                            if tool['tool_id'] == action.get('tool_id') and tool['enabled']), None)
+            matched = self.shortcuts.match(row['text'])
+            if matched and current and matched['tool_id'] == current['tool_id']:
+                current = matched
+            if not current or self.shortcuts.prepare_action(current, row['text']) != action:
+                return self._result(self.store.move_task(task_id, 'failed',
+                    '快捷指令配置已变更或已停用，本次未执行。请重新发送指令。'))
+        try:
+            return self._result(self.store.move_task(task_id, 'handoff_ready',
+                '已准备系统交接，尚未执行。', action))
+        except InvalidTransition:
+            return self._result(self.store.get_task(task_id), fresh=False)
+
+    def mark_handoff_rejected(self, task_id):
+        return self._result(self.store.move_task(task_id, 'failed',
+            'iOS 拒绝打开目标地址；未确认任何外部操作。'))
 
     def mark_handoff_unverified(self, task_id):
         row = self.store.get_task(task_id)

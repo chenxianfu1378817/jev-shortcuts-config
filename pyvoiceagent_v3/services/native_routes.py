@@ -13,8 +13,8 @@ _AMAP_COMMANDS = frozenset((
 ))
 
 _ACTION_PREFIX = re.compile(
-    r'^(?:请|请你|帮我|给我|麻烦你|麻烦)?'
-    r'(?:打开|启动|运行|执行|导航去|导航到|带我去|'
+    r'^(?:(?:请你|请|帮我|给我|麻烦你|麻烦|能不能|能否|可以|能|帮忙)\s*)*'
+    r'(?:打开|启动|运行|执行|导航去|导航到|带我去|提醒我|'
     r'创建提醒|添加提醒|设置提醒|新建提醒|'
     r'创建日程|添加日程|新建日程|'
     r'新建备忘录|创建备忘录|添加备忘录|'
@@ -27,7 +27,8 @@ def match_native(text):
     """Return an allowed handoff, or None; no network or side effects."""
     compact = re.sub(r'\s+', '', str(text or '')).lower()
     compact = compact.rstrip('。.!！?？')
-    compact = re.sub(r'^(?:请帮我|请你|麻烦你|麻烦|请|帮我|给我)', '', compact)
+    compact = re.sub(r'^(?:请你|请|帮我|给我|麻烦你|麻烦|能不能|能否|可以|能|帮忙)+', '', compact)
+    compact = re.sub(r'(?:好吗|可以吗|行吗|一下|吧|吗)+$', '', compact)
     if compact in _AMAP_COMMANDS:
         return {
             'kind': 'ios_url_handoff',
@@ -42,7 +43,8 @@ def match_native(text):
 def is_unhandled_action(text):
     """Do not mislabel an unimplemented iPhone operation as completed AI chat."""
     value = str(text or '').strip()
-    if value.endswith(('？', '?')) or value.startswith(('如何', '怎么', '为什么', '能否', '介绍')):
+    if value.startswith(('如何', '怎么', '为什么', '介绍')) or re.search(
+            r'(?:怎么|如何|为什么|有什么|是什么意思)', value):
         return False
     return bool(_ACTION_PREFIX.match(value))
 

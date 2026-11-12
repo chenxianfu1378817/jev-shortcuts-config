@@ -48,7 +48,7 @@ class NativeActionRoutingTests(unittest.TestCase):
         result = self.agent.submit('打开高德导航')
         with self.assertRaises(RuntimeError):
             mobile._handoff(self.agent, result.task_id, True, opener=lambda _: False)
-        self.assertEqual(self.agent.store.get_task(result.task_id)['status'], 'needs_review')
+        self.assertEqual(self.agent.store.get_task(result.task_id)['status'], 'failed')
 
     def test_unknown_tool_action_is_failed_locally(self):
         for phrase in ('打开未知软件', '导航到某个地方', '帮我创建提醒明天开会'):
@@ -80,3 +80,29 @@ class NativeActionRoutingTests(unittest.TestCase):
     def test_no_broad_match_on_similar_words(self):
         self.assertIsNone(match_native('高德导航有什么功能'))
         self.assertIsNone(match_native('打开高德导航到北京'))
+
+    def test_polite_commands_do_not_go_to_text_chat(self):
+        result = self.agent.submit('可以帮我打开高德导航吗？')
+        self.assertEqual(result.action['url'], AMAP_URI)
+        result = self.agent.submit('能不能帮我提醒我明天开会？')
+        self.assertEqual(result.status, 'failed')
+        self.llm.answer.assert_not_called()
+
+    def test_ready_task_cannot_be_replayed(self):
+        result = self.agent.submit('打开高德导航')
+        self.agent.confirm_handoff(result.task_id, True)
+        opener = Mock()
+        replay = mobile._handoff(self.agent, result.task_id, True, opener=opener)
+        self.assertFalse(replay.fresh)
+        opener.assert_not_called()
+
+    def test_changed_shortcut_is_not_executed_after_confirmation(self):
+        for change in ({'enabled': False}, {'input_mode': 'full'}):
+            with self.subTest(change=change):
+                self.agent.shortcuts.register('example', '测试', ['测试工具'])
+                result = self.agent.submit('运行测试工具')
+                self.agent.shortcuts.register('example', '测试', ['测试工具'], **change)
+                opener = Mock()
+                outcome = mobile._handoff(self.agent, result.task_id, True, opener=opener)
+                self.assertEqual(outcome.status, 'failed')
+                opener.assert_not_called()

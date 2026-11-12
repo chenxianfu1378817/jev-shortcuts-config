@@ -163,9 +163,9 @@ class MobileApplicationTests(unittest.TestCase):
 class MobileReleaseTests(unittest.TestCase):
     def test_release_size_sha_and_all_python_modules(self):
         engine, manifest = builder.make_release()
-        self.assertEqual(manifest['version'],'3.0.2')
-        self.assertEqual(manifest['sequence'],302)
-        self.assertEqual(manifest['path'], 'agent_core_3_0_2.py')
+        self.assertEqual(manifest['version'],'3.0.3')
+        self.assertEqual(manifest['sequence'],303)
+        self.assertEqual(manifest['path'], 'agent_core_3_0_3.py')
         self.assertLessEqual(len(engine),350000)
         self.assertEqual(hashlib.sha256(engine).hexdigest(),manifest['sha256'])
         namespace={'__name__':'v3_embedded_test'}
@@ -252,14 +252,14 @@ class UpdateSafetyTests(unittest.TestCase):
             self.addCleanup(mock.stop)
 
     def _fetch(self,good=True):
-        payload=b'VERSION="3.0.2"\n'
-        manifest={'schema':1,'sequence':302,'version':'3.0.2',
-                  'path':'agent_core_3_0_2.py','size_bytes':len(payload),
+        payload=b'VERSION="3.0.3"\n'
+        manifest={'schema':1,'sequence':303,'version':'3.0.3',
+                  'path':'agent_core_3_0_3.py','size_bytes':len(payload),
                   'sha256':hashlib.sha256(payload).hexdigest() if good else '0'*64}
         def get(name,limit):
             return json.dumps(manifest).encode() if name=='manifest.json' else payload
         # Override strict >=1000 bytes minimum with realistic fixture.
-        payload=b'VERSION="3.0.2"\n' + b'#'+ b'Z'*1200+b'\n'
+        payload=b'VERSION="3.0.3"\n' + b'#'+ b'Z'*1200+b'\n'
         manifest['size_bytes']=len(payload)
         manifest['sha256']=hashlib.sha256(payload).hexdigest() if good else '0'*64
         return get,payload
@@ -270,7 +270,7 @@ class UpdateSafetyTests(unittest.TestCase):
         self.assertTrue(result['updated'],result['message'])
         self.assertEqual(Path(self.current).read_bytes(),payload)
         self.assertEqual(Path(self.backup).read_bytes(),self.old)
-        self.assertEqual(json.loads(Path(self.meta).read_text())['installed_seq'],302)
+        self.assertEqual(json.loads(Path(self.meta).read_text())['installed_seq'],303)
 
     def test_user_rolls_back_verified_engine_and_blocks_broken_version(self):
         fetch,_ = self._fetch()
@@ -281,7 +281,7 @@ class UpdateSafetyTests(unittest.TestCase):
         meta=json.loads(Path(self.meta).read_text(encoding='utf-8'))
         self.assertEqual(meta['installed_version'],'3.0.0')
         self.assertEqual(meta['installed_seq'],300)
-        self.assertEqual(meta['broken_version'],'3.0.2')
+        self.assertEqual(meta['broken_version'],'3.0.3')
 
     def test_corrupt_previous_sha_rejects_rollback_without_changes(self):
         fetch,_ = self._fetch()

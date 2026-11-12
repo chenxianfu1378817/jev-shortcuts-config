@@ -8,7 +8,7 @@ on:
   pull_request:
     paths:
       - 'pyvoiceagent_v3/**'
-      - 'pyvoiceagent/agent_core_3_0_2.py'
+      - 'pyvoiceagent/agent_core_3_0_3.py'
       - 'pyvoiceagent/manifest.json'
       - '.github/workflows/pyvoiceagent-v3-mobile.yml'
   workflow_dispatch:
@@ -36,12 +36,8 @@ jobs:
         run: python pyvoiceagent_v3/tools/build_mobile_release.py --write
       - name: Verify deterministic rebuild and SHA256
         run: python pyvoiceagent_v3/tools/build_mobile_release.py
-      - name: Existing independent V3 core regressions
-        run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_engine.py' -v
-      - name: AI network timeout, offline and consent tests
-        run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_network_cli.py' -v
-      - name: V3 actual iPhone bootstrap, user UI and update failures
-        run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_mobile_release.py' -v
+      - name: Run the complete V3 regression suite
+        run: python -m unittest discover -s pyvoiceagent_v3/tests -v
   package-pr-update:
     # A PR from this repository can stage reproducible phone artifacts.
     # The main updater is NOT changed until this PR is reviewed and merged.
@@ -69,9 +65,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_2.py
+          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_3.py
           if ! git diff --cached --quiet; then
-            git commit -m "build(v3): stage verified V3.0.2 phone payload"
+            git commit -m "build(v3): stage verified V3.0.3 phone payload"
             git push origin "HEAD:${TARGET_BRANCH}"
           fi
   publish-after-tests:
@@ -88,7 +84,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Generate and verify pinned V3.0.2 release
+      - name: Generate and verify pinned V3.0.3 release
         run: |
           python pyvoiceagent_v3/tools/build_mobile_release.py --write
           python pyvoiceagent_v3/tools/build_mobile_release.py
@@ -96,8 +92,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_2.py
+          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_3.py
           if ! git diff --cached --quiet; then
-            git commit -m "build(v3): publish SHA256-checked V3.0.2 phone update"
+            git commit -m "build(v3): publish SHA256-checked V3.0.3 phone update"
             git push origin HEAD:main
           fi

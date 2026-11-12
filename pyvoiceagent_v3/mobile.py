@@ -19,7 +19,7 @@ from .services.native_routes import allowed_url
 from .services.settings import THEMES, MODES
 from .storage.sqlite_store import LocalStore
 
-VERSION = '3.0.2'
+VERSION = '3.0.3'
 KEY_SERVICE = 'PYVoiceAgent_DeepSeekV3'
 KEY_ACCOUNT = 'main'
 MAX_DISPLAY = 1600
@@ -85,7 +85,7 @@ def _handoff(agent, task_id, confirmed, opener=None):
     if opener is None:
         opener = webbrowser.open
     outcome = agent.confirm_handoff(task_id, bool(confirmed))
-    if not confirmed or outcome.status != 'handoff_ready':
+    if not confirmed or not outcome.fresh or outcome.status != 'handoff_ready':
         return outcome
     action = outcome.action or {}
     if action.get('kind') == 'ios_url_handoff':
@@ -108,11 +108,14 @@ def _handoff(agent, task_id, confirmed, opener=None):
         uri = 'shortcuts://run-shortcut?' + urlencode(params)
     try:
         opened = opener(uri)
-        if opened is False:
-            raise RuntimeError('iOS 拒绝打开外部地址；可能未安装对应 App')
-    finally:
-        # A URL open request is not proof that the app or Shortcut completed.
+    except Exception:
         agent.mark_handoff_unverified(task_id)
+        raise
+    if opened is False:
+        agent.mark_handoff_rejected(task_id)
+        raise RuntimeError('iOS 拒绝打开外部地址')
+    # A URL open request is not proof that the app or Shortcut completed.
+    agent.mark_handoff_unverified(task_id)
     return outcome
 
 
@@ -137,7 +140,10 @@ def _send(agent, value):
             # return text; handle that proposed handoff below.
             result = agent.approve_remote(result.task_id, True)
         if result.status == 'waiting_confirmation' and (result.action or {}).get('kind') == 'ios_url_handoff':
-            _handoff(agent, result.task_id, True)
+            outcome = _handoff(agent, result.task_id, True)
+            if not outcome.fresh or outcome.status != 'handoff_ready':
+                _message(outcome)
+                return
             # A low-risk app launch follows the explicit user command, with no
             # extra approval tap. Do not mark it as completed.
             _alert('已尝试打开高德地图',
@@ -150,9 +156,11 @@ def _send(agent, value):
                     .format(action.get('shortcut_name', ''),
                             str(action.get('input_text', ''))[:130]))
             approved = _confirm('系统工具授权', info, '打开快捷指令')
-            _handoff(agent, result.task_id, approved)
-            if approved:
+            outcome = _handoff(agent, result.task_id, approved)
+            if approved and outcome.fresh and outcome.status == 'handoff_ready':
                 _alert('等待核验', '已尝试转交苹果快捷指令。是否实际完成，请在快捷指令或对应 App 核对；不会自动重试。')
+            elif approved:
+                _message(outcome)
             return
         _message(result)
     except Exception as exc:
@@ -297,7 +305,7 @@ def _settings(agent):
                 _alert('备份失败', type(exc).__name__)
         elif selected == '运行诊断与版本':
             _alert('版本与诊断',
-                'V3.0.2 · 独立模块\nSQLite：已初始化\nWebView：未使用\n'
+                'V3.0.3 · 独立模块\nSQLite：已初始化\nWebView：未使用\n'
                 'Pythonista 原生录音：未启用\n旧数据：未修改\n'
                 'DeepSeek Keychain：{}\n本机稳定性仍需真机验证。'.format(
                     '已读取' if _key() else '未检测到'))
