@@ -80,8 +80,10 @@ def _message(result):
     return None
 
 
-def _handoff(agent, task_id, confirmed, opener=webbrowser.open):
-    """User authorization required; *never* claim shortcut has run successfully."""
+def _handoff(agent, task_id, confirmed, opener=None):
+    """Only a launch request; never claim an app or Shortcut finished."""
+    if opener is None:
+        opener = webbrowser.open
     outcome = agent.confirm_handoff(task_id, bool(confirmed))
     if not confirmed or outcome.status != 'handoff_ready':
         return outcome
