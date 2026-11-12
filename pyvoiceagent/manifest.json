@@ -3,7 +3,7 @@
   "sequence": 302,
   "version": "3.0.2",
   "path": "agent_core_3_0_2.py",
-  "sha256": "6912e345c4836d06871e60fd998394165ef17d782fa9a9a6d9f667603bdd0994",
-  "size_bytes": 43152,
+  "sha256": "bd22d02206fa3863260841ebb52e2174033456365ed0ca44111b59226f1f14ab",
+  "size_bytes": 44460,
   "summary": "V3.0.2：本地高德地图唤起分流、未接入操作不再假完成，修正 DeepSeek 只读角色提示词；保留旧用户数据。手机待验收。"
 }
