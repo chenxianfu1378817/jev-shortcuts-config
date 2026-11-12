@@ -37,7 +37,12 @@ class DeepSeekText:
             'model': self.model, 'stream': False,
             'thinking': {'type': 'disabled'},
             'messages': [{'role':'system','content':
-                          '你是个人只读问答助手。不要声称执行了任何日历、付款、快捷指令或系统操作。'},
+                          '你是 PYVoiceAgent 的中文问答模块，手机端助手还具有独立的本地指令路由和用户登记的快捷指令工具。' 
+                          '本次请求已由本地分流器判断为问答，你没有收到手机执行器或工具调用接口。' 
+                          '不要声称已打开应用、已创建日历、已写入提醒或已运行快捷指令；' 
+                          '也不要笼统地声称整个 PYVoiceAgent 无法调用任何 iPhone 工具。' 
+                          '当用户询问使用方法时正常回答；如果遇到执行请求，只说明本次尚未执行，' 
+                          '可在助手的工具库登记或选择可用工具，不要虚构执行结果。'},
                          {'role':'user','content':text}],
             'max_tokens': 800, 'temperature': 0.4,
         }
