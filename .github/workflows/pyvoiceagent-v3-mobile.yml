@@ -42,6 +42,38 @@ jobs:
         run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_network_cli.py' -v
       - name: V3 actual iPhone bootstrap, user UI and update failures
         run: python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_mobile_release.py' -v
+  package-pr-update:
+    # A PR from this repository can stage reproducible phone artifacts.
+    # The main updater is NOT changed until this PR is reviewed and merged.
+    needs: build-and-test
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build and verify deterministic iPhone update
+        run: |
+          python pyvoiceagent_v3/tools/build_mobile_release.py --write
+          python pyvoiceagent_v3/tools/build_mobile_release.py
+          python -m unittest discover -s pyvoiceagent_v3/tests -v
+      - name: Commit checked release artifacts to the PR branch
+        env:
+          TARGET_BRANCH: ${{ github.head_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyvoiceagent/manifest.json pyvoiceagent/agent_core_3_0_1.py
+          if ! git diff --cached --quiet; then
+            git commit -m "build(v3): stage verified V3.0.1 phone payload"
+            git push origin "HEAD:${TARGET_BRANCH}"
+          fi
   publish-after-tests:
     # Only publish to the updater branch once BOTH Python versions passed.
     needs: build-and-test

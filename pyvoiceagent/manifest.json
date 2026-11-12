@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 300,
-  "version": "3.0.0",
-  "path": "agent_core_3_0_0.py",
-  "sha256": "13fee8b3e6b7bb6899fa4edc83c12c71d3995846783c17a26965662752a6de86",
-  "size_bytes": 39320,
-  "summary": "V3 手机可直接使用：固定 Pythonista 入口无缝升级至独立 Python 包；稳定系统菜单、DeepSeek 逐次确认、历史/设置、快捷指令显式授权、完整性校验和在线更新。V2 数据不覆盖；真机待验收。"
+  "sequence": 301,
+  "version": "3.0.1",
+  "path": "agent_core_3_0_1.py",
+  "sha256": "f8d7f0496a738d816d555cc7853506162a1d4e15c5827cc6b37e30089cbbf043",
+  "size_bytes": 40344,
+  "summary": "V3.0.1：修正「你好」本地提示、DeepSeek 文字自动发送与 HTTP/TLS/超时错误分类；系统工具仍须确认。保持既有更新器与用户数据，待 iPhone 真机验收。"
 }

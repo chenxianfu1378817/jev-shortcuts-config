@@ -165,6 +165,7 @@ class MobileReleaseTests(unittest.TestCase):
         engine, manifest = builder.make_release()
         self.assertEqual(manifest['version'],'3.0.1')
         self.assertEqual(manifest['sequence'],301)
+        self.assertEqual(manifest['path'], 'agent_core_3_0_1.py')
         self.assertLessEqual(len(engine),350000)
         self.assertEqual(hashlib.sha256(engine).hexdigest(),manifest['sha256'])
         namespace={'__name__':'v3_embedded_test'}

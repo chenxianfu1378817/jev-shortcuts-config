@@ -80,7 +80,7 @@ def make_release():
         raise RuntimeError('Mobile package violates old 350000 byte updater limit')
     manifest = {
         'schema': 1, 'sequence': SEQUENCE, 'version': VERSION,
-        'path': 'agent_core_3_0_0.py',
+        'path': 'agent_core_' + VERSION.replace('.', '_') + '.py',
         'sha256': hashlib.sha256(data).hexdigest(),
         'size_bytes': len(data),
         'summary': 'V3.0.1：修正「你好」本地提示、DeepSeek 文字自动发送与 HTTP/TLS/超时错误分类；系统工具仍须确认。保持既有更新器与用户数据，待 iPhone 真机验收。',
