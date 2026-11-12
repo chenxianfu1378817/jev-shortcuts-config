@@ -133,8 +133,9 @@ def _send(agent, value):
                        '未从 Pythonista Keychain 读取到 API Key。请进入「设置 → DeepSeek API Key」。本次文字未联网。')
                 agent.approve_remote(result.task_id, True)
                 return
-            _message(agent.approve_remote(result.task_id, True))
-            return
+            # A DeepSeek response may select an allowed shortcut rather than
+            # return text; handle that proposed handoff below.
+            result = agent.approve_remote(result.task_id, True)
         if result.status == 'waiting_confirmation' and (result.action or {}).get('kind') == 'ios_url_handoff':
             _handoff(agent, result.task_id, True)
             # A low-risk app launch follows the explicit user command, with no
@@ -143,8 +144,7 @@ def _send(agent, value):
                    '已向 iOS 发出高德地图跳转请求，尚未开始路线导航。'
                    '若没有切换到地图 App，请核实是否已安装高德地图。')
             return
-        decision = _message(result)
-        if decision == 'handoff':
+        if result.status == 'waiting_confirmation':
             action = result.action or {}
             info = ('快捷指令：{}\n参数：{}\n仅打开苹果快捷指令，不保证执行成功。'
                     .format(action.get('shortcut_name', ''),
@@ -153,6 +153,8 @@ def _send(agent, value):
             _handoff(agent, result.task_id, approved)
             if approved:
                 _alert('等待核验', '已尝试转交苹果快捷指令。是否实际完成，请在快捷指令或对应 App 核对；不会自动重试。')
+            return
+        _message(result)
     except Exception as exc:
         # Do not include private prompt, URL, credentials or exception message.
         _alert('本次操作未确认', '操作未完成：'+type(exc).__name__+'。请在历史中核验后再尝试，避免重复系统写入。')
