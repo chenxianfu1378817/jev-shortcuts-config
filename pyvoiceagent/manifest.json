@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 304,
-  "version": "3.0.4",
-  "path": "agent_core_3_0_4.py",
-  "sha256": "aa43a1b472a670e52757330bcb1b80954a797961d5ccd0caa1858a6000a4ad12",
-  "size_bytes": 341613,
-  "summary": "恢复 V2.3.9 完整工具引擎、原生界面及旧工具配置；iPhone 待验收。"
+  "sequence": 305,
+  "version": "3.0.5",
+  "path": "agent_core_3_0_5.py",
+  "sha256": "579a0d976527863a4105f0d6388af6c078cc14abd40e69a9ecb52810bff71f68",
+  "size_bytes": 344346,
+  "summary": "保留完整工具引擎，改用系统输入对话框绕过原生卡片发送闪退；iPhone 待验收。"
 }

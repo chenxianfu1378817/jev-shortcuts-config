@@ -1,0 +1,71 @@
+_previous_main = main
+_raw_release_download = _release_download
+
+def _release_download(path, limit):
+    try:
+        return _raw_release_download(path, limit)
+    except (URLError, TimeoutError):
+        if not re.fullmatch(r'[a-zA-Z0-9_-]+(?:\.json|\.py)', path):
+            raise ValueError('更新文件名不安全')
+        endpoint = ('https://api.github.com/repos/chenxianfu1378817/'
+                    'jev-shortcuts-config/contents/pyvoiceagent/' + path + '?ref=main')
+        request = Request(endpoint, headers={'User-Agent': 'PYVoiceAgent',
+                                             'Accept': 'application/vnd.github.raw+json'})
+        with urlopen(request, timeout=15) as response:
+            data = response.read(limit + 1)
+        if len(data) > limit:
+            raise ValueError('更新文件超过允许大小')
+        return data
+
+def _dialog_submit(text):
+    text = str(text or '').strip()
+    if not text:
+        return False
+    if len(text) > 2000:
+        print('请输入不超过 2000 字的任务。')
+        return False
+    start_new(text)
+    return True
+
+def show_menu():
+    import dialogs
+    choices = ['输入任务', '读取剪贴板', '快捷指令工具库', '历史', '检查在线更新', '更多与设置']
+    while True:
+        choice = dialogs.list_dialog('PYVoiceAgent ' + VERSION.split('-')[0], choices)
+        if choice is None:
+            return
+        if choice == choices[0]:
+            if _dialog_submit(ask_text('输入任务（可用 iPhone 键盘听写）')):
+                return
+        elif choice == choices[1]:
+            import clipboard
+            if _dialog_submit(clipboard.get()):
+                return
+        elif choice == choices[2]:
+            add_shortcut_registration()
+        elif choice == choices[3]:
+            for record in _history_search(limit=10):
+                print(record.get('summary') or record.get('goal') or record.get('title') or '')
+            pretty_status(get_state())
+            return
+        elif choice == choices[4]:
+            if update_from_menu():
+                return
+        elif choice == choices[5]:
+            show_settings_menu()
+        if waiting_for_shortcut():
+            return
+
+def main():
+    entry = sys.argv[1] if len(sys.argv) > 1 else ''
+    if entry == 'text' and len(sys.argv) > 2:
+        return _dialog_submit(sys.argv[2])
+    if entry == 'voice':
+        return _dialog_submit(ask_text('请使用 iPhone 键盘听写'))
+    return _previous_main()
+
+def _result_ui_show(state):
+    import dialogs
+    model = _result_card_model(state)
+    return dialogs.alert(model['title'], model['copy'][:650] or model['subtitle'],
+                         '完成', hide_cancel_button=True)

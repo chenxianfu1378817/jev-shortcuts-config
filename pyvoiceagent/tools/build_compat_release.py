@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '3.0.4'
-SEQUENCE = 304
+VERSION = '3.0.5'
+SEQUENCE = 305
 
 
 def build(write=False):
@@ -16,6 +16,11 @@ def build(write=False):
         raise ValueError('Unexpected legacy version marker')
     marker = "VERSION = '{}-legacy-compat'\n".format(VERSION).encode()
     data = source.replace(original, marker, 1)
+    entry = b'if __name__ == "__main__":\n    main()\n'
+    if not data.endswith(entry):
+        raise ValueError('Unexpected engine entry point')
+    overlay = (ROOT / 'tools' / 'dialog_recovery.txt').read_bytes()
+    data = data[:-len(entry)] + overlay + b'\n' + entry
     name = 'agent_core_' + VERSION.replace('.', '_') + '.py'
     compile(data, name, 'exec')
     if not 1000 <= len(data) <= 350000:
@@ -23,7 +28,7 @@ def build(write=False):
     manifest = {'schema': 1, 'sequence': SEQUENCE, 'version': VERSION,
                 'path': name, 'sha256': hashlib.sha256(data).hexdigest(),
                 'size_bytes': len(data),
-                'summary': '恢复 V2.3.9 完整工具引擎、原生界面及旧工具配置；iPhone 待验收。'}
+                'summary': '保留完整工具引擎，改用系统输入对话框绕过原生卡片发送闪退；iPhone 待验收。'}
     meta = ROOT / 'manifest.json'
     engine = ROOT / name
     if write:
