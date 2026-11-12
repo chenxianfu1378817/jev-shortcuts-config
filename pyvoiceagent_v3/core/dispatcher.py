@@ -10,6 +10,7 @@ from ..services.llm import RemoteError
 from ..services.history import HistoryService
 from ..services.settings import AppearanceSettings
 from ..services.shortcuts import ShortcutRegistry
+from ..services.native_routes import match_native, is_unhandled_action, allowed_url
 
 _HELP = ('V3 测试核心：输入「你好」「/帮助」「/历史」「/工具」「/设置」。'
          '其他问题须明确授权后才可发送给 DeepSeek。快捷指令只生成待确认操作，不直接执行。')
@@ -43,6 +44,18 @@ class Agent:
                        .format(tool['shortcut_name']))
             return self._result(self.store.move_task(
                 task_id, 'waiting_confirmation', message, action))
+        # Native actions are decided locally, before any DeepSeek text request.
+        # An app handoff is never a completed task until its effect is verified.
+        native = match_native(value)
+        if native:
+            return self._result(self.store.move_task(
+                task_id, 'waiting_confirmation',
+                '已识别为打开高德地图；尚未发起系统跳转，也未开始导航。', native))
+        if is_unhandled_action(value):
+            return self._result(self.store.move_task(
+                task_id, 'failed',
+                '这是手机操作指令，但当前 V3 尚无对应执行工具；没有调用 DeepSeek，也没有执行手机操作。'
+                '请在「快捷指令工具库」登记同名快捷指令，或导入旧版直达型工具。'))
         if value in ('你好', '您好', 'hi', 'Hi', 'hello', 'Hello'):
             return self._result(self.store.move_task(
                 task_id, 'completed', '你好，V3 本地引擎正常。这条问候不需要联网，也没有调用手机工具。'))
@@ -113,8 +126,14 @@ class Agent:
             return self._result(self.store.move_task(task_id, 'cancelled',
                 '未授权快捷指令，本次没有执行。'))
         action = json.loads(row['action_json'])
-        if action.get('kind') != 'ios_shortcut_handoff' or action.get('executed') is not False:
+        kind = action.get('kind')
+        if action.get('executed') is not False:
             raise InputError('Handoff payload has changed; refusing to execute')
+        if kind == 'ios_url_handoff':
+            if not allowed_url(action.get('url')):
+                raise InputError('Unapproved app URL; refusing to open')
+        elif kind != 'ios_shortcut_handoff':
+            raise InputError('Unsupported handoff kind')
         return self._result(self.store.move_task(task_id, 'handoff_ready',
             '已生成交接信息，尚未启动苹果快捷指令。需要由用户授权的 iOS 适配器执行，并回传核验。', action))
 
