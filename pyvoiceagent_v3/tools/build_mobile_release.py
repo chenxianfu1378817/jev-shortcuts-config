@@ -83,7 +83,7 @@ def make_release():
         'path': 'agent_core_' + VERSION.replace('.', '_') + '.py',
         'sha256': hashlib.sha256(data).hexdigest(),
         'size_bytes': len(data),
-        'summary': 'V3.0.2：本地高德地图唤起分流、未接入操作不再假完成，修正 DeepSeek 只读角色提示词；保留旧用户数据。手机待验收。',
+        'summary': 'V3.0.2：修正 DeepSeek 角色与真实快捷指令 Tool Calls 分流、高德原生唤起和假完成状态；保护旧数据，iPhone 待验收。',
     }
     return data, manifest
 
