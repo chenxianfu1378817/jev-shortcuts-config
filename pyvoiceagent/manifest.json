@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 301,
-  "version": "3.0.1",
-  "path": "agent_core_3_0_1.py",
-  "sha256": "f8d7f0496a738d816d555cc7853506162a1d4e15c5827cc6b37e30089cbbf043",
-  "size_bytes": 40344,
-  "summary": "V3.0.1：修正「你好」本地提示、DeepSeek 文字自动发送与 HTTP/TLS/超时错误分类；系统工具仍须确认。保持既有更新器与用户数据，待 iPhone 真机验收。"
+  "sequence": 302,
+  "version": "3.0.2",
+  "path": "agent_core_3_0_2.py",
+  "sha256": "6912e345c4836d06871e60fd998394165ef17d782fa9a9a6d9f667603bdd0994",
+  "size_bytes": 43152,
+  "summary": "V3.0.2：本地高德地图唤起分流、未接入操作不再假完成，修正 DeepSeek 只读角色提示词；保留旧用户数据。手机待验收。"
 }
