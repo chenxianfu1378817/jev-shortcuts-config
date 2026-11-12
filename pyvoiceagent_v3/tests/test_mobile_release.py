@@ -264,6 +264,30 @@ class UpdateSafetyTests(unittest.TestCase):
         manifest['sha256']=hashlib.sha256(payload).hexdigest() if good else '0'*64
         return get,payload
 
+    def test_active_compat_release_upgrades_v303_and_preserves_both_stores(self):
+        published = Path(__file__).resolve().parents[2] / 'pyvoiceagent'
+        release = json.loads((published / 'manifest.json').read_text(encoding='utf-8'))
+        self.assertGreater(release['sequence'], 303)
+        prior = (published / 'agent_core_3_0_3.py').read_bytes()
+        Path(self.current).write_bytes(prior)
+        Path(self.meta).write_text(json.dumps({
+            'installed_seq': 303, 'installed_version': '3.0.3',
+            'sha256': hashlib.sha256(prior).hexdigest()}), encoding='utf-8')
+        data = Path(self.temp.name)
+        legacy_registry = data / 'shortcut_registry.json'
+        v3_database = data / 'PYVoiceAgent_V3_Data' / 'agent_v3.sqlite3'
+        v3_database.parent.mkdir()
+        fixtures = {legacy_registry: b'{"saved":true}', v3_database: b'v3 user data'}
+        for path, content in fixtures.items():
+            path.write_bytes(content)
+        result = mobile_update.check_for_update(
+            downloader=lambda name, limit: (published / name).read_bytes())
+        self.assertTrue(result['updated'], result['message'])
+        self.assertEqual(Path(self.backup).read_bytes(), prior)
+        self.assertEqual(Path(self.current).read_bytes(), (published / release['path']).read_bytes())
+        for path, content in fixtures.items():
+            self.assertEqual(path.read_bytes(), content)
+
     def test_update_writes_checked_engine_and_backup(self):
         fetch,payload=self._fetch()
         result=mobile_update.check_for_update(downloader=fetch)

@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "sequence": 303,
-  "version": "3.0.3",
-  "path": "agent_core_3_0_3.py",
-  "sha256": "0d92198efce60fdaa6af319e54755595aa1a19e012e00a0f58e84855c920eed9",
-  "size_bytes": 45576,
-  "summary": "V3.0.3：修复口语操作分流、快捷指令授权复核与重复交接；保护旧数据，iPhone 待验收。"
+  "sequence": 304,
+  "version": "3.0.4",
+  "path": "agent_core_3_0_4.py",
+  "sha256": "aa43a1b472a670e52757330bcb1b80954a797961d5ccd0caa1858a6000a4ad12",
+  "size_bytes": 341613,
+  "summary": "恢复 V2.3.9 完整工具引擎、原生界面及旧工具配置；iPhone 待验收。"
 }

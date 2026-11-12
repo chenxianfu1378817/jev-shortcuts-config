@@ -45,9 +45,15 @@ class ModularBuildTests(unittest.TestCase):
 
     def test_generated_single_file_matches_manifest(self):
         manifest = json.loads((ROOT / 'manifest.json').read_text(encoding='utf-8'))
-        result = build_module.build(sequence=manifest['sequence'], write=False)
-        self.assertEqual(result['release']['version'], manifest['version'])
-        self.assertLessEqual(result['release']['size_bytes'], 350000)
+        if manifest['version'] == '2.3.9':
+            result = build_module.build(sequence=manifest['sequence'], write=False)
+            self.assertEqual(result['release']['version'], manifest['version'])
+            self.assertLessEqual(result['release']['size_bytes'], 350000)
+        else:
+            source = build_module.remove_nonfunctional_lines(build_module.assembled_source()[0])
+            self.assertEqual(source.encode('utf-8'),
+                             (ROOT / 'agent_core_2_3_9.py').read_bytes())
+            self.assertLessEqual(len(source.encode('utf-8')), 350000)
 
     def test_comment_stripping_has_same_ast(self):
         source, _ = build_module.assembled_source()

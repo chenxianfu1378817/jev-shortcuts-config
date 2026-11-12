@@ -27,3 +27,7 @@ jobs:
         run: python -m unittest discover -s pyvoiceagent/tests -p 'test_active_release_contract.py' -v
       - name: Check current registry's user data safety
         run: python -m unittest discover -s pyvoiceagent/tests -p 'test_active_registry_contract.py' -v
+      - name: Verify legacy compatibility artifact and V3 upgrade
+        run: |
+          python pyvoiceagent/tools/build_compat_release.py
+          python -m unittest discover -s pyvoiceagent_v3/tests -p 'test_mobile_release.py' -v

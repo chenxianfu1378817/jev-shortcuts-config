@@ -1,3 +1,5 @@
+> **手机在线版：3.0.4（304）兼容恢复。** 仍运行原来的 `PYVoiceAgent.py`。从 3.0.3 的「设置 → 检查在线更新」安装后，退出再运行。恢复的是已发布的 2.3.9 引擎，打包仅改版本标记；会重新使用旧工具注册、桥接、主题和历史。更新不删除或合并 V3 数据，更新器保留上一版引擎。原先依赖本机已导入快捷指令的能力仍有此依赖。iPhone 真机待验收。
+
 # PYVoiceAgent — Pythonista iPhone AI 语音智能体
 
 **跨会话开发接续入口：先阅读 [PROJECT_STATUS.md](PROJECT_STATUS.md)，再核对 [manifest.json](manifest.json) 中当前正式版本。** 本文件记录未完成的 iPhone 真机验收事项、数据保护边界与下一步开发顺序。
