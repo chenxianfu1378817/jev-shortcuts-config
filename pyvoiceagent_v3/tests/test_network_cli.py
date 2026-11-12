@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import ssl
 from pathlib import Path
 import tempfile
 import unittest
@@ -51,6 +52,29 @@ class NetworkAndCliTests(unittest.TestCase):
         self.assertNotIn('secret',str(cm.exception))
         self.assertIn('网络',str(cm.exception))
 
+    def test_http_errors_are_not_misreported_as_offline(self):
+        expected = {400: 'HTTP 400', 401: 'API Key', 402: '余额不足',
+                    403: 'HTTP 403', 429: 'HTTP 429', 503: 'HTTP 503'}
+        for code, label in expected.items():
+            with self.subTest(code=code):
+                def fail(req, timeout):
+                    raise urllib.error.HTTPError(req.full_url, code,
+                                                 'secret credentials',
+                                                 None, None)
+                with self.assertRaises(RemoteError) as exc:
+                    self.client(b'', fail).answer('测试失败诊断')
+                self.assertIn(label, str(exc.exception))
+                self.assertNotIn('secret', str(exc.exception))
+                self.assertNotIn('网络连接失败', str(exc.exception))
+
+    def test_tls_certificate_failure_is_distinct_from_network_error(self):
+        def tls_fail(req, timeout):
+            raise urllib.error.URLError(ssl.SSLError('certificate verify failed'))
+        with self.assertRaises(RemoteError) as exc:
+            self.client(b'', tls_fail).answer('你好')
+        self.assertIn('TLS', str(exc.exception))
+        self.assertNotIn('sensitive_key_123', str(exc.exception))
+
     def test_timeout_is_handled(self):
         def time_out(req,timeout):
             raise TimeoutError('real token in exception')
@@ -86,7 +110,7 @@ class NetworkAndCliTests(unittest.TestCase):
         out=[]
         self.assertEqual(run(['--data',self.folder.name],input_fn=lambda p:next(inp),output_fn=out.append),0)
         self.assertTrue(any('科技蓝' in x for x in out))
-        self.assertTrue(any('未联网' in x for x in out))
+        self.assertTrue(any('不需要联网' in x for x in out))
         self.assertIn('已安全退出',out[-1])
 
     def test_cli_unknown_instruction_never_goes_online(self):
