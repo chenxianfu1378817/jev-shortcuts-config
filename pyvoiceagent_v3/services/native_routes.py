@@ -26,7 +26,8 @@ _ACTION_PREFIX = re.compile(
 def match_native(text):
     """Return an allowed handoff, or None; no network or side effects."""
     compact = re.sub(r'\s+', '', str(text or '')).lower()
-    compact = compact.rstrip('。.!！')
+    compact = compact.rstrip('。.!！?？')
+    compact = re.sub(r'^(?:请帮我|请你|麻烦你|麻烦|请|帮我|给我)', '', compact)
     if compact in _AMAP_COMMANDS:
         return {
             'kind': 'ios_url_handoff',
