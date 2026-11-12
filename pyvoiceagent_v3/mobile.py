@@ -15,10 +15,11 @@ from urllib.parse import urlencode
 from .core.dispatcher import Agent
 from .services.history import HistoryService
 from .services.llm import DeepSeekText
+from .services.native_routes import allowed_url
 from .services.settings import THEMES, MODES
 from .storage.sqlite_store import LocalStore
 
-VERSION = '3.0.1'
+VERSION = '3.0.2'
 KEY_SERVICE = 'PYVoiceAgent_DeepSeekV3'
 KEY_ACCOUNT = 'main'
 MAX_DISPLAY = 1600
@@ -85,23 +86,30 @@ def _handoff(agent, task_id, confirmed, opener=webbrowser.open):
     if not confirmed or outcome.status != 'handoff_ready':
         return outcome
     action = outcome.action or {}
-    name = action.get('shortcut_name', '')
-    if not isinstance(name, str) or not name or len(name) > 80:
-        agent.mark_handoff_unverified(task_id)
-        raise ValueError('快捷指令名称无效，未尝试打开')
-    text = action.get('input_text', '')
-    if not isinstance(text, str) or len(text) > 2000:
-        agent.mark_handoff_unverified(task_id)
-        raise ValueError('快捷指令参数格式无效')
-    # Apple's documented external-app URL scheme; user must approve this tap.
-    params = {'name': name}
-    if text:
-        params.update({'input': 'text', 'text': text})
-    uri = 'shortcuts://run-shortcut?' + urlencode(params)
+    if action.get('kind') == 'ios_url_handoff':
+        uri = action.get('url', '')
+        if not allowed_url(uri):
+            agent.mark_handoff_unverified(task_id)
+            raise ValueError('未授权的应用地址，拒绝打开')
+    else:
+        name = action.get('shortcut_name', '')
+        if not isinstance(name, str) or not name or len(name) > 80:
+            agent.mark_handoff_unverified(task_id)
+            raise ValueError('快捷指令名称无效，未尝试打开')
+        text = action.get('input_text', '')
+        if not isinstance(text, str) or len(text) > 2000:
+            agent.mark_handoff_unverified(task_id)
+            raise ValueError('快捷指令参数格式无效')
+        params = {'name': name}
+        if text:
+            params.update({'input': 'text', 'text': text})
+        uri = 'shortcuts://run-shortcut?' + urlencode(params)
     try:
-        opener(uri)
+        opened = opener(uri)
+        if opened is False:
+            raise RuntimeError('iOS 拒绝打开外部地址；可能未安装对应 App')
     finally:
-        # Opening a URL does not verify that a Shortcut actually ran.
+        # A URL open request is not proof that the app or Shortcut completed.
         agent.mark_handoff_unverified(task_id)
     return outcome
 
@@ -124,6 +132,14 @@ def _send(agent, value):
                 agent.approve_remote(result.task_id, True)
                 return
             _message(agent.approve_remote(result.task_id, True))
+            return
+        if result.status == 'waiting_confirmation' and (result.action or {}).get('kind') == 'ios_url_handoff':
+            _handoff(agent, result.task_id, True)
+            # A low-risk app launch follows the explicit user command, with no
+            # extra approval tap. Do not mark it as completed.
+            _alert('已尝试打开高德地图',
+                   '已向 iOS 发出高德地图跳转请求，尚未开始路线导航。'
+                   '若没有切换到地图 App，请核实是否已安装高德地图。')
             return
         decision = _message(result)
         if decision == 'handoff':
@@ -277,7 +293,7 @@ def _settings(agent):
                 _alert('备份失败', type(exc).__name__)
         elif selected == '运行诊断与版本':
             _alert('版本与诊断',
-                'V3.0.1 · 独立模块\nSQLite：已初始化\nWebView：未使用\n'
+                'V3.0.2 · 独立模块\nSQLite：已初始化\nWebView：未使用\n'
                 'Pythonista 原生录音：未启用\n旧数据：未修改\n'
                 'DeepSeek Keychain：{}\n本机稳定性仍需真机验证。'.format(
                     '已读取' if _key() else '未检测到'))
