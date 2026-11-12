@@ -3,6 +3,8 @@
 Never stores or logs credentials; tool calls are intentionally not supported.
 """
 import json
+import socket
+import ssl
 import urllib.error
 import urllib.request
 
@@ -55,7 +57,33 @@ class DeepSeekText:
                 if not isinstance(answer, str) or not answer.strip():
                     raise RemoteError('AI response is empty or malformed')
                 return answer.strip()[:5000]
-        except (urllib.error.URLError, TimeoutError, OSError):
-            raise RemoteError('网络不可用、超时或 TLS/连接异常') from None
+        except urllib.error.HTTPError as exc:
+            # HTTPError subclasses URLError: status codes are NOT offline errors.
+            status = int(exc.code) if isinstance(exc.code, int) else 0
+            reason = {
+                400: '请求格式被 DeepSeek 拒绝（HTTP 400）',
+                401: 'DeepSeek API Key 无效或已失效（HTTP 401）',
+                402: 'DeepSeek 账户余额不足（HTTP 402）',
+                403: 'DeepSeek 接口访问受限（HTTP 403）',
+                408: 'DeepSeek 服务器请求超时（HTTP 408）',
+                429: 'DeepSeek 请求频率受限（HTTP 429）',
+            }.get(status)
+            if reason is None:
+                reason = ('DeepSeek 服务暂时异常（HTTP {}）'.format(status)
+                          if status >= 500 else
+                          'DeepSeek 请求失败（HTTP {}）'.format(status))
+            raise RemoteError(reason) from None
+        except (TimeoutError, socket.timeout):
+            raise RemoteError('DeepSeek 请求超时，请稍后再试') from None
+        except urllib.error.URLError as exc:
+            detail = getattr(exc, 'reason', None)
+            if (isinstance(detail, ssl.SSLError) or
+                    'CERTIFICATE_VERIFY_FAILED' in str(type(detail)) or
+                    'CERTIFICATE_VERIFY_FAILED' in str(detail) or
+                    'SSL' in type(detail).__name__):
+                raise RemoteError('TLS 安全连接失败，请检查代理、证书与系统时间') from None
+            raise RemoteError('网络连接失败，请检查蜂窝网络、DNS 或代理') from None
+        except OSError:
+            raise RemoteError('网络连接或系统 I/O 异常') from None
         except (ValueError, KeyError, IndexError, TypeError):
             raise RemoteError('AI 返回内容无法解析') from None
