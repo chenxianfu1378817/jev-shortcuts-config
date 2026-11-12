@@ -67,7 +67,9 @@ class ShortcutRegistry:
         elif tool['input_mode'] == 'suffix':
             match = tool.get('matched_alias', '')
             index = text.casefold().find(match.casefold()) if match else -1
-            value = text[index + len(match):].strip() if index >= 0 else ''
+            # For an AI-selected tool, the literal alias may not occur in the
+            # user's phrase; forward original text instead of silently losing it.
+            value = text[index + len(match):].strip() if index >= 0 else text
         else:
             value = ''
         return {'kind': 'ios_shortcut_handoff', 'tool_id': tool['tool_id'],
